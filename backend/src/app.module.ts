@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
-
+import { AuthModule } from './auth/auth.module';
+import { InventarioModule } from './inventario/inventario.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -12,8 +13,10 @@ import { AppController } from './app.controller';
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize: true, // dev only
+      synchronize: false, // Ensure we don't drop existing tables
     }),
+    AuthModule,
+    InventarioModule,
   ],
   controllers: [AppController],
 })

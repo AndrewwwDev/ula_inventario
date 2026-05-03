@@ -1,22 +1,13 @@
-FROM node:20
+FROM node:20-alpine
 
-# Crear directorio de trabajo
 WORKDIR /app
 
-# Instalar Angular CLI globalmente
-RUN npm install -g @angular/cli
+COPY package.json ./
 
-# Crear un nuevo proyecto Angular dentro del contenedor
-RUN ng new mi-app --defaults --skip-git --skip-install
-
-# Copiar los archivos del proyecto al contenedor
-WORKDIR /app/mi-app
-
-# Instalar dependencias
 RUN npm install
 
-# Exponer puerto
+COPY . .
+
 EXPOSE 4200
 
-# Servir la app
 CMD ["npm", "start"]

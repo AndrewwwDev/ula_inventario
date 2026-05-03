@@ -10,6 +10,8 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const app_controller_1 = require("./app.controller");
+const auth_module_1 = require("./auth/auth.module");
+const inventario_module_1 = require("./inventario/inventario.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -24,8 +26,10 @@ exports.AppModule = AppModule = __decorate([
                 password: process.env.DB_PASS,
                 database: process.env.DB_NAME,
                 autoLoadEntities: true,
-                synchronize: true, // dev only
+                synchronize: false, // Ensure we don't drop existing tables
             }),
+            auth_module_1.AuthModule,
+            inventario_module_1.InventarioModule,
         ],
         controllers: [app_controller_1.AppController],
     })
