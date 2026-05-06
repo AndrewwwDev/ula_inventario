@@ -18,4 +18,9 @@ export declare class Bien {
     imagen_url: string;
     qr_code: string;
     activo: boolean;
+    motivo_desincorporacion: string;
+    fecha_desincorporacion: Date;
+    foto_desincorporacion: string;
+    condicion_fisica: string;
+    especificaciones_condicion: string;
 }

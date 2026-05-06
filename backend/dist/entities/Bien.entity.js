@@ -82,6 +82,26 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: true }),
     __metadata("design:type", Boolean)
 ], Bien.prototype, "activo", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Bien.prototype, "motivo_desincorporacion", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'date', nullable: true }),
+    __metadata("design:type", Date)
+], Bien.prototype, "fecha_desincorporacion", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Bien.prototype, "foto_desincorporacion", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 50, default: 'Buen estado' }),
+    __metadata("design:type", String)
+], Bien.prototype, "condicion_fisica", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Bien.prototype, "especificaciones_condicion", void 0);
 exports.Bien = Bien = __decorate([
     (0, typeorm_1.Entity)('bienes')
 ], Bien);

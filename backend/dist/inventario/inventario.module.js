@@ -15,13 +15,15 @@ const Bien_entity_1 = require("../entities/Bien.entity");
 const Categoria_entity_1 = require("../entities/Categoria.entity");
 const Dependencia_entity_1 = require("../entities/Dependencia.entity");
 const Encargado_entity_1 = require("../entities/Encargado.entity");
+const Mantenimiento_entity_1 = require("../entities/Mantenimiento.entity");
+const Bitacora_entity_1 = require("../entities/Bitacora.entity");
 let InventarioModule = class InventarioModule {
 };
 exports.InventarioModule = InventarioModule;
 exports.InventarioModule = InventarioModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([Bien_entity_1.Bien, Categoria_entity_1.Categoria, Dependencia_entity_1.Dependencia, Encargado_entity_1.Encargado])
+            typeorm_1.TypeOrmModule.forFeature([Bien_entity_1.Bien, Categoria_entity_1.Categoria, Dependencia_entity_1.Dependencia, Encargado_entity_1.Encargado, Mantenimiento_entity_1.Mantenimiento, Bitacora_entity_1.Bitacora])
         ],
         controllers: [inventario_controller_1.InventarioController],
         providers: [inventario_service_1.InventarioService]

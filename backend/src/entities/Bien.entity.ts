@@ -54,4 +54,19 @@ export class Bien {
 
   @Column({ type: 'boolean', default: true })
   activo: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  motivo_desincorporacion: string;
+
+  @Column({ type: 'date', nullable: true })
+  fecha_desincorporacion: Date;
+
+  @Column({ type: 'text', nullable: true })
+  foto_desincorporacion: string;
+
+  @Column({ type: 'varchar', length: 50, default: 'Buen estado' })
+  condicion_fisica: string;
+
+  @Column({ type: 'text', nullable: true })
+  especificaciones_condicion: string;
 }
