@@ -81,7 +81,19 @@ export class DashboardComponent implements OnInit {
   finalizandoBienId: number | null = null;
   
   // --- Bitacora ---
+  allBitacoraLogs: any[] = [];
   bitacoraLogs: any[] = [];
+  displayedBitacoraLogs: any[] = [];
+  bitacoraPageSize = 10;
+  bitacoraCurrentPage = 1;
+  isLoadingMoreBitacora = false;
+  bitacoraFilter: string | null = null;
+  
+  // Bitacora KPIs
+  kpiTotalLogs = 0;
+  kpiMantenimientoLogs = 0;
+  kpiAltasLogs = 0;
+  kpiBajasLogs = 0;
 
   constructor(
     private authService: AuthService, 
@@ -141,7 +153,14 @@ export class DashboardComponent implements OnInit {
   }
 
   loadBitacora() {
-    this.inventarioService.getBitacora().subscribe((data: any) => this.bitacoraLogs = data);
+    this.inventarioService.getBitacora().subscribe((data: any) => {
+      this.allBitacoraLogs = data;
+      this.kpiTotalLogs = data.length;
+      this.kpiMantenimientoLogs = data.filter((log: any) => log.accion.includes('MANTENIMIENTO')).length;
+      this.kpiAltasLogs = data.filter((log: any) => log.accion === 'ALTA').length;
+      this.kpiBajasLogs = data.filter((log: any) => log.accion === 'DESINCORPORACION').length;
+      this.applyBitacoraFilter();
+    });
   }
 
   switchView(view: 'inicio' | 'inventario' | 'desincorporacion' | 'mantenimiento' | 'reportes') {
@@ -391,7 +410,11 @@ export class DashboardComponent implements OnInit {
   onScroll(event: any) {
     const element = event.target;
     if (element.scrollHeight - element.scrollTop - element.clientHeight < 50) {
-      this.loadMoreItems();
+      if (this.currentView === 'inventario') {
+        this.loadMoreItems();
+      } else if (this.currentView === 'reportes') {
+        this.loadMoreBitacoraLogs();
+      }
     }
   }
 
@@ -408,5 +431,53 @@ export class DashboardComponent implements OnInit {
       this.displayedInventory = [...this.displayedInventory, ...nextItems];
       this.isLoadingMore = false;
     }, 500); // simulated loading time
+  }
+
+  // --- Bitacora Filtering & Scroll ---
+  applyBitacoraFilter(filter?: string | null) {
+    if (filter !== undefined) {
+      if (this.bitacoraFilter === filter) {
+        this.bitacoraFilter = null;
+      } else {
+        this.bitacoraFilter = filter;
+      }
+    }
+    
+    let result = this.allBitacoraLogs;
+    if (this.bitacoraFilter === 'MANTENIMIENTO') {
+      result = result.filter(log => log.accion.includes('MANTENIMIENTO'));
+    } else if (this.bitacoraFilter === 'ALTA') {
+      result = result.filter(log => log.accion === 'ALTA');
+    } else if (this.bitacoraFilter === 'DESINCORPORACION') {
+      result = result.filter(log => log.accion === 'DESINCORPORACION');
+    } else if (this.bitacoraFilter === 'MODIFICACION') {
+      result = result.filter(log => log.accion === 'MODIFICACION');
+    }
+    
+    this.bitacoraLogs = result;
+    this.bitacoraCurrentPage = 1;
+    this.displayedBitacoraLogs = this.bitacoraLogs.slice(0, this.bitacoraPageSize);
+  }
+
+  onBitacoraScroll(event: any) {
+    const element = event.target;
+    if (element.scrollHeight - element.scrollTop - element.clientHeight < 50) {
+      this.loadMoreBitacoraLogs();
+    }
+  }
+
+  loadMoreBitacoraLogs() {
+    if (this.isLoadingMoreBitacora || this.displayedBitacoraLogs.length >= this.bitacoraLogs.length) return;
+    
+    this.isLoadingMoreBitacora = true;
+    setTimeout(() => {
+      this.bitacoraCurrentPage++;
+      const nextItems = this.bitacoraLogs.slice(
+        (this.bitacoraCurrentPage - 1) * this.bitacoraPageSize, 
+        this.bitacoraCurrentPage * this.bitacoraPageSize
+      );
+      this.displayedBitacoraLogs = [...this.displayedBitacoraLogs, ...nextItems];
+      this.isLoadingMoreBitacora = false;
+    }, 500);
   }
 }

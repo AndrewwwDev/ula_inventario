@@ -41936,7 +41936,7 @@ var LoginComponent = class _LoginComponent {
   }, dependencies: [FormsModule, \u0275NgNoValidate, DefaultValueAccessor, NgControlStatus, NgControlStatusGroup, RequiredValidator, NgModel, NgForm, CommonModule, NgIf], encapsulation: 2 });
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(LoginComponent, { className: "LoginComponent", filePath: "src/app/pages/login/login.component.ts", lineNumber: 13 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(LoginComponent, { className: "LoginComponent", filePath: "src\\app\\pages\\login\\login.component.ts", lineNumber: 13 });
 })();
 
 // src/app/services/inventario.service.ts
@@ -41959,6 +41959,24 @@ var InventarioService = class _InventarioService {
   createBien(data) {
     return this.http.post(`${this.apiUrl}/inventario`, data, { headers: this.getHeaders() });
   }
+  updateBien(id, data) {
+    return this.http.put(`${this.apiUrl}/inventario/${id}`, data, { headers: this.getHeaders() });
+  }
+  getBienesDesincorporados() {
+    return this.http.get(`${this.apiUrl}/inventario/desincorporados`, { headers: this.getHeaders() });
+  }
+  desincorporarBien(id, motivo, fecha, foto) {
+    const formData = new FormData();
+    formData.append("motivo", motivo);
+    formData.append("fecha", fecha);
+    if (foto) {
+      formData.append("foto", foto);
+    }
+    const headers = new HttpHeaders({
+      "Authorization": `Bearer ${localStorage.getItem("token")}`
+    });
+    return this.http.put(`${this.apiUrl}/inventario/${id}/desincorporar`, formData, { headers });
+  }
   getCategorias() {
     return this.http.get(`${this.apiUrl}/inventario/categorias`, { headers: this.getHeaders() });
   }
@@ -41968,374 +41986,1618 @@ var InventarioService = class _InventarioService {
   getEncargados() {
     return this.http.get(`${this.apiUrl}/inventario/encargados`, { headers: this.getHeaders() });
   }
+  // --- MANTENIMIENTO ---
+  getAlertasMantenimiento() {
+    return this.http.get(`${this.apiUrl}/inventario/mantenimiento/alertas`, { headers: this.getHeaders() });
+  }
+  getEnReparacion() {
+    return this.http.get(`${this.apiUrl}/inventario/mantenimiento/reparacion`, { headers: this.getHeaders() });
+  }
+  getHistorialMantenimiento() {
+    return this.http.get(`${this.apiUrl}/inventario/mantenimiento/historial`, { headers: this.getHeaders() });
+  }
+  finalizarMantenimiento(id, trabajo, proximaFecha) {
+    return this.http.post(`${this.apiUrl}/inventario/mantenimiento/${id}/finalizar`, { trabajo, proximaFecha }, { headers: this.getHeaders() });
+  }
+  // --- BITACORA ---
+  getBitacora() {
+    return this.http.get(`${this.apiUrl}/inventario/bitacora`, { headers: this.getHeaders() });
+  }
   static \u0275fac = function InventarioService_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _InventarioService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(AuthService));
   };
   static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _InventarioService, factory: _InventarioService.\u0275fac, providedIn: "root" });
 };
 
+// src/app/services/toast.service.ts
+var ToastService = class _ToastService {
+  toastsSubject = new BehaviorSubject([]);
+  toasts$ = this.toastsSubject.asObservable();
+  nextId = 0;
+  show(message, type = "success") {
+    const id = this.nextId++;
+    const currentToasts = this.toastsSubject.value;
+    this.toastsSubject.next([...currentToasts, { id, message, type }]);
+    setTimeout(() => {
+      this.remove(id);
+    }, 5e3);
+  }
+  remove(id) {
+    const currentToasts = this.toastsSubject.value;
+    this.toastsSubject.next(currentToasts.filter((t) => t.id !== id));
+  }
+  static \u0275fac = function ToastService_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _ToastService)();
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _ToastService, factory: _ToastService.\u0275fac, providedIn: "root" });
+};
+
 // src/app/pages/dashboard/dashboard.component.ts
-var _c0 = (a0, a1, a2) => ({ "bg-green-100 text-green-700": a0, "bg-yellow-100 text-yellow-700": a1, "bg-red-100 text-red-700": a2 });
-function DashboardComponent_div_69_Template(rf, ctx) {
+var _c0 = (a0, a1) => ({ "translate-x-0": a0, "-translate-x-full": a1 });
+var _c1 = (a0, a1) => ({ "bg-green-100 text-green-800": a0, "text-gray-600 hover:bg-gray-50": a1 });
+var _c2 = (a0, a1) => ({ "bg-green-100 text-green-700 ring-2 ring-green-400 ring-offset-1": a0, "bg-gray-100 text-gray-600 hover:bg-gray-200": a1 });
+var _c3 = (a0, a1) => ({ "bg-orange-100 text-orange-700 ring-2 ring-orange-400 ring-offset-1": a0, "bg-gray-100 text-gray-600 hover:bg-gray-200": a1 });
+var _c4 = (a0, a1) => ({ "bg-red-100 text-red-700 ring-2 ring-red-400 ring-offset-1": a0, "bg-gray-100 text-gray-600 hover:bg-gray-200": a1 });
+var _c5 = (a0, a1, a2, a3) => ({ "bg-green-100 text-green-700": a0, "bg-gray-100 text-gray-700": a1, "bg-orange-100 text-orange-700": a2, "bg-red-100 text-red-700": a3 });
+var _c6 = (a0, a1, a2) => ({ "text-teal-600 bg-teal-50 border border-teal-200": a0, "text-yellow-600 bg-yellow-50 border border-yellow-200": a1, "text-red-600 bg-red-50 border border-red-200": a2 });
+var _c7 = (a0, a1) => ({ "border-primary text-primary font-bold": a0, "border-transparent text-gray-500 hover:text-gray-700": a1 });
+var _c8 = (a0, a1) => ({ "bg-gray-100 text-gray-800 font-bold ring-2 ring-gray-300 ring-offset-1": a0, "text-gray-600 hover:bg-gray-50": a1 });
+var _c9 = (a0, a1) => ({ "bg-blue-50 text-blue-700 font-bold ring-2 ring-blue-300 ring-offset-1": a0, "text-gray-600 hover:bg-gray-50": a1 });
+var _c10 = (a0, a1) => ({ "bg-green-50 text-green-700 font-bold ring-2 ring-green-300 ring-offset-1": a0, "text-gray-600 hover:bg-gray-50": a1 });
+var _c11 = (a0, a1) => ({ "bg-red-50 text-red-700 font-bold ring-2 ring-red-300 ring-offset-1": a0, "text-gray-600 hover:bg-gray-50": a1 });
+var _c12 = () => ["ALTA", "DESINCORPORACION", "MANTENIMIENTO_INICIO", "MODIFICACION", "MANTENIMIENTO_FIN"];
+var _c13 = (a0, a1, a2, a3, a4) => ({ "bg-green-500": a0, "bg-red-500": a1, "bg-orange-500": a2, "bg-blue-500": a3, "bg-gray-400": a4 });
+var _c14 = (a0, a1, a2, a3, a4) => ({ "bg-gradient-to-br from-green-400 to-green-600": a0, "bg-gradient-to-br from-red-400 to-red-600": a1, "bg-gradient-to-br from-orange-400 to-orange-600": a2, "bg-gradient-to-br from-blue-400 to-blue-600": a3, "bg-gradient-to-br from-gray-400 to-gray-600": a4 });
+function DashboardComponent_div_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 58)(1, "div")(2, "p", 59);
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 41);
+    \u0275\u0275listener("click", function DashboardComponent_div_1_Template_div_click_0_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.toggleSidebar());
+    });
+    \u0275\u0275elementEnd();
+  }
+}
+function DashboardComponent_div_68_li_2_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "li", 45);
+    \u0275\u0275listener("click", function DashboardComponent_div_68_li_2_Template_li_click_0_listener() {
+      const item_r4 = \u0275\u0275restoreView(_r3).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.selectSearchResult(item_r4));
+    });
+    \u0275\u0275elementStart(1, "span", 46);
+    \u0275\u0275text(2, "inventory_2");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "div")(4, "p", 20);
+    \u0275\u0275text(5);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "p", 47);
+    \u0275\u0275text(7);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const item_r4 = ctx.$implicit;
+    \u0275\u0275advance(5);
+    \u0275\u0275textInterpolate(item_r4.codigo);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r4.nombre);
+  }
+}
+function DashboardComponent_div_68_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 42)(1, "ul", 43);
+    \u0275\u0275template(2, DashboardComponent_div_68_li_2_Template, 8, 2, "li", 44);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngForOf", ctx_r1.searchResults);
+  }
+}
+function DashboardComponent_span_72_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 48);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r1.alertasMantenimiento.length);
+  }
+}
+function DashboardComponent_div_79_div_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 53)(1, "div")(2, "p", 54);
     \u0275\u0275text(3);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "h3", 60);
+    \u0275\u0275elementStart(4, "h3", 55);
     \u0275\u0275text(5);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(6, "div")(7, "span", 17);
+    \u0275\u0275elementStart(6, "div")(7, "span", 18);
     \u0275\u0275text(8);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    const stat_r1 = ctx.$implicit;
+    const stat_r5 = ctx.$implicit;
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(stat_r1.label);
+    \u0275\u0275textInterpolate(stat_r5.label);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(stat_r1.value);
+    \u0275\u0275textInterpolate(stat_r5.value);
     \u0275\u0275advance();
-    \u0275\u0275classMapInterpolate2("w-10 h-10 rounded-full flex items-center justify-center ", stat_r1.bg, " ", stat_r1.color, "");
+    \u0275\u0275classMapInterpolate2("w-10 h-10 rounded-full flex items-center justify-center ", stat_r5.bg, " ", stat_r5.color, "");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(stat_r1.icon);
+    \u0275\u0275textInterpolate(stat_r5.icon);
   }
 }
-function DashboardComponent_tr_110_Template(rf, ctx) {
+function DashboardComponent_div_79_div_9_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "tr", 61)(1, "td", 62)(2, "div", 63)(3, "span", 17);
+    \u0275\u0275elementStart(0, "div", 53)(1, "div")(2, "p", 54);
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "h3", 55);
+    \u0275\u0275text(5);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(6, "div")(7, "span", 18);
+    \u0275\u0275text(8);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const stat_r6 = ctx.$implicit;
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(stat_r6.label);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(stat_r6.value);
+    \u0275\u0275advance();
+    \u0275\u0275classMapInterpolate2("w-10 h-10 rounded-full flex items-center justify-center ", stat_r6.bg, " ", stat_r6.color, "");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(stat_r6.icon);
+  }
+}
+function DashboardComponent_div_79_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div")(1, "h3", 49);
+    \u0275\u0275text(2, "Estado Operativo");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "div", 50);
+    \u0275\u0275template(4, DashboardComponent_div_79_div_4_Template, 9, 7, "div", 51);
+    \u0275\u0275pipe(5, "slice");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "h3", 49);
+    \u0275\u0275text(7, "Condici\xF3n F\xEDsica");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "div", 52);
+    \u0275\u0275template(9, DashboardComponent_div_79_div_9_Template, 9, 7, "div", 51);
+    \u0275\u0275pipe(10, "slice");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(4);
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(5, 2, ctx_r1.stats, 0, 4));
+    \u0275\u0275advance(5);
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(10, 6, ctx_r1.stats, 4, 7));
+  }
+}
+function DashboardComponent_div_80_button_14_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r8 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 78);
+    \u0275\u0275listener("click", function DashboardComponent_div_80_button_14_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r8);
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.applyQuickFilter(null));
+    });
+    \u0275\u0275text(1, "Limpiar");
+    \u0275\u0275elementEnd();
+  }
+}
+function DashboardComponent_div_80_tr_48_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r9 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "tr", 79)(1, "td", 80)(2, "div", 81)(3, "span", 18);
     \u0275\u0275text(4, "inventory_2");
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(5, "td", 64);
+    \u0275\u0275elementStart(5, "td", 82);
     \u0275\u0275text(6);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "td", 65);
+    \u0275\u0275elementStart(7, "td", 83);
     \u0275\u0275text(8);
     \u0275\u0275pipe(9, "date");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "td", 66);
+    \u0275\u0275elementStart(10, "td", 84);
     \u0275\u0275text(11);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "td", 67);
+    \u0275\u0275elementStart(12, "td", 85);
     \u0275\u0275text(13);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "td", 68);
+    \u0275\u0275elementStart(14, "td", 86);
     \u0275\u0275text(15);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "td", 62)(17, "div", 69);
+    \u0275\u0275elementStart(16, "td", 80)(17, "div", 87);
     \u0275\u0275text(18);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(19, "td", 62)(20, "div", 70)(21, "button", 71)(22, "span", 54);
-    \u0275\u0275text(23, "edit");
+    \u0275\u0275elementStart(19, "td", 80)(20, "div", 88);
+    \u0275\u0275text(21);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(24, "button", 72)(25, "span", 54);
-    \u0275\u0275text(26, "delete");
+    \u0275\u0275elementStart(22, "td", 80)(23, "div", 89)(24, "button", 90);
+    \u0275\u0275listener("click", function DashboardComponent_div_80_tr_48_Template_button_click_24_listener() {
+      const item_r10 = \u0275\u0275restoreView(_r9).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.openEditModal(item_r10));
+    });
+    \u0275\u0275elementStart(25, "span", 91);
+    \u0275\u0275text(26, "edit");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(27, "button", 92);
+    \u0275\u0275listener("click", function DashboardComponent_div_80_tr_48_Template_button_click_27_listener() {
+      const item_r10 = \u0275\u0275restoreView(_r9).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.openDesincorporarModal(item_r10));
+    });
+    \u0275\u0275elementStart(28, "span", 91);
+    \u0275\u0275text(29, "delete");
     \u0275\u0275elementEnd()()()()();
   }
   if (rf & 2) {
-    const item_r2 = ctx.$implicit;
+    const item_r10 = ctx.$implicit;
     \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate(item_r2.codigo);
+    \u0275\u0275textInterpolate(item_r10.codigo);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(9, 8, item_r2.fecha_registro, "shortDate"));
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(9, 11, item_r10.fecha_registro, "shortDate"));
     \u0275\u0275advance(2);
-    \u0275\u0275propertyInterpolate("title", item_r2.descripcion);
+    \u0275\u0275propertyInterpolate("title", item_r10.descripcion);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(item_r2.nombre);
+    \u0275\u0275textInterpolate(item_r10.nombre);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((item_r2.ubicacion == null ? null : item_r2.ubicacion.nombre) || "N/A");
+    \u0275\u0275textInterpolate((item_r10.ubicacion == null ? null : item_r10.ubicacion.nombre) || "N/A");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((item_r2.categoria == null ? null : item_r2.categoria.nombre) || "N/A");
+    \u0275\u0275textInterpolate((item_r10.categoria == null ? null : item_r10.categoria.nombre) || "N/A");
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction3(11, _c0, item_r2.estado_operativo === "En uso", item_r2.estado_operativo === "Regular", item_r2.estado_operativo === "Da\xF1ado"));
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction4(14, _c5, item_r10.estado_operativo === "Activo", item_r10.estado_operativo === "Inactivo", item_r10.estado_operativo === "Mantenimiento", item_r10.estado_operativo === "Desincorporado"));
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", item_r2.estado_operativo, " ");
+    \u0275\u0275textInterpolate1(" ", item_r10.estado_operativo, " ");
+    \u0275\u0275advance(2);
+    \u0275\u0275propertyInterpolate("title", item_r10.especificaciones_condicion);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction3(19, _c6, item_r10.condicion_fisica === "Buen estado", item_r10.condicion_fisica === "Regular", item_r10.condicion_fisica === "Mal estado"));
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", item_r10.condicion_fisica, " ");
   }
 }
-function DashboardComponent_div_128_option_54_Template(rf, ctx) {
+function DashboardComponent_div_80_div_49_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "option", 101);
-    \u0275\u0275text(1);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const cat_r5 = ctx.$implicit;
-    \u0275\u0275property("ngValue", cat_r5.id);
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate(cat_r5.nombre);
+    \u0275\u0275elementStart(0, "div", 93);
+    \u0275\u0275element(1, "div", 94);
+    \u0275\u0275elementStart(2, "span", 95);
+    \u0275\u0275text(3, "Cargando m\xE1s registros...");
+    \u0275\u0275elementEnd()();
   }
 }
-function DashboardComponent_div_128_option_61_Template(rf, ctx) {
+function DashboardComponent_div_80_div_50_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "option", 101);
-    \u0275\u0275text(1);
+    \u0275\u0275elementStart(0, "div", 96);
+    \u0275\u0275text(1, " No hay m\xE1s registros para mostrar. ");
     \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const enc_r6 = ctx.$implicit;
-    \u0275\u0275property("ngValue", enc_r6.id);
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate(enc_r6.nombre);
   }
 }
-function DashboardComponent_div_128_option_73_Template(rf, ctx) {
+function DashboardComponent_div_80_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "option", 101);
-    \u0275\u0275text(1);
+    const _r7 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 56)(1, "div", 57)(2, "div", 58)(3, "h2", 59);
+    \u0275\u0275text(4, "Inventario total");
     \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const dep_r7 = ctx.$implicit;
-    \u0275\u0275property("ngValue", dep_r7.id);
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate(dep_r7.nombre);
-  }
-}
-function DashboardComponent_div_128_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 73)(1, "div", 74)(2, "div", 75)(3, "h2", 76);
-    \u0275\u0275text(4, "A\xF1adir inventario");
+    \u0275\u0275elementStart(5, "div", 60)(6, "span", 61);
+    \u0275\u0275text(7, "Filtros:");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "button", 77);
-    \u0275\u0275listener("click", function DashboardComponent_div_128_Template_button_click_5_listener() {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.toggleAddModal());
+    \u0275\u0275elementStart(8, "button", 62);
+    \u0275\u0275listener("click", function DashboardComponent_div_80_Template_button_click_8_listener() {
+      \u0275\u0275restoreView(_r7);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.applyQuickFilter("Activo"));
     });
-    \u0275\u0275elementStart(6, "span", 78);
+    \u0275\u0275text(9, "Activos");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(10, "button", 62);
+    \u0275\u0275listener("click", function DashboardComponent_div_80_Template_button_click_10_listener() {
+      \u0275\u0275restoreView(_r7);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.applyQuickFilter("Mantenimiento"));
+    });
+    \u0275\u0275text(11, "En Mantenimiento");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "button", 62);
+    \u0275\u0275listener("click", function DashboardComponent_div_80_Template_button_click_12_listener() {
+      \u0275\u0275restoreView(_r7);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.applyQuickFilter("Desincorporado"));
+    });
+    \u0275\u0275text(13, "Desincorporados");
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(14, DashboardComponent_div_80_button_14_Template, 2, 0, "button", 63);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(15, "div", 64)(16, "button", 65)(17, "span", 18);
+    \u0275\u0275text(18, "qr_code_scanner");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(19, "button", 66)(20, "span", 67);
+    \u0275\u0275text(21, "file_download");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(22, " Exportar ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(23, "button", 68);
+    \u0275\u0275listener("click", function DashboardComponent_div_80_Template_button_click_23_listener() {
+      \u0275\u0275restoreView(_r7);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.toggleAddModal());
+    });
+    \u0275\u0275text(24, " + Agregar inventario ");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(25, "div", 69)(26, "table", 70)(27, "thead")(28, "tr", 71)(29, "th", 72);
+    \u0275\u0275text(30, "Inventario");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(31, "th", 72);
+    \u0275\u0275text(32, "C\xF3digo ID");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(33, "th", 72);
+    \u0275\u0275text(34, "Fecha");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(35, "th", 72);
+    \u0275\u0275text(36, "Descripci\xF3n");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(37, "th", 72);
+    \u0275\u0275text(38, "Ubicaci\xF3n");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(39, "th", 72);
+    \u0275\u0275text(40, "Categor\xEDa");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(41, "th", 72);
+    \u0275\u0275text(42, "Estado Operativo");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(43, "th", 72);
+    \u0275\u0275text(44, "Condici\xF3n");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(45, "th", 73);
+    \u0275\u0275text(46, "Acci\xF3n");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(47, "tbody", 74);
+    \u0275\u0275template(48, DashboardComponent_div_80_tr_48_Template, 30, 23, "tr", 75);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275template(49, DashboardComponent_div_80_div_49_Template, 4, 0, "div", 76)(50, DashboardComponent_div_80_div_50_Template, 2, 0, "div", 77);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(8);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(7, _c2, ctx_r1.activeFilter === "Activo", ctx_r1.activeFilter !== "Activo"));
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(10, _c3, ctx_r1.activeFilter === "Mantenimiento", ctx_r1.activeFilter !== "Mantenimiento"));
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(13, _c4, ctx_r1.activeFilter === "Desincorporado", ctx_r1.activeFilter !== "Desincorporado"));
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", ctx_r1.activeFilter);
+    \u0275\u0275advance(34);
+    \u0275\u0275property("ngForOf", ctx_r1.displayedInventory);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isLoadingMore);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", !ctx_r1.isLoadingMore && ctx_r1.displayedInventory.length === ctx_r1.filteredInventory.length && ctx_r1.displayedInventory.length > 0);
+  }
+}
+function DashboardComponent_div_81_tr_27_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r11 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "tr", 103);
+    \u0275\u0275listener("click", function DashboardComponent_div_81_tr_27_Template_tr_click_0_listener() {
+      const item_r12 = \u0275\u0275restoreView(_r11).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.openDetailsModal(item_r12));
+    });
+    \u0275\u0275elementStart(1, "td", 104);
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "td", 86);
+    \u0275\u0275text(4);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "td", 83);
+    \u0275\u0275text(6);
+    \u0275\u0275pipe(7, "date");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "td", 105);
+    \u0275\u0275text(9);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const item_r12 = ctx.$implicit;
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r12.codigo);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r12.nombre);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(7, 4, item_r12.fecha_desincorporacion, "mediumDate"));
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(item_r12.motivo_desincorporacion);
+  }
+}
+function DashboardComponent_div_81_tr_28_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tr")(1, "td", 106);
+    \u0275\u0275text(2, "No hay bienes desincorporados registrados.");
+    \u0275\u0275elementEnd()();
+  }
+}
+function DashboardComponent_div_81_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 56)(1, "div", 97)(2, "div")(3, "h2", 98)(4, "span", 99);
+    \u0275\u0275text(5, "archive");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(6, " Bienes Desincorporados ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "p", 100);
+    \u0275\u0275text(8, "Historial de desincorporaciones");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(9, "div", 101)(10, "button", 66)(11, "span", 67);
+    \u0275\u0275text(12, "file_download");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(13, " Exportar ");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(14, "div", 69)(15, "table", 70)(16, "thead")(17, "tr", 71)(18, "th", 72);
+    \u0275\u0275text(19, "C\xF3digo ID");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(20, "th", 72);
+    \u0275\u0275text(21, "Bien");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(22, "th", 72);
+    \u0275\u0275text(23, "Fecha de Baja");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(24, "th", 72);
+    \u0275\u0275text(25, "Motivo");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(26, "tbody", 74);
+    \u0275\u0275template(27, DashboardComponent_div_81_tr_27_Template, 10, 7, "tr", 102)(28, DashboardComponent_div_81_tr_28_Template, 3, 0, "tr", 37);
+    \u0275\u0275elementEnd()()()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(27);
+    \u0275\u0275property("ngForOf", ctx_r1.desincorporados);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.desincorporados.length === 0);
+  }
+}
+function DashboardComponent_div_82_span_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 117);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r1.alertasMantenimiento.length);
+  }
+}
+function DashboardComponent_div_82_div_17_div_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 120);
+    \u0275\u0275text(1, "No hay alertas de mantenimiento actuales.");
+    \u0275\u0275elementEnd();
+  }
+}
+function DashboardComponent_div_82_div_17_table_2_tr_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tr")(1, "td", 125);
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "td", 126);
+    \u0275\u0275text(4);
+    \u0275\u0275pipe(5, "date");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "td", 123)(7, "span", 127)(8, "span", 128);
+    \u0275\u0275text(9, "warning");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(10, " Vencido");
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const m_r14 = ctx.$implicit;
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate2("", m_r14.bien == null ? null : m_r14.bien.nombre, " (", m_r14.bien == null ? null : m_r14.bien.codigo, ")");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(5, 3, m_r14.proxima_fecha, "mediumDate"));
+  }
+}
+function DashboardComponent_div_82_div_17_table_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "table", 121)(1, "thead")(2, "tr", 122)(3, "th", 123);
+    \u0275\u0275text(4, "Bien");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "th", 123);
+    \u0275\u0275text(6, "Pr\xF3xima Fecha");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "th", 123);
+    \u0275\u0275text(8, "Estado");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(9, "tbody", 74);
+    \u0275\u0275template(10, DashboardComponent_div_82_div_17_table_2_tr_10_Template, 11, 6, "tr", 124);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(10);
+    \u0275\u0275property("ngForOf", ctx_r1.alertasMantenimiento);
+  }
+}
+function DashboardComponent_div_82_div_17_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div");
+    \u0275\u0275template(1, DashboardComponent_div_82_div_17_div_1_Template, 2, 0, "div", 118)(2, DashboardComponent_div_82_div_17_table_2_Template, 11, 1, "table", 119);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.alertasMantenimiento.length === 0);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.alertasMantenimiento.length > 0);
+  }
+}
+function DashboardComponent_div_82_div_18_div_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 120);
+    \u0275\u0275text(1, "No hay equipos en reparaci\xF3n.");
+    \u0275\u0275elementEnd();
+  }
+}
+function DashboardComponent_div_82_div_18_table_2_tr_12_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r15 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "tr")(1, "td", 129)(2, "span", 130);
+    \u0275\u0275text(3, "error");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(4);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "td", 125);
+    \u0275\u0275text(6);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "td", 131);
+    \u0275\u0275text(8);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(9, "td", 123)(10, "button", 132);
+    \u0275\u0275listener("click", function DashboardComponent_div_82_div_18_table_2_tr_12_Template_button_click_10_listener() {
+      const item_r16 = \u0275\u0275restoreView(_r15).$implicit;
+      const ctx_r1 = \u0275\u0275nextContext(4);
+      return \u0275\u0275resetView(ctx_r1.openFinalizarMantenimiento(item_r16));
+    });
+    \u0275\u0275text(11, "Finalizar y Reincorporar");
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const item_r16 = ctx.$implicit;
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate1(" ", item_r16.codigo, " ");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r16.nombre);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(item_r16.ubicacion == null ? null : item_r16.ubicacion.nombre);
+  }
+}
+function DashboardComponent_div_82_div_18_table_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "table", 121)(1, "thead")(2, "tr", 122)(3, "th", 123);
+    \u0275\u0275text(4, "C\xF3digo");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "th", 123);
+    \u0275\u0275text(6, "Nombre");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "th", 123);
+    \u0275\u0275text(8, "Ubicaci\xF3n");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(9, "th", 123);
+    \u0275\u0275text(10, "Acciones");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(11, "tbody", 74);
+    \u0275\u0275template(12, DashboardComponent_div_82_div_18_table_2_tr_12_Template, 12, 3, "tr", 124);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(12);
+    \u0275\u0275property("ngForOf", ctx_r1.enReparacion);
+  }
+}
+function DashboardComponent_div_82_div_18_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div");
+    \u0275\u0275template(1, DashboardComponent_div_82_div_18_div_1_Template, 2, 0, "div", 118)(2, DashboardComponent_div_82_div_18_table_2_Template, 13, 1, "table", 119);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.enReparacion.length === 0);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.enReparacion.length > 0);
+  }
+}
+function DashboardComponent_div_82_div_19_div_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 120);
+    \u0275\u0275text(1, "No hay historial de mantenimientos.");
+    \u0275\u0275elementEnd();
+  }
+}
+function DashboardComponent_div_82_div_19_table_2_tr_12_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "tr")(1, "td", 133);
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "td", 134);
+    \u0275\u0275text(4);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "td", 125);
+    \u0275\u0275text(6);
+    \u0275\u0275pipe(7, "date");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "td", 125);
+    \u0275\u0275text(9);
+    \u0275\u0275pipe(10, "date");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const m_r17 = ctx.$implicit;
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate2("", m_r17.bien == null ? null : m_r17.bien.nombre, " (", m_r17.bien == null ? null : m_r17.bien.codigo, ")");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(m_r17.trabajo_realizado);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(7, 5, m_r17.fecha_fin, "mediumDate"));
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(10, 8, m_r17.proxima_fecha, "mediumDate"));
+  }
+}
+function DashboardComponent_div_82_div_19_table_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "table", 121)(1, "thead")(2, "tr", 122)(3, "th", 123);
+    \u0275\u0275text(4, "Bien");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "th", 123);
+    \u0275\u0275text(6, "Trabajo Realizado");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "th", 123);
+    \u0275\u0275text(8, "Fecha Fin");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(9, "th", 123);
+    \u0275\u0275text(10, "Pr\xF3ximo");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(11, "tbody", 74);
+    \u0275\u0275template(12, DashboardComponent_div_82_div_19_table_2_tr_12_Template, 11, 11, "tr", 124);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(12);
+    \u0275\u0275property("ngForOf", ctx_r1.historialMantenimiento);
+  }
+}
+function DashboardComponent_div_82_div_19_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div");
+    \u0275\u0275template(1, DashboardComponent_div_82_div_19_div_1_Template, 2, 0, "div", 118)(2, DashboardComponent_div_82_div_19_table_2_Template, 13, 1, "table", 119);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.historialMantenimiento.length === 0);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.historialMantenimiento.length > 0);
+  }
+}
+function DashboardComponent_div_82_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r13 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 107)(1, "div", 108)(2, "div", 109)(3, "div")(4, "h2", 110);
+    \u0275\u0275text(5, "Gesti\xF3n de Mantenimiento");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "p", 111);
+    \u0275\u0275text(7, "Control de reparaciones y mantenimientos preventivos");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(8, "div", 112)(9, "button", 113);
+    \u0275\u0275listener("click", function DashboardComponent_div_82_Template_button_click_9_listener() {
+      \u0275\u0275restoreView(_r13);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.switchMantenimientoTab("alertas"));
+    });
+    \u0275\u0275text(10, " Alertas ");
+    \u0275\u0275template(11, DashboardComponent_div_82_span_11_Template, 2, 1, "span", 114);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "button", 115);
+    \u0275\u0275listener("click", function DashboardComponent_div_82_Template_button_click_12_listener() {
+      \u0275\u0275restoreView(_r13);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.switchMantenimientoTab("reparacion"));
+    });
+    \u0275\u0275text(13, " En Reparaci\xF3n ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(14, "button", 115);
+    \u0275\u0275listener("click", function DashboardComponent_div_82_Template_button_click_14_listener() {
+      \u0275\u0275restoreView(_r13);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.switchMantenimientoTab("historial"));
+    });
+    \u0275\u0275text(15, " Historial ");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(16, "div", 116);
+    \u0275\u0275template(17, DashboardComponent_div_82_div_17_Template, 3, 2, "div", 37)(18, DashboardComponent_div_82_div_18_Template, 3, 2, "div", 37)(19, DashboardComponent_div_82_div_19_Template, 3, 2, "div", 37);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(9);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(7, _c7, ctx_r1.mantenimientoTab === "alertas", ctx_r1.mantenimientoTab !== "alertas"));
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", ctx_r1.alertasMantenimiento.length > 0);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(10, _c7, ctx_r1.mantenimientoTab === "reparacion", ctx_r1.mantenimientoTab !== "reparacion"));
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(13, _c7, ctx_r1.mantenimientoTab === "historial", ctx_r1.mantenimientoTab !== "historial"));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("ngIf", ctx_r1.mantenimientoTab === "alertas");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.mantenimientoTab === "reparacion");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.mantenimientoTab === "historial");
+  }
+}
+function DashboardComponent_div_83_div_52_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 164)(1, "span", 165);
+    \u0275\u0275text(2, "history_toggle_off");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "p", 166);
+    \u0275\u0275text(4, "No hay registros para este filtro.");
+    \u0275\u0275elementEnd()();
+  }
+}
+function DashboardComponent_div_83_div_53_div_1_p_19_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "p", 182);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const log_r19 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(log_r19.detalles);
+  }
+}
+function DashboardComponent_div_83_div_53_div_1_div_20_div_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 185)(1, "p", 186);
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "div", 187)(4, "div", 188)(5, "del", 189);
+    \u0275\u0275text(6, "-");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "span");
+    \u0275\u0275text(8);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(9, "span", 190);
+    \u0275\u0275text(10, "arrow_forward");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(11, "div", 191)(12, "ins", 189);
+    \u0275\u0275text(13, "+");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(14, "span");
+    \u0275\u0275text(15);
+    \u0275\u0275elementEnd()()()();
+  }
+  if (rf & 2) {
+    const diff_r20 = ctx.$implicit;
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(diff_r20.key);
+    \u0275\u0275advance(6);
+    \u0275\u0275textInterpolate(diff_r20.old || "(Vac\xEDo)");
+    \u0275\u0275advance(7);
+    \u0275\u0275textInterpolate(diff_r20.new || "(Vac\xEDo)");
+  }
+}
+function DashboardComponent_div_83_div_53_div_1_div_20_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 183);
+    \u0275\u0275template(1, DashboardComponent_div_83_div_53_div_1_div_20_div_1_Template, 16, 3, "div", 184);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const log_r19 = \u0275\u0275nextContext().$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngForOf", ctx_r1.parseDiff(log_r19.diff_visual));
+  }
+}
+function DashboardComponent_div_83_div_53_div_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 169);
+    \u0275\u0275element(1, "div", 170)(2, "div", 171);
+    \u0275\u0275elementStart(3, "div", 172)(4, "div", 173)(5, "div", 174)(6, "div", 175)(7, "span", 176);
+    \u0275\u0275text(8);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(9, "div")(10, "p", 177);
+    \u0275\u0275text(11);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "p", 178);
+    \u0275\u0275text(13);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(14, "div", 179)(15, "span", 128);
+    \u0275\u0275text(16, "schedule");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(17);
+    \u0275\u0275pipe(18, "date");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275template(19, DashboardComponent_div_83_div_53_div_1_p_19_Template, 2, 1, "p", 180)(20, DashboardComponent_div_83_div_53_div_1_div_20_Template, 2, 1, "div", 181);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const log_r19 = ctx.$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction5(12, _c13, log_r19.accion === "ALTA", log_r19.accion === "DESINCORPORACION", log_r19.accion === "MANTENIMIENTO_INICIO", log_r19.accion === "MODIFICACION" || log_r19.accion === "MANTENIMIENTO_FIN", !\u0275\u0275pureFunction0(11, _c12).includes(log_r19.accion)));
+    \u0275\u0275advance(4);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction5(19, _c14, log_r19.accion === "ALTA", log_r19.accion === "DESINCORPORACION", log_r19.accion === "MANTENIMIENTO_INICIO", log_r19.accion === "MODIFICACION" || log_r19.accion === "MANTENIMIENTO_FIN", !\u0275\u0275pureFunction0(18, _c12).includes(log_r19.accion)));
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(log_r19.accion === "ALTA" ? "add" : log_r19.accion === "DESINCORPORACION" ? "delete" : log_r19.accion === "MODIFICACION" ? "edit" : "build");
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate((log_r19.usuario == null ? null : log_r19.usuario.nombre) || "Sistema");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(log_r19.accion.replace("_", " "));
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate1(" ", \u0275\u0275pipeBind2(18, 8, log_r19.fecha, "medium"), " ");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", log_r19.detalles);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", log_r19.diff_visual && ctx_r1.parseDiff(log_r19.diff_visual).length > 0);
+  }
+}
+function DashboardComponent_div_83_div_53_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 167);
+    \u0275\u0275template(1, DashboardComponent_div_83_div_53_div_1_Template, 21, 25, "div", 168);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngForOf", ctx_r1.displayedBitacoraLogs);
+  }
+}
+function DashboardComponent_div_83_div_54_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 192);
+    \u0275\u0275element(1, "div", 94);
+    \u0275\u0275elementStart(2, "span", 95);
+    \u0275\u0275text(3, "Cargando m\xE1s registros...");
+    \u0275\u0275elementEnd()();
+  }
+}
+function DashboardComponent_div_83_div_55_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 193);
+    \u0275\u0275text(1, " Fin de la bit\xE1cora ");
+    \u0275\u0275elementEnd();
+  }
+}
+function DashboardComponent_div_83_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r18 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 107)(1, "div", 135)(2, "div", 136)(3, "div", 137)(4, "h2", 138)(5, "span", 139);
+    \u0275\u0275text(6, "history");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(7, " Bit\xE1cora de Auditor\xEDa");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "p", 140);
+    \u0275\u0275text(9, "Registro detallado de actividades y mantenimientos");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(10, "div", 141)(11, "div", 142)(12, "span", 143);
+    \u0275\u0275text(13);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(14, "span", 144);
+    \u0275\u0275text(15, "Total");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(16, "div", 145)(17, "span", 146);
+    \u0275\u0275text(18);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(19, "span", 147);
+    \u0275\u0275text(20, "Mantenimientos");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(21, "div", 148)(22, "span", 149);
+    \u0275\u0275text(23);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(24, "span", 150);
+    \u0275\u0275text(25, "Altas");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(26, "div", 151)(27, "span", 152);
+    \u0275\u0275text(28);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(29, "span", 153);
+    \u0275\u0275text(30, "Bajas");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(31, "h3", 154);
+    \u0275\u0275text(32, "Filtros R\xE1pidos");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(33, "nav", 155)(34, "button", 156);
+    \u0275\u0275listener("click", function DashboardComponent_div_83_Template_button_click_34_listener() {
+      \u0275\u0275restoreView(_r18);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.applyBitacoraFilter(null));
+    });
+    \u0275\u0275elementStart(35, "span", 157);
+    \u0275\u0275text(36, "format_list_bulleted");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(37, " Todos los registros ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(38, "button", 156);
+    \u0275\u0275listener("click", function DashboardComponent_div_83_Template_button_click_38_listener() {
+      \u0275\u0275restoreView(_r18);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.applyBitacoraFilter("MANTENIMIENTO"));
+    });
+    \u0275\u0275elementStart(39, "span", 157);
+    \u0275\u0275text(40, "build");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(41, " Mantenimientos ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(42, "button", 156);
+    \u0275\u0275listener("click", function DashboardComponent_div_83_Template_button_click_42_listener() {
+      \u0275\u0275restoreView(_r18);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.applyBitacoraFilter("ALTA"));
+    });
+    \u0275\u0275elementStart(43, "span", 157);
+    \u0275\u0275text(44, "add_circle_outline");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(45, " Altas ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(46, "button", 156);
+    \u0275\u0275listener("click", function DashboardComponent_div_83_Template_button_click_46_listener() {
+      \u0275\u0275restoreView(_r18);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.applyBitacoraFilter("DESINCORPORACION"));
+    });
+    \u0275\u0275elementStart(47, "span", 157);
+    \u0275\u0275text(48, "delete_outline");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(49, " Bajas (Desincorporaci\xF3n) ");
+    \u0275\u0275elementEnd()()()();
+    \u0275\u0275elementStart(50, "div", 158)(51, "div", 159);
+    \u0275\u0275template(52, DashboardComponent_div_83_div_52_Template, 5, 0, "div", 160)(53, DashboardComponent_div_83_div_53_Template, 2, 1, "div", 161)(54, DashboardComponent_div_83_div_54_Template, 4, 0, "div", 162)(55, DashboardComponent_div_83_div_55_Template, 2, 0, "div", 163);
+    \u0275\u0275elementEnd()()()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(13);
+    \u0275\u0275textInterpolate(ctx_r1.kpiTotalLogs);
+    \u0275\u0275advance(5);
+    \u0275\u0275textInterpolate(ctx_r1.kpiMantenimientoLogs);
+    \u0275\u0275advance(5);
+    \u0275\u0275textInterpolate(ctx_r1.kpiAltasLogs);
+    \u0275\u0275advance(5);
+    \u0275\u0275textInterpolate(ctx_r1.kpiBajasLogs);
+    \u0275\u0275advance(6);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(12, _c8, ctx_r1.bitacoraFilter === null, ctx_r1.bitacoraFilter !== null));
+    \u0275\u0275advance(4);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(15, _c9, ctx_r1.bitacoraFilter === "MANTENIMIENTO", ctx_r1.bitacoraFilter !== "MANTENIMIENTO"));
+    \u0275\u0275advance(4);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(18, _c10, ctx_r1.bitacoraFilter === "ALTA", ctx_r1.bitacoraFilter !== "ALTA"));
+    \u0275\u0275advance(4);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(21, _c11, ctx_r1.bitacoraFilter === "DESINCORPORACION", ctx_r1.bitacoraFilter !== "DESINCORPORACION"));
+    \u0275\u0275advance(6);
+    \u0275\u0275property("ngIf", ctx_r1.displayedBitacoraLogs.length === 0);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.displayedBitacoraLogs.length > 0);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isLoadingMoreBitacora);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", !ctx_r1.isLoadingMoreBitacora && ctx_r1.displayedBitacoraLogs.length === ctx_r1.bitacoraLogs.length && ctx_r1.displayedBitacoraLogs.length > 0);
+  }
+}
+function DashboardComponent_div_84_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r21 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 194)(1, "div", 195)(2, "div", 196)(3, "h2", 110);
+    \u0275\u0275text(4, "Finalizar Mantenimiento");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "button", 197);
+    \u0275\u0275listener("click", function DashboardComponent_div_84_Template_button_click_5_listener() {
+      \u0275\u0275restoreView(_r21);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.showFinalizarModal = false);
+    });
+    \u0275\u0275elementStart(6, "span", 18);
     \u0275\u0275text(7, "close");
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(8, "div", 79)(9, "div", 80)(10, "div", 81)(11, "div", 82)(12, "span", 83);
-    \u0275\u0275text(13, "image");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "p", 84);
-    \u0275\u0275text(15, "Subir imagen: ");
-    \u0275\u0275elementStart(16, "span", 85);
-    \u0275\u0275text(17, "arrastra y suelta.");
+    \u0275\u0275elementStart(8, "div", 198)(9, "div")(10, "label", 199);
+    \u0275\u0275text(11, "Trabajo Realizado ");
+    \u0275\u0275elementStart(12, "span", 200);
+    \u0275\u0275text(13, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(18, "p", 86);
-    \u0275\u0275text(19, "PNG, JPG, GIF at\xE9 5MB");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(20, "div", 13)(21, "label", 87);
-    \u0275\u0275text(22, "Nombre del bien ");
-    \u0275\u0275elementStart(23, "span", 88);
-    \u0275\u0275text(24, "*");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(25, "input", 89);
-    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_128_Template_input_ngModelChange_25_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r3 = \u0275\u0275nextContext();
-      \u0275\u0275twoWayBindingSet(ctx_r3.newBien.nombre, $event) || (ctx_r3.newBien.nombre = $event);
+    \u0275\u0275elementStart(14, "textarea", 201);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_84_Template_textarea_ngModelChange_14_listener($event) {
+      \u0275\u0275restoreView(_r21);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.trabajoRealizado, $event) || (ctx_r1.trabajoRealizado = $event);
       return \u0275\u0275resetView($event);
     });
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(26, "div", 13)(27, "label", 87);
-    \u0275\u0275text(28, "C\xF3digo ID ");
-    \u0275\u0275elementStart(29, "span", 88);
-    \u0275\u0275text(30, "*");
+    \u0275\u0275elementStart(15, "div")(16, "label", 199);
+    \u0275\u0275text(17, "Pr\xF3xima Fecha de Mantenimiento ");
+    \u0275\u0275elementStart(18, "span", 200);
+    \u0275\u0275text(19, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(31, "div", 90)(32, "input", 91);
-    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_128_Template_input_ngModelChange_32_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r3 = \u0275\u0275nextContext();
-      \u0275\u0275twoWayBindingSet(ctx_r3.newBien.codigo, $event) || (ctx_r3.newBien.codigo = $event);
+    \u0275\u0275elementStart(20, "input", 202);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_84_Template_input_ngModelChange_20_listener($event) {
+      \u0275\u0275restoreView(_r21);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.proximaFechaMantenimiento, $event) || (ctx_r1.proximaFechaMantenimiento = $event);
       return \u0275\u0275resetView($event);
     });
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(21, "div", 203)(22, "button", 204);
+    \u0275\u0275listener("click", function DashboardComponent_div_84_Template_button_click_22_listener() {
+      \u0275\u0275restoreView(_r21);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.showFinalizarModal = false);
+    });
+    \u0275\u0275text(23, "Cancelar");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(33, "button", 92)(34, "span", 78);
-    \u0275\u0275text(35, "autorenew");
+    \u0275\u0275elementStart(24, "button", 205);
+    \u0275\u0275listener("click", function DashboardComponent_div_84_Template_button_click_24_listener() {
+      \u0275\u0275restoreView(_r21);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.finalizarMantenimiento());
+    });
+    \u0275\u0275text(25, "Guardar y Reincorporar");
     \u0275\u0275elementEnd()()()();
-    \u0275\u0275elementStart(36, "div", 93)(37, "h3", 94);
-    \u0275\u0275text(38, "QR");
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(14);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.trabajoRealizado);
+    \u0275\u0275advance(6);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.proximaFechaMantenimiento);
+    \u0275\u0275advance(4);
+    \u0275\u0275property("disabled", !ctx_r1.trabajoRealizado || !ctx_r1.proximaFechaMantenimiento || ctx_r1.isSubmitting);
+  }
+}
+function DashboardComponent_div_85_option_56_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "option", 228);
+    \u0275\u0275text(1);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(39, "div", 95)(40, "span", 96);
-    \u0275\u0275text(41, "qr_code_2");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(42, "button", 97)(43, "span", 98);
-    \u0275\u0275text(44, "print");
+  }
+  if (rf & 2) {
+    const cat_r23 = ctx.$implicit;
+    \u0275\u0275property("ngValue", cat_r23.id);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(cat_r23.nombre);
+  }
+}
+function DashboardComponent_div_85_option_63_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "option", 228);
+    \u0275\u0275text(1);
     \u0275\u0275elementEnd();
-    \u0275\u0275text(45, " Imprimir ");
+  }
+  if (rf & 2) {
+    const enc_r24 = ctx.$implicit;
+    \u0275\u0275property("ngValue", enc_r24.id);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(enc_r24.nombre);
+  }
+}
+function DashboardComponent_div_85_option_75_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "option", 228);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const dep_r25 = ctx.$implicit;
+    \u0275\u0275property("ngValue", dep_r25.id);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(dep_r25.nombre);
+  }
+}
+function DashboardComponent_div_85_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r22 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 194)(1, "div", 206)(2, "div", 207)(3, "h2", 110);
+    \u0275\u0275text(4);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "p", 208);
+    \u0275\u0275text(6);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "button", 209);
+    \u0275\u0275listener("click", function DashboardComponent_div_85_Template_button_click_7_listener() {
+      \u0275\u0275restoreView(_r22);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.toggleAddModal());
+    });
+    \u0275\u0275elementStart(8, "span", 176);
+    \u0275\u0275text(9, "close");
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(46, "div", 81)(47, "div", 99)(48, "div", 13)(49, "label", 87);
-    \u0275\u0275text(50, "Categoria");
+    \u0275\u0275elementStart(10, "div", 116)(11, "div", 210)(12, "div", 211)(13, "div", 212)(14, "span", 213);
+    \u0275\u0275text(15, "image");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(51, "select", 100);
-    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_128_Template_select_ngModelChange_51_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r3 = \u0275\u0275nextContext();
-      \u0275\u0275twoWayBindingSet(ctx_r3.newBien.categoria_id, $event) || (ctx_r3.newBien.categoria_id = $event);
+    \u0275\u0275elementStart(16, "p", 214);
+    \u0275\u0275text(17, "Subir imagen: ");
+    \u0275\u0275elementStart(18, "span", 215);
+    \u0275\u0275text(19, "arrastra y suelta.");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(20, "p", 216);
+    \u0275\u0275text(21, "PNG, JPG, GIF at\xE9 5MB");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(22, "div", 13)(23, "label", 199);
+    \u0275\u0275text(24, "Nombre del bien ");
+    \u0275\u0275elementStart(25, "span", 200);
+    \u0275\u0275text(26, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(27, "input", 217);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_85_Template_input_ngModelChange_27_listener($event) {
+      \u0275\u0275restoreView(_r22);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.newBien.nombre, $event) || (ctx_r1.newBien.nombre = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275elementStart(52, "option", 101);
-    \u0275\u0275text(53, "Seleccione...");
-    \u0275\u0275elementEnd();
-    \u0275\u0275template(54, DashboardComponent_div_128_option_54_Template, 2, 2, "option", 102);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(55, "div", 13)(56, "label", 87);
-    \u0275\u0275text(57, "Encargado");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(58, "select", 100);
-    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_128_Template_select_ngModelChange_58_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r3 = \u0275\u0275nextContext();
-      \u0275\u0275twoWayBindingSet(ctx_r3.newBien.encargado_id, $event) || (ctx_r3.newBien.encargado_id = $event);
+    \u0275\u0275elementStart(28, "div", 13)(29, "label", 199);
+    \u0275\u0275text(30, "C\xF3digo ID ");
+    \u0275\u0275elementStart(31, "span", 200);
+    \u0275\u0275text(32, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(33, "div", 218)(34, "input", 219);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_85_Template_input_ngModelChange_34_listener($event) {
+      \u0275\u0275restoreView(_r22);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.newBien.codigo, $event) || (ctx_r1.newBien.codigo = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275elementStart(59, "option", 101);
-    \u0275\u0275text(60, "Seleccione...");
     \u0275\u0275elementEnd();
-    \u0275\u0275template(61, DashboardComponent_div_128_option_61_Template, 2, 2, "option", 102);
+    \u0275\u0275elementStart(35, "button", 220)(36, "span", 176);
+    \u0275\u0275text(37, "autorenew");
+    \u0275\u0275elementEnd()()()();
+    \u0275\u0275elementStart(38, "div", 221)(39, "h3", 143);
+    \u0275\u0275text(40, "QR");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(41, "div", 222)(42, "span", 223);
+    \u0275\u0275text(43, "qr_code_2");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(44, "button", 224)(45, "span", 225);
+    \u0275\u0275text(46, "print");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(47, " Imprimir ");
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(62, "div", 99)(63, "div", 13)(64, "label", 87);
-    \u0275\u0275text(65, "Operador usuario");
+    \u0275\u0275elementStart(48, "div", 211)(49, "div", 226)(50, "div", 13)(51, "label", 199);
+    \u0275\u0275text(52, "Categoria");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(66, "input", 103);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(67, "div", 13)(68, "label", 87);
-    \u0275\u0275text(69, "Ubicacion");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(70, "select", 100);
-    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_128_Template_select_ngModelChange_70_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r3 = \u0275\u0275nextContext();
-      \u0275\u0275twoWayBindingSet(ctx_r3.newBien.ubicacion_id, $event) || (ctx_r3.newBien.ubicacion_id = $event);
+    \u0275\u0275elementStart(53, "select", 227);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_85_Template_select_ngModelChange_53_listener($event) {
+      \u0275\u0275restoreView(_r22);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.newBien.categoria_id, $event) || (ctx_r1.newBien.categoria_id = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275elementStart(71, "option", 101);
-    \u0275\u0275text(72, "Seleccione...");
+    \u0275\u0275elementStart(54, "option", 228);
+    \u0275\u0275text(55, "Seleccione...");
     \u0275\u0275elementEnd();
-    \u0275\u0275template(73, DashboardComponent_div_128_option_73_Template, 2, 2, "option", 102);
+    \u0275\u0275template(56, DashboardComponent_div_85_option_56_Template, 2, 2, "option", 229);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(57, "div", 13)(58, "label", 199);
+    \u0275\u0275text(59, "Encargado");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(60, "select", 227);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_85_Template_select_ngModelChange_60_listener($event) {
+      \u0275\u0275restoreView(_r22);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.newBien.encargado_id, $event) || (ctx_r1.newBien.encargado_id = $event);
+      return \u0275\u0275resetView($event);
+    });
+    \u0275\u0275elementStart(61, "option", 228);
+    \u0275\u0275text(62, "Seleccione...");
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(63, DashboardComponent_div_85_option_63_Template, 2, 2, "option", 229);
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(74, "div", 13)(75, "label", 87);
-    \u0275\u0275text(76, "Descripci\xF3n");
+    \u0275\u0275elementStart(64, "div", 226)(65, "div", 13)(66, "label", 199);
+    \u0275\u0275text(67, "Operador usuario");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(77, "textarea", 104);
-    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_128_Template_textarea_ngModelChange_77_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r3 = \u0275\u0275nextContext();
-      \u0275\u0275twoWayBindingSet(ctx_r3.newBien.descripcion, $event) || (ctx_r3.newBien.descripcion = $event);
+    \u0275\u0275element(68, "input", 230);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(69, "div", 13)(70, "label", 199);
+    \u0275\u0275text(71, "Ubicacion");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(72, "select", 227);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_85_Template_select_ngModelChange_72_listener($event) {
+      \u0275\u0275restoreView(_r22);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.newBien.ubicacion_id, $event) || (ctx_r1.newBien.ubicacion_id = $event);
+      return \u0275\u0275resetView($event);
+    });
+    \u0275\u0275elementStart(73, "option", 228);
+    \u0275\u0275text(74, "Seleccione...");
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(75, DashboardComponent_div_85_option_75_Template, 2, 2, "option", 229);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(76, "div", 13)(77, "label", 199);
+    \u0275\u0275text(78, "Descripci\xF3n");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(79, "textarea", 231);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_85_Template_textarea_ngModelChange_79_listener($event) {
+      \u0275\u0275restoreView(_r22);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.newBien.descripcion, $event) || (ctx_r1.newBien.descripcion = $event);
       return \u0275\u0275resetView($event);
     });
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(78, "div", 105)(79, "span", 87);
-    \u0275\u0275text(80, "Estado oprativo en uso");
+    \u0275\u0275elementStart(80, "div", 232)(81, "div", 13)(82, "label", 199);
+    \u0275\u0275text(83, "Estado Operativo");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(81, "div", 106)(82, "div", 107);
-    \u0275\u0275listener("click", function DashboardComponent_div_128_Template_div_click_82_listener() {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.newBien.estado_operativo = "En uso");
+    \u0275\u0275elementStart(84, "select", 227);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_85_Template_select_ngModelChange_84_listener($event) {
+      \u0275\u0275restoreView(_r22);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.newBien.estado_operativo, $event) || (ctx_r1.newBien.estado_operativo = $event);
+      return \u0275\u0275resetView($event);
     });
-    \u0275\u0275elementStart(83, "span", 54);
-    \u0275\u0275text(84, "check_circle");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(85, "div", 108);
-    \u0275\u0275listener("click", function DashboardComponent_div_128_Template_div_click_85_listener() {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.newBien.estado_operativo = "Regular");
-    });
-    \u0275\u0275elementStart(86, "span", 54);
-    \u0275\u0275text(87, "warning");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(88, "div", 109);
-    \u0275\u0275listener("click", function DashboardComponent_div_128_Template_div_click_88_listener() {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.newBien.estado_operativo = "Da\xF1ado");
-    });
-    \u0275\u0275elementStart(89, "span", 54);
-    \u0275\u0275text(90, "cancel");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(91, "div", 110)(92, "span", 87);
-    \u0275\u0275text(93);
-    \u0275\u0275elementEnd()()()()()();
-    \u0275\u0275elementStart(94, "div", 111)(95, "h3", 112)(96, "span", 98);
-    \u0275\u0275text(97, "info");
+    \u0275\u0275elementStart(85, "option", 233);
+    \u0275\u0275text(86, "Activo");
     \u0275\u0275elementEnd();
-    \u0275\u0275text(98, " Invent\xE1rio de bienes ");
+    \u0275\u0275elementStart(87, "option", 234);
+    \u0275\u0275text(88, "Inactivo");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(99, "div", 113)(100, "div", 114)(101, "label", 115);
-    \u0275\u0275text(102, "Otro");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(103, "input", 116);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(104, "div", 117)(105, "label", 115);
-    \u0275\u0275text(106, "Otro");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(107, "input", 118);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(108, "div", 119)(109, "label", 115);
-    \u0275\u0275text(110, "Fecha");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(111, "div", 120);
-    \u0275\u0275element(112, "input", 121);
-    \u0275\u0275elementStart(113, "span", 122);
-    \u0275\u0275text(114, "calendar_today");
+    \u0275\u0275elementStart(89, "option", 235);
+    \u0275\u0275text(90, "Mantenimiento");
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(115, "button", 123);
-    \u0275\u0275listener("click", function DashboardComponent_div_128_Template_button_click_115_listener() {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r3 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r3.saveBien());
-    });
-    \u0275\u0275elementStart(116, "span", 124);
-    \u0275\u0275text(117);
+    \u0275\u0275elementStart(91, "div", 13)(92, "label", 199);
+    \u0275\u0275text(93, "Condici\xF3n F\xEDsica");
     \u0275\u0275elementEnd();
-    \u0275\u0275text(118);
+    \u0275\u0275elementStart(94, "select", 227);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_85_Template_select_ngModelChange_94_listener($event) {
+      \u0275\u0275restoreView(_r22);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.newBien.condicion_fisica, $event) || (ctx_r1.newBien.condicion_fisica = $event);
+      return \u0275\u0275resetView($event);
+    });
+    \u0275\u0275elementStart(95, "option", 236);
+    \u0275\u0275text(96, "Buen estado");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(97, "option", 237);
+    \u0275\u0275text(98, "Regular");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(99, "option", 238);
+    \u0275\u0275text(100, "Mal estado");
+    \u0275\u0275elementEnd()()()();
+    \u0275\u0275elementStart(101, "div", 239)(102, "label", 199);
+    \u0275\u0275text(103, "Especificaciones de Condici\xF3n ");
+    \u0275\u0275elementStart(104, "span", 240);
+    \u0275\u0275text(105, "(Opcional)");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(106, "textarea", 241);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_85_Template_textarea_ngModelChange_106_listener($event) {
+      \u0275\u0275restoreView(_r22);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.newBien.especificaciones_condicion, $event) || (ctx_r1.newBien.especificaciones_condicion = $event);
+      return \u0275\u0275resetView($event);
+    });
+    \u0275\u0275elementEnd()()()();
+    \u0275\u0275elementStart(107, "div", 242)(108, "h3", 243)(109, "span", 225);
+    \u0275\u0275text(110, "receipt_long");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(111, " Documentos relacionados ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(112, "div", 244)(113, "div", 245)(114, "label", 246);
+    \u0275\u0275text(115, "Otro");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(116, "input", 247);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(117, "div", 248)(118, "label", 246);
+    \u0275\u0275text(119, "Otro");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(120, "input", 249);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(121, "div", 250)(122, "label", 246);
+    \u0275\u0275text(123, "Fecha");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(124, "div", 251);
+    \u0275\u0275element(125, "input", 252);
+    \u0275\u0275elementStart(126, "span", 253);
+    \u0275\u0275text(127, "calendar_today");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(128, "button", 254);
+    \u0275\u0275listener("click", function DashboardComponent_div_85_Template_button_click_128_listener() {
+      \u0275\u0275restoreView(_r22);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.saveBien());
+    });
+    \u0275\u0275elementStart(129, "span", 255);
+    \u0275\u0275text(130);
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(131);
     \u0275\u0275elementEnd()()()()()();
   }
   if (rf & 2) {
-    const ctx_r3 = \u0275\u0275nextContext();
-    \u0275\u0275advance(25);
-    \u0275\u0275twoWayProperty("ngModel", ctx_r3.newBien.nombre);
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate(ctx_r1.isEditMode ? "Editar inventario" : "A\xF1adir inventario");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r1.isEditMode ? "Modifica los datos del objeto" : "Ingresa los datos del nuevo objeto");
+    \u0275\u0275advance(21);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.newBien.nombre);
     \u0275\u0275advance(7);
-    \u0275\u0275twoWayProperty("ngModel", ctx_r3.newBien.codigo);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.newBien.codigo);
     \u0275\u0275advance(19);
-    \u0275\u0275twoWayProperty("ngModel", ctx_r3.newBien.categoria_id);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.newBien.categoria_id);
     \u0275\u0275advance();
     \u0275\u0275property("ngValue", null);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", ctx_r3.categorias);
+    \u0275\u0275property("ngForOf", ctx_r1.categorias);
     \u0275\u0275advance(4);
-    \u0275\u0275twoWayProperty("ngModel", ctx_r3.newBien.encargado_id);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.newBien.encargado_id);
     \u0275\u0275advance();
     \u0275\u0275property("ngValue", null);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", ctx_r3.encargados);
+    \u0275\u0275property("ngForOf", ctx_r1.encargados);
     \u0275\u0275advance(5);
-    \u0275\u0275property("value", ctx_r3.user == null ? null : ctx_r3.user.nombre);
+    \u0275\u0275property("value", ctx_r1.user == null ? null : ctx_r1.user.nombre);
     \u0275\u0275advance(4);
-    \u0275\u0275twoWayProperty("ngModel", ctx_r3.newBien.ubicacion_id);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.newBien.ubicacion_id);
     \u0275\u0275advance();
     \u0275\u0275property("ngValue", null);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", ctx_r3.dependencias);
+    \u0275\u0275property("ngForOf", ctx_r1.dependencias);
     \u0275\u0275advance(4);
-    \u0275\u0275twoWayProperty("ngModel", ctx_r3.newBien.descripcion);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.newBien.descripcion);
     \u0275\u0275advance(5);
-    \u0275\u0275property("ngClass", ctx_r3.newBien.estado_operativo === "En uso" ? "bg-green-500 text-white" : "bg-green-100 text-green-500");
-    \u0275\u0275advance(3);
-    \u0275\u0275property("ngClass", ctx_r3.newBien.estado_operativo === "Regular" ? "bg-yellow-500 text-white" : "bg-yellow-100 text-yellow-500");
-    \u0275\u0275advance(3);
-    \u0275\u0275property("ngClass", ctx_r3.newBien.estado_operativo === "Da\xF1ado" ? "bg-red-500 text-white" : "bg-red-100 text-red-500");
-    \u0275\u0275advance(5);
-    \u0275\u0275textInterpolate(ctx_r3.newBien.estado_operativo);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.newBien.estado_operativo);
+    \u0275\u0275advance(10);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.newBien.condicion_fisica);
+    \u0275\u0275advance(12);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.newBien.especificaciones_condicion);
     \u0275\u0275advance(22);
-    \u0275\u0275property("disabled", ctx_r3.isSubmitting);
+    \u0275\u0275property("disabled", ctx_r1.isSubmitting);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(ctx_r3.isSubmitting ? "hourglass_empty" : "add");
+    \u0275\u0275textInterpolate(ctx_r1.isSubmitting ? "hourglass_empty" : ctx_r1.isEditMode ? "save" : "add");
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ctx_r3.isSubmitting ? "Guardando..." : "Guardar", " ");
+    \u0275\u0275textInterpolate1(" ", ctx_r1.isSubmitting ? ctx_r1.isEditMode ? "Actualizando..." : "Guardando..." : ctx_r1.isEditMode ? "Actualizar" : "Guardar", " ");
+  }
+}
+function DashboardComponent_div_86_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r26 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 194)(1, "div", 256)(2, "div", 257)(3, "h2", 258)(4, "span", 225);
+    \u0275\u0275text(5, "warning");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(6, " Desincorporar Bien ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "button", 197);
+    \u0275\u0275listener("click", function DashboardComponent_div_86_Template_button_click_7_listener() {
+      \u0275\u0275restoreView(_r26);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.showDesincorporarModal = false);
+    });
+    \u0275\u0275elementStart(8, "span", 18);
+    \u0275\u0275text(9, "close");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(10, "div", 259)(11, "p", 260);
+    \u0275\u0275text(12, "Esta acci\xF3n retirar\xE1 el bien del inventario activo y lo mover\xE1 al historial de desincorporaciones. Por favor, proporcione la justificaci\xF3n y evidencia necesarias.");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(13, "div", 261)(14, "div", 13)(15, "label", 199);
+    \u0275\u0275text(16, "Justificaci\xF3n de Motivo de desincorporaci\xF3n ");
+    \u0275\u0275elementStart(17, "span", 200);
+    \u0275\u0275text(18, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(19, "textarea", 262);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_86_Template_textarea_ngModelChange_19_listener($event) {
+      \u0275\u0275restoreView(_r26);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.motivoDesincorporacion, $event) || (ctx_r1.motivoDesincorporacion = $event);
+      return \u0275\u0275resetView($event);
+    });
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(20, "div", 13)(21, "label", 199);
+    \u0275\u0275text(22, "Fecha de desincorporaci\xF3n ");
+    \u0275\u0275elementStart(23, "span", 200);
+    \u0275\u0275text(24, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(25, "input", 263);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_86_Template_input_ngModelChange_25_listener($event) {
+      \u0275\u0275restoreView(_r26);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.fechaDesincorporacion, $event) || (ctx_r1.fechaDesincorporacion = $event);
+      return \u0275\u0275resetView($event);
+    });
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(26, "div", 13)(27, "label", 199);
+    \u0275\u0275text(28, "Fotograf\xEDa \xFAnica del bien ");
+    \u0275\u0275elementStart(29, "span", 200);
+    \u0275\u0275text(30, "*");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(31, "input", 264);
+    \u0275\u0275listener("change", function DashboardComponent_div_86_Template_input_change_31_listener($event) {
+      \u0275\u0275restoreView(_r26);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onFileSelected($event));
+    });
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(32, "div", 265)(33, "label", 266)(34, "div", 267)(35, "input", 268);
+    \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_div_86_Template_input_ngModelChange_35_listener($event) {
+      \u0275\u0275restoreView(_r26);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.confirmarDesincorporacion, $event) || (ctx_r1.confirmarDesincorporacion = $event);
+      return \u0275\u0275resetView($event);
+    });
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(36, "div", 269)(37, "span", 270);
+    \u0275\u0275text(38, "check");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(39, "span", 271);
+    \u0275\u0275text(40, " Estoy de acuerdo con desincorporar y soy responsable y consciente de la acci\xF3n que estoy realizando. ");
+    \u0275\u0275elementStart(41, "a", 272);
+    \u0275\u0275text(42, "Ver reglas y normativas");
+    \u0275\u0275elementEnd()()()()()();
+    \u0275\u0275elementStart(43, "div", 203)(44, "button", 273);
+    \u0275\u0275listener("click", function DashboardComponent_div_86_Template_button_click_44_listener() {
+      \u0275\u0275restoreView(_r26);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.showDesincorporarModal = false);
+    });
+    \u0275\u0275text(45, " Cancelar ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(46, "button", 274);
+    \u0275\u0275listener("click", function DashboardComponent_div_86_Template_button_click_46_listener() {
+      \u0275\u0275restoreView(_r26);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.desincorporar());
+    });
+    \u0275\u0275elementStart(47, "span", 67);
+    \u0275\u0275text(48, "archive");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(49);
+    \u0275\u0275elementEnd()()()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(19);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.motivoDesincorporacion);
+    \u0275\u0275advance(6);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.fechaDesincorporacion);
+    \u0275\u0275advance(10);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.confirmarDesincorporacion);
+    \u0275\u0275advance(11);
+    \u0275\u0275property("disabled", !ctx_r1.confirmarDesincorporacion || !ctx_r1.motivoDesincorporacion || !ctx_r1.fechaDesincorporacion || !ctx_r1.selectedFile || ctx_r1.isSubmitting);
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate1(" ", ctx_r1.isSubmitting ? "Procesando..." : "Desincorporar Equipo", " ");
+  }
+}
+function DashboardComponent_div_87_div_33_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div")(1, "h3", 283);
+    \u0275\u0275text(2, "Fotograf\xEDa de Evidencia");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "div", 284);
+    \u0275\u0275element(4, "img", 285);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(4);
+    \u0275\u0275property("src", "http://localhost:3000" + ctx_r1.selectedItemDetails.foto_desincorporacion, \u0275\u0275sanitizeUrl);
+  }
+}
+function DashboardComponent_div_87_div_34_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div")(1, "p", 286);
+    \u0275\u0275text(2, "No se adjunt\xF3 fotograf\xEDa.");
+    \u0275\u0275elementEnd()();
+  }
+}
+function DashboardComponent_div_87_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r27 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 194)(1, "div", 256)(2, "div", 196)(3, "h2", 110);
+    \u0275\u0275text(4, "Detalles de Desincorporaci\xF3n");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "button", 197);
+    \u0275\u0275listener("click", function DashboardComponent_div_87_Template_button_click_5_listener() {
+      \u0275\u0275restoreView(_r27);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.closeDetailsModal());
+    });
+    \u0275\u0275elementStart(6, "span", 18);
+    \u0275\u0275text(7, "close");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(8, "div", 275)(9, "div")(10, "h3", 276);
+    \u0275\u0275text(11, "Bien Desincorporado");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "p", 59);
+    \u0275\u0275text(13);
+    \u0275\u0275elementStart(14, "span", 277);
+    \u0275\u0275text(15);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(16, "div", 226)(17, "div")(18, "h3", 276);
+    \u0275\u0275text(19, "Fecha de Baja");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(20, "p", 278);
+    \u0275\u0275text(21);
+    \u0275\u0275pipe(22, "date");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(23, "div")(24, "h3", 276);
+    \u0275\u0275text(25, "Condici\xF3n F\xEDsica");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(26, "p", 279);
+    \u0275\u0275text(27);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(28, "div")(29, "h3", 276);
+    \u0275\u0275text(30, "Motivo / Justificaci\xF3n");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(31, "p", 280);
+    \u0275\u0275text(32);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275template(33, DashboardComponent_div_87_div_33_Template, 5, 1, "div", 37)(34, DashboardComponent_div_87_div_34_Template, 3, 0, "div", 37);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(35, "div", 281)(36, "button", 282);
+    \u0275\u0275listener("click", function DashboardComponent_div_87_Template_button_click_36_listener() {
+      \u0275\u0275restoreView(_r27);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.closeDetailsModal());
+    });
+    \u0275\u0275text(37, " Cerrar ");
+    \u0275\u0275elementEnd()()()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(13);
+    \u0275\u0275textInterpolate1("", ctx_r1.selectedItemDetails == null ? null : ctx_r1.selectedItemDetails.nombre, " ");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate1("(ID: ", ctx_r1.selectedItemDetails == null ? null : ctx_r1.selectedItemDetails.codigo, ")");
+    \u0275\u0275advance(6);
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(22, 7, ctx_r1.selectedItemDetails == null ? null : ctx_r1.selectedItemDetails.fecha_desincorporacion, "mediumDate"));
+    \u0275\u0275advance(6);
+    \u0275\u0275textInterpolate(ctx_r1.selectedItemDetails == null ? null : ctx_r1.selectedItemDetails.condicion_fisica);
+    \u0275\u0275advance(5);
+    \u0275\u0275textInterpolate(ctx_r1.selectedItemDetails == null ? null : ctx_r1.selectedItemDetails.motivo_desincorporacion);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.selectedItemDetails == null ? null : ctx_r1.selectedItemDetails.foto_desincorporacion);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", !(ctx_r1.selectedItemDetails == null ? null : ctx_r1.selectedItemDetails.foto_desincorporacion));
   }
 }
 var DashboardComponent = class _DashboardComponent {
   authService;
   router;
   inventarioService;
+  toastService;
   showAddModal = false;
   user = null;
-  inventory = [];
+  // --- Inventory Data & Infinite Scroll ---
+  allInventory = [];
+  filteredInventory = [];
+  displayedInventory = [];
+  pageSize = 12;
+  currentPage = 1;
+  isLoadingMore = false;
+  // --- Search & Filters ---
+  searchQuery = "";
+  searchResults = [];
+  showAutocomplete = false;
+  activeFilter = null;
+  // --- Sidebar ---
+  isSidebarOpen = false;
+  toggleSidebar() {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
   categorias = [];
   dependencias = [];
   encargados = [];
@@ -42347,19 +43609,58 @@ var DashboardComponent = class _DashboardComponent {
     encargado_id: null,
     ubicacion_id: null,
     descripcion: "",
-    estado_operativo: "En uso"
+    estado_operativo: "Activo",
+    condicion_fisica: "Buen estado",
+    especificaciones_condicion: ""
   };
   isSubmitting = false;
-  constructor(authService, router, inventarioService) {
+  isEditMode = false;
+  editingBienId = null;
+  showDesincorporarModal = false;
+  confirmarDesincorporacion = false;
+  motivoDesincorporacion = "";
+  fechaDesincorporacion = "";
+  selectedFile = null;
+  showDetailsModal = false;
+  selectedItemDetails = null;
+  currentView = "inicio";
+  desincorporados = [];
+  // --- Mantenimiento ---
+  mantenimientoTab = "alertas";
+  alertasMantenimiento = [];
+  enReparacion = [];
+  historialMantenimiento = [];
+  showFinalizarModal = false;
+  trabajoRealizado = "";
+  proximaFechaMantenimiento = "";
+  finalizandoBienId = null;
+  // --- Bitacora ---
+  allBitacoraLogs = [];
+  bitacoraLogs = [];
+  displayedBitacoraLogs = [];
+  bitacoraPageSize = 10;
+  bitacoraCurrentPage = 1;
+  isLoadingMoreBitacora = false;
+  bitacoraFilter = null;
+  // Bitacora KPIs
+  kpiTotalLogs = 0;
+  kpiMantenimientoLogs = 0;
+  kpiAltasLogs = 0;
+  kpiBajasLogs = 0;
+  constructor(authService, router, inventarioService, toastService) {
     this.authService = authService;
     this.router = router;
     this.inventarioService = inventarioService;
+    this.toastService = toastService;
   }
   stats = [
-    { label: "Total de bienes", value: "1,248", icon: "inventory_2", color: "text-blue-500", bg: "bg-blue-100" },
-    { label: "En buen estado", value: "11,11", icon: "check_circle", color: "text-green-500", bg: "bg-green-100" },
-    { label: "Estado regular", value: "5", icon: "warning", color: "text-yellow-500", bg: "bg-yellow-100" },
-    { label: "En mal estado", value: "300", icon: "cancel", color: "text-red-500", bg: "bg-red-100" }
+    { label: "Total de bienes", value: "0", icon: "inventory_2", color: "text-blue-500", bg: "bg-blue-100" },
+    { label: "Activos", value: "0", icon: "check_circle", color: "text-green-500", bg: "bg-green-100" },
+    { label: "Inactivos", value: "0", icon: "cancel", color: "text-gray-500", bg: "bg-gray-100" },
+    { label: "En Mantenimiento", value: "0", icon: "build", color: "text-orange-500", bg: "bg-orange-100" },
+    { label: "Buen estado", value: "0", icon: "thumb_up", color: "text-teal-500", bg: "bg-teal-100" },
+    { label: "Regular", value: "0", icon: "warning", color: "text-yellow-500", bg: "bg-yellow-100" },
+    { label: "Mal estado", value: "0", icon: "thumb_down", color: "text-red-500", bg: "bg-red-100" }
   ];
   ngOnInit() {
     this.authService.currentUser$.subscribe((user) => {
@@ -42371,12 +43672,49 @@ var DashboardComponent = class _DashboardComponent {
   }
   loadInventory() {
     this.inventarioService.getBienes().subscribe((data) => {
-      this.inventory = data;
-      this.stats[0].value = this.inventory.length.toString();
-      this.stats[1].value = this.inventory.filter((i) => i.estado_operativo === "En uso").length.toString();
-      this.stats[2].value = this.inventory.filter((i) => i.estado_operativo === "Regular").length.toString();
-      this.stats[3].value = this.inventory.filter((i) => i.estado_operativo === "Da\xF1ado").length.toString();
+      this.allInventory = data;
+      this.applyFilters();
+      this.stats[0].value = this.allInventory.length.toString();
+      this.stats[1].value = this.allInventory.filter((i) => i.estado_operativo === "Activo").length.toString();
+      this.stats[2].value = this.allInventory.filter((i) => i.estado_operativo === "Inactivo").length.toString();
+      this.stats[3].value = this.allInventory.filter((i) => i.estado_operativo === "Mantenimiento").length.toString();
+      this.stats[4].value = this.allInventory.filter((i) => i.condicion_fisica === "Buen estado").length.toString();
+      this.stats[5].value = this.allInventory.filter((i) => i.condicion_fisica === "Regular").length.toString();
+      this.stats[6].value = this.allInventory.filter((i) => i.condicion_fisica === "Mal estado").length.toString();
     });
+    if (this.currentView === "desincorporacion") {
+      this.inventarioService.getBienesDesincorporados().subscribe((data) => {
+        this.desincorporados = data;
+      });
+    }
+    if (this.currentView === "mantenimiento") {
+      this.loadMantenimientoData();
+    }
+    if (this.currentView === "reportes") {
+      this.loadBitacora();
+    }
+  }
+  loadMantenimientoData() {
+    this.inventarioService.getAlertasMantenimiento().subscribe((data) => this.alertasMantenimiento = data);
+    this.inventarioService.getEnReparacion().subscribe((data) => this.enReparacion = data);
+    this.inventarioService.getHistorialMantenimiento().subscribe((data) => this.historialMantenimiento = data);
+  }
+  loadBitacora() {
+    this.inventarioService.getBitacora().subscribe((data) => {
+      this.allBitacoraLogs = data;
+      this.kpiTotalLogs = data.length;
+      this.kpiMantenimientoLogs = data.filter((log) => log.accion.includes("MANTENIMIENTO")).length;
+      this.kpiAltasLogs = data.filter((log) => log.accion === "ALTA").length;
+      this.kpiBajasLogs = data.filter((log) => log.accion === "DESINCORPORACION").length;
+      this.applyBitacoraFilter();
+    });
+  }
+  switchView(view) {
+    this.currentView = view;
+    this.loadInventory();
+  }
+  switchMantenimientoTab(tab) {
+    this.mantenimientoTab = tab;
   }
   loadDropdowns() {
     this.inventarioService.getCategorias().subscribe((data) => this.categorias = data);
@@ -42388,8 +43726,56 @@ var DashboardComponent = class _DashboardComponent {
     this.router.navigate(["/login"]);
   }
   toggleAddModal() {
+    this.isEditMode = false;
+    this.editingBienId = null;
+    this.confirmarDesincorporacion = false;
+    this.motivoDesincorporacion = "";
+    this.fechaDesincorporacion = "";
+    this.newBien = {
+      nombre: "",
+      codigo: "",
+      categoria_id: null,
+      encargado_id: null,
+      ubicacion_id: null,
+      descripcion: "",
+      estado_operativo: "Activo",
+      condicion_fisica: "Buen estado",
+      especificaciones_condicion: ""
+    };
     this.showAddModal = !this.showAddModal;
     if (this.showAddModal && this.categorias.length === 0) {
+      this.loadDropdowns();
+    }
+  }
+  openDesincorporarModal(item) {
+    this.editingBienId = item.id;
+    this.confirmarDesincorporacion = false;
+    this.motivoDesincorporacion = "";
+    this.fechaDesincorporacion = "";
+    this.selectedFile = null;
+    this.showDesincorporarModal = true;
+  }
+  onFileSelected(event) {
+    if (event.target.files && event.target.files.length > 0) {
+      this.selectedFile = event.target.files[0];
+    }
+  }
+  openEditModal(item) {
+    this.isEditMode = true;
+    this.editingBienId = item.id;
+    this.newBien = {
+      nombre: item.nombre,
+      codigo: item.codigo,
+      categoria_id: item.categoria ? item.categoria.id : null,
+      encargado_id: item.encargado ? item.encargado.id : null,
+      ubicacion_id: item.ubicacion ? item.ubicacion.id : null,
+      descripcion: item.descripcion || "",
+      estado_operativo: item.estado_operativo,
+      condicion_fisica: item.condicion_fisica || "Buen estado",
+      especificaciones_condicion: item.especificaciones_condicion || ""
+    };
+    this.showAddModal = true;
+    if (this.categorias.length === 0) {
       this.loadDropdowns();
     }
   }
@@ -42399,192 +43785,390 @@ var DashboardComponent = class _DashboardComponent {
       return;
     }
     this.isSubmitting = true;
-    this.inventarioService.createBien(this.newBien).subscribe({
+    if (this.isEditMode && this.editingBienId) {
+      this.inventarioService.updateBien(this.editingBienId, this.newBien).subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          this.showAddModal = false;
+          this.toastService.show("Guardado exitosamente", "success");
+          this.loadInventory();
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          this.toastService.show("Error al actualizar: " + (err.error?.message || err.message), "error");
+        }
+      });
+    } else {
+      this.inventarioService.createBien(this.newBien).subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          this.showAddModal = false;
+          this.toastService.show("Guardado exitosamente", "success");
+          this.loadInventory();
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          this.toastService.show("Error al guardar: " + (err.error?.message || err.message), "error");
+        }
+      });
+    }
+  }
+  desincorporar() {
+    if (!this.editingBienId)
+      return;
+    if (!this.motivoDesincorporacion || this.motivoDesincorporacion.trim() === "") {
+      alert("Debe especificar un motivo para la desincorporaci\xF3n.");
+      return;
+    }
+    if (!this.fechaDesincorporacion) {
+      alert("Debe especificar la fecha de desincorporaci\xF3n.");
+      return;
+    }
+    if (!this.selectedFile) {
+      alert("Debe adjuntar una fotograf\xEDa del bien.");
+      return;
+    }
+    this.isSubmitting = true;
+    this.inventarioService.desincorporarBien(this.editingBienId, this.motivoDesincorporacion, this.fechaDesincorporacion, this.selectedFile).subscribe({
       next: () => {
         this.isSubmitting = false;
-        this.toggleAddModal();
+        this.showDesincorporarModal = false;
         this.loadInventory();
-        this.newBien = { nombre: "", codigo: "", categoria_id: null, encargado_id: null, ubicacion_id: null, descripcion: "", estado_operativo: "En uso" };
       },
       error: (err) => {
         this.isSubmitting = false;
-        alert("Error al guardar: " + (err.error?.message || err.message));
+        alert("Error al desincorporar: " + (err.error?.message || err.message));
       }
     });
   }
+  openDetailsModal(item) {
+    this.selectedItemDetails = item;
+    this.showDetailsModal = true;
+  }
+  closeDetailsModal() {
+    this.showDetailsModal = false;
+    this.selectedItemDetails = null;
+  }
+  // --- Mantenimiento Methods ---
+  openFinalizarMantenimiento(item) {
+    this.finalizandoBienId = item.id;
+    this.trabajoRealizado = "";
+    this.proximaFechaMantenimiento = "";
+    this.showFinalizarModal = true;
+  }
+  finalizarMantenimiento() {
+    if (!this.finalizandoBienId || !this.trabajoRealizado || !this.proximaFechaMantenimiento) {
+      this.toastService.show("Por favor llene todos los campos", "warning");
+      return;
+    }
+    this.isSubmitting = true;
+    this.inventarioService.finalizarMantenimiento(this.finalizandoBienId, this.trabajoRealizado, this.proximaFechaMantenimiento).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.showFinalizarModal = false;
+        this.toastService.show("Reincorporado con \xE9xito", "success");
+        this.loadInventory();
+      },
+      error: (err) => {
+        this.isSubmitting = false;
+        this.toastService.show("Fallo en la operaci\xF3n: " + (err.error?.message || err.message), "error");
+      }
+    });
+  }
+  parseDiff(diff) {
+    if (!diff)
+      return [];
+    return Object.keys(diff).map((key) => ({
+      key,
+      old: diff[key].old,
+      new: diff[key].new
+    }));
+  }
+  // --- Filtering & Infinite Scroll ---
+  applyFilters() {
+    let result = this.allInventory;
+    if (this.activeFilter) {
+      result = result.filter((item) => item.estado_operativo === this.activeFilter);
+    }
+    if (this.searchQuery && this.searchQuery.trim() !== "") {
+      const q = this.searchQuery.toLowerCase();
+      result = result.filter((item) => item.nombre && item.nombre.toLowerCase().includes(q) || item.codigo && item.codigo.toLowerCase().includes(q) || item.encargado?.nombre && item.encargado.nombre.toLowerCase().includes(q));
+    }
+    this.filteredInventory = result;
+    this.currentPage = 1;
+    this.displayedInventory = this.filteredInventory.slice(0, this.pageSize);
+  }
+  onSearchInput() {
+    if (this.searchQuery && this.searchQuery.trim().length > 0) {
+      const q = this.searchQuery.toLowerCase();
+      this.searchResults = this.allInventory.filter((item) => item.nombre && item.nombre.toLowerCase().includes(q) || item.codigo && item.codigo.toLowerCase().includes(q) || item.encargado?.nombre && item.encargado.nombre.toLowerCase().includes(q)).slice(0, 5);
+      this.showAutocomplete = this.searchResults.length > 0;
+    } else {
+      this.searchResults = [];
+      this.showAutocomplete = false;
+    }
+    this.applyFilters();
+  }
+  selectSearchResult(item) {
+    this.searchQuery = item.codigo;
+    this.showAutocomplete = false;
+    this.applyFilters();
+  }
+  applyQuickFilter(status) {
+    if (this.activeFilter === status) {
+      this.activeFilter = null;
+    } else {
+      this.activeFilter = status;
+    }
+    this.applyFilters();
+  }
+  onScroll(event) {
+    const element = event.target;
+    if (element.scrollHeight - element.scrollTop - element.clientHeight < 50) {
+      if (this.currentView === "inventario") {
+        this.loadMoreItems();
+      } else if (this.currentView === "reportes") {
+        this.loadMoreBitacoraLogs();
+      }
+    }
+  }
+  loadMoreItems() {
+    if (this.isLoadingMore || this.displayedInventory.length >= this.filteredInventory.length)
+      return;
+    this.isLoadingMore = true;
+    setTimeout(() => {
+      this.currentPage++;
+      const nextItems = this.filteredInventory.slice((this.currentPage - 1) * this.pageSize, this.currentPage * this.pageSize);
+      this.displayedInventory = [...this.displayedInventory, ...nextItems];
+      this.isLoadingMore = false;
+    }, 500);
+  }
+  // --- Bitacora Filtering & Scroll ---
+  applyBitacoraFilter(filter2) {
+    if (filter2 !== void 0) {
+      if (this.bitacoraFilter === filter2) {
+        this.bitacoraFilter = null;
+      } else {
+        this.bitacoraFilter = filter2;
+      }
+    }
+    let result = this.allBitacoraLogs;
+    if (this.bitacoraFilter === "MANTENIMIENTO") {
+      result = result.filter((log) => log.accion.includes("MANTENIMIENTO"));
+    } else if (this.bitacoraFilter === "ALTA") {
+      result = result.filter((log) => log.accion === "ALTA");
+    } else if (this.bitacoraFilter === "DESINCORPORACION") {
+      result = result.filter((log) => log.accion === "DESINCORPORACION");
+    } else if (this.bitacoraFilter === "MODIFICACION") {
+      result = result.filter((log) => log.accion === "MODIFICACION");
+    }
+    this.bitacoraLogs = result;
+    this.bitacoraCurrentPage = 1;
+    this.displayedBitacoraLogs = this.bitacoraLogs.slice(0, this.bitacoraPageSize);
+  }
+  onBitacoraScroll(event) {
+    const element = event.target;
+    if (element.scrollHeight - element.scrollTop - element.clientHeight < 50) {
+      this.loadMoreBitacoraLogs();
+    }
+  }
+  loadMoreBitacoraLogs() {
+    if (this.isLoadingMoreBitacora || this.displayedBitacoraLogs.length >= this.bitacoraLogs.length)
+      return;
+    this.isLoadingMoreBitacora = true;
+    setTimeout(() => {
+      this.bitacoraCurrentPage++;
+      const nextItems = this.bitacoraLogs.slice((this.bitacoraCurrentPage - 1) * this.bitacoraPageSize, this.bitacoraCurrentPage * this.bitacoraPageSize);
+      this.displayedBitacoraLogs = [...this.displayedBitacoraLogs, ...nextItems];
+      this.isLoadingMoreBitacora = false;
+    }, 500);
+  }
   static \u0275fac = function DashboardComponent_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(InventarioService));
+    return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(InventarioService), \u0275\u0275directiveInject(ToastService));
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 129, vars: 5, consts: [[1, "min-h-screen", "bg-gray-50", "flex"], [1, "w-64", "bg-white", "border-r", "border-gray-200", "flex", "flex-col", "hidden", "md:flex"], [1, "p-6", "flex", "flex-col", "items-center", "border-b", "border-gray-100"], ["src", "assets/logo.png", "alt", "ULA Logo", 1, "h-16", "mb-4", "object-contain"], [1, "text-xl", "font-bold", "tracking-tight"], [1, "text-primary"], [1, "text-sm", "font-medium", "text-gray-800", "mt-1"], [1, "flex-1", "overflow-y-auto", "py-6", "px-4"], [1, "text-xs", "font-bold", "text-gray-400", "uppercase", "mb-4", "px-2", "tracking-wider"], [1, "space-y-1", "mb-8"], ["href", "#", 1, "flex", "items-center", "px-4", "py-3", "bg-green-100", "text-green-800", "rounded-lg", "font-medium"], [1, "material-icons-outlined", "mr-3"], ["href", "#", 1, "flex", "items-center", "px-4", "py-3", "text-gray-600", "hover:bg-gray-50", "rounded-lg", "font-medium", "transition-colors"], [1, "space-y-1"], [1, "p-4", "border-t", "border-gray-200"], [1, "flex", "items-center"], [1, "w-10", "h-10", "bg-blue-100", "text-blue-600", "rounded-full", "flex", "items-center", "justify-center", "font-bold", "text-lg"], [1, "material-icons-outlined"], [1, "ml-3"], [1, "text-sm", "font-bold", "text-gray-800"], [1, "text-xs", "text-gray-500", "font-medium", "uppercase"], [1, "flex-1", "flex", "flex-col", "overflow-hidden"], [1, "h-16", "bg-white", "border-b", "border-gray-200", "flex", "items-center", "justify-between", "px-6", "lg:px-8"], [1, "flex-1"], [1, "flex", "items-center", "space-x-6"], [1, "relative", "hidden", "sm:block", "w-64"], ["type", "text", "placeholder", "Buscar", 1, "w-full", "pl-4", "pr-10", "py-2", "border", "border-gray-300", "rounded-lg", "focus:outline-none", "focus:ring-1", "focus:ring-primary", "focus:border-primary", "text-sm"], [1, "material-icons-outlined", "absolute", "right-3", "top-2.5", "text-gray-400", "text-sm"], [1, "text-gray-500", "hover:text-gray-700", "focus:outline-none", "relative"], [1, "absolute", "top-0", "right-0", "w-2", "h-2", "bg-red-500", "rounded-full", "border", "border-white"], [1, "flex", "items-center", "text-red-500", "hover:text-red-700", "hover:bg-red-50", "px-3", "py-1.5", "rounded-lg", "transition-colors", "text-sm", "font-medium", "focus:outline-none", 3, "click"], [1, "material-icons-outlined", "mr-1", "text-[20px]"], [1, "flex-1", "overflow-auto", "p-6", "lg:p-8"], [1, "grid", "grid-cols-1", "sm:grid-cols-2", "lg:grid-cols-4", "gap-6", "mb-8"], ["class", "bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between", 4, "ngFor", "ngForOf"], [1, "bg-white", "rounded-xl", "shadow-sm", "border", "border-gray-100", "p-6"], [1, "flex", "flex-col", "sm:flex-row", "justify-between", "items-center", "mb-6"], [1, "text-lg", "font-bold", "text-gray-800"], [1, "text-sm", "text-gray-500", "mt-1", "flex", "items-center"], [1, "material-icons-outlined", "text-[16px]", "ml-1"], [1, "flex", "items-center", "space-x-4", "mt-4", "sm:mt-0"], [1, "w-12", "h-12", "bg-teal-400", "text-white", "rounded-full", "flex", "items-center", "justify-center", "hover:bg-teal-500", "shadow-md", "transition-colors"], [1, "flex", "items-center", "px-4", "py-2", "border", "border-gray-300", "text-gray-700", "rounded-lg", "hover:bg-gray-50", "font-medium", "text-sm", "transition-colors"], [1, "material-icons-outlined", "mr-2", "text-[18px]"], [1, "flex", "items-center", "px-4", "py-2", "bg-primary", "text-white", "rounded-lg", "hover:bg-primary-hover", "font-bold", "text-sm", "transition-colors", "shadow-sm", 3, "click"], [1, "overflow-x-auto"], [1, "w-full", "min-w-[800px]", "text-left", "border-collapse"], [1, "border-b", "border-gray-200", "text-xs", "font-bold", "text-gray-500", "uppercase", "tracking-wider"], [1, "py-4", "px-4"], [1, "py-4", "px-4", "text-center"], [1, "divide-y", "divide-gray-100"], ["class", "hover:bg-gray-50/50 transition-colors", 4, "ngFor", "ngForOf"], [1, "flex", "items-center", "justify-center", "mt-6", "space-x-1"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "rounded-full", "text-gray-400", "hover:bg-gray-100"], [1, "material-icons-outlined", "text-[18px]"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "rounded-full", "bg-blue-100", "text-blue-600", "font-bold", "text-sm"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "rounded-full", "text-gray-600", "hover:bg-gray-100", "font-medium", "text-sm"], ["class", "fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4", 4, "ngIf"], [1, "bg-white", "rounded-xl", "shadow-sm", "border", "border-gray-100", "p-5", "flex", "items-center", "justify-between"], [1, "text-sm", "font-medium", "text-gray-500", "mb-1"], [1, "text-2xl", "font-bold", "text-gray-800"], [1, "hover:bg-gray-50/50", "transition-colors"], [1, "py-3", "px-4"], [1, "w-10", "h-10", "bg-primary", "text-white", "rounded", "flex", "items-center", "justify-center"], [1, "py-3", "px-4", "text-sm", "font-medium", "text-gray-800"], [1, "py-3", "px-4", "text-sm", "text-gray-500"], [1, "py-3", "px-4", "text-xs", "font-medium", "text-gray-600", "max-w-[200px]", "truncate", 3, "title"], [1, "py-3", "px-4", "text-xs", "font-bold", "text-gray-700"], [1, "py-3", "px-4", "text-xs", "font-medium", "text-gray-600"], [1, "px-2", "py-1", "rounded-md", "text-xs", "font-bold", "inline-flex", "items-center", 3, "ngClass"], [1, "flex", "items-center", "justify-center", "space-x-2"], [1, "w-8", "h-8", "rounded-md", "bg-gray-100", "text-gray-600", "flex", "items-center", "justify-center", "hover:bg-gray-200", "transition-colors"], [1, "w-8", "h-8", "rounded-md", "bg-gray-100", "text-gray-600", "flex", "items-center", "justify-center", "hover:bg-red-100", "hover:text-red-600", "transition-colors"], [1, "fixed", "inset-0", "z-50", "flex", "items-center", "justify-center", "bg-black", "bg-opacity-40", "backdrop-blur-sm", "p-4"], [1, "bg-white", "rounded-2xl", "shadow-xl", "w-full", "max-w-4xl", "max-h-[90vh]", "overflow-y-auto"], [1, "flex", "items-center", "justify-between", "p-6", "border-b", "border-gray-100", "sticky", "top-0", "bg-white", "z-10"], [1, "text-xl", "font-bold", "text-gray-800"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "rounded-full", "bg-red-100", "text-red-500", "hover:bg-red-200", "transition-colors", 3, "click"], [1, "material-icons-outlined", "text-[20px]"], [1, "p-6"], [1, "grid", "grid-cols-1", "md:grid-cols-2", "gap-8"], [1, "space-y-6"], [1, "border-2", "border-dashed", "border-gray-300", "rounded-xl", "p-8", "flex", "flex-col", "items-center", "justify-center", "text-center", "bg-gray-50", "hover:bg-gray-100", "transition-colors", "cursor-pointer"], [1, "material-icons-outlined", "text-primary", "text-4xl", "mb-2"], [1, "text-sm", "font-medium", "text-primary"], [1, "text-gray-500", "font-normal"], [1, "text-xs", "text-gray-400", "mt-1"], [1, "text-sm", "font-bold", "text-gray-700"], [1, "text-red-500"], ["type", "text", "placeholder", "Ex.: Notebook Dell Inspiron 15", 1, "w-full", "px-4", "py-3", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "focus:bg-white", "transition-all", "text-sm", 3, "ngModelChange", "ngModel"], [1, "flex", "space-x-2"], ["type", "text", "placeholder", "Ex.: PRD-001", 1, "flex-1", "px-4", "py-3", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "focus:bg-white", "transition-all", "text-sm", 3, "ngModelChange", "ngModel"], [1, "w-12", "bg-blue-100", "text-primary", "rounded-xl", "flex", "items-center", "justify-center", "hover:bg-blue-200", "transition-colors"], [1, "flex", "items-center", "space-x-6", "pt-2"], [1, "text-2xl", "font-black", "text-gray-800"], [1, "w-24", "h-24", "bg-gray-200", "rounded", "flex", "items-center", "justify-center"], [1, "material-icons-outlined", "text-gray-400", "text-4xl"], [1, "flex", "items-center", "px-6", "py-3", "bg-primary", "text-white", "rounded-xl", "font-bold", "hover:bg-primary-hover", "transition-colors", "shadow-sm"], [1, "material-icons-outlined", "mr-2"], [1, "grid", "grid-cols-2", "gap-4"], [1, "w-full", "px-4", "py-3", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "focus:bg-white", "transition-all", "text-sm", "text-gray-500", "appearance-none", 3, "ngModelChange", "ngModel"], [3, "ngValue"], [3, "ngValue", 4, "ngFor", "ngForOf"], ["type", "text", "disabled", "", 1, "w-full", "px-4", "py-3", "bg-gray-100", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "text-sm", "text-gray-500", "cursor-not-allowed", 3, "value"], ["rows", "4", "placeholder", "Lorem ipsum dolor sit amet...", 1, "w-full", "px-4", "py-3", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "focus:bg-white", "transition-all", "text-sm", "resize-none", 3, "ngModelChange", "ngModel"], [1, "flex", "items-center", "justify-between", "pt-4", "border-t", "border-gray-100"], [1, "flex", "items-center", "space-x-4"], [1, "w-8", "h-8", "rounded-full", "flex", "items-center", "justify-center", "cursor-pointer", "hover:bg-green-200", "transition-colors", 3, "click", "ngClass"], [1, "w-8", "h-8", "rounded-full", "flex", "items-center", "justify-center", "cursor-pointer", "hover:bg-yellow-200", "transition-colors", 3, "click", "ngClass"], [1, "w-8", "h-8", "rounded-full", "flex", "items-center", "justify-center", "cursor-pointer", "hover:bg-red-200", "transition-colors", 3, "click", "ngClass"], [1, "flex", "items-center", "ml-4"], [1, "mt-8", "pt-6", "border-t", "border-gray-200"], [1, "text-primary", "font-bold", "flex", "items-center", "mb-4"], [1, "flex", "flex-wrap", "items-end", "gap-4"], [1, "flex-1", "min-w-[150px]"], [1, "text-xs", "font-bold", "text-gray-500", "block", "mb-1"], ["type", "text", "placeholder", "0,00", 1, "w-full", "px-4", "py-3", "bg-white", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "text-sm"], [1, "flex-[2]", "min-w-[200px]"], ["type", "text", "placeholder", "L x A x C", 1, "w-full", "px-4", "py-3", "bg-white", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "text-sm"], [1, "flex-[1.5]", "min-w-[150px]"], [1, "relative"], ["type", "text", "placeholder", "dd/mm/aaaa", 1, "w-full", "pl-4", "pr-10", "py-3", "bg-white", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "text-sm"], [1, "material-icons-outlined", "absolute", "right-3", "top-3", "text-primary"], [1, "px-8", "py-3", "bg-primary", "text-white", "rounded-xl", "font-bold", "flex", "items-center", "hover:bg-primary-hover", "transition-colors", "shadow-md", "h-[46px]", "disabled:opacity-50", 3, "click", "disabled"], [1, "material-icons-outlined", "mr-2", "text-[20px]"]], template: function DashboardComponent_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 88, vars: 39, consts: [[1, "min-h-screen", "bg-gray-50", "flex"], ["class", "fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden", 3, "click", 4, "ngIf"], [1, "fixed", "md:static", "inset-y-0", "left-0", "z-50", "w-64", "bg-white", "border-r", "border-gray-200", "flex", "flex-col", "transform", "md:translate-x-0", "transition-transform", "duration-300", "ease-in-out", 3, "ngClass"], [1, "p-6", "flex", "flex-col", "items-center", "border-b", "border-gray-100"], ["src", "assets/logo.png", "alt", "ULA Logo", 1, "h-16", "mb-4", "object-contain"], [1, "text-xl", "font-bold", "tracking-tight"], [1, "text-primary"], [1, "text-sm", "font-medium", "text-gray-800", "mt-1"], [1, "flex-1", "overflow-y-auto", "py-6", "px-4"], [1, "text-xs", "font-bold", "text-gray-400", "uppercase", "mb-4", "px-2", "tracking-wider"], [1, "space-y-1", "mb-8"], ["href", "javascript:void(0)", 1, "flex", "items-center", "px-4", "py-3", "rounded-lg", "font-medium", "transition-colors", 3, "click", "ngClass"], [1, "material-icons-outlined", "mr-3"], [1, "space-y-1"], ["href", "#", 1, "flex", "items-center", "px-4", "py-3", "text-gray-600", "hover:bg-gray-50", "rounded-lg", "font-medium", "transition-colors"], [1, "p-4", "border-t", "border-gray-200"], [1, "flex", "items-center"], [1, "w-10", "h-10", "bg-blue-100", "text-blue-600", "rounded-full", "flex", "items-center", "justify-center", "font-bold", "text-lg"], [1, "material-icons-outlined"], [1, "ml-3"], [1, "text-sm", "font-bold", "text-gray-800"], [1, "text-xs", "text-gray-500", "font-medium", "uppercase"], [1, "flex-1", "flex", "flex-col", "overflow-hidden"], [1, "h-16", "bg-white", "border-b", "border-gray-200", "flex", "items-center", "justify-between", "px-4", "lg:px-8"], [1, "md:hidden", "mr-4", "text-gray-500", "hover:text-gray-700", "focus:outline-none", 3, "click"], [1, "flex-1"], [1, "flex", "items-center", "space-x-6"], [1, "relative", "hidden", "sm:block", "w-64", "lg:w-80"], ["type", "text", "placeholder", "Buscar bien, c\xF3digo o encargado...", 1, "w-full", "pl-4", "pr-10", "py-2", "border", "border-gray-300", "rounded-lg", "focus:outline-none", "focus:ring-1", "focus:ring-primary", "focus:border-primary", "text-sm", 3, "ngModelChange", "input", "ngModel"], [1, "material-icons-outlined", "absolute", "right-3", "top-2.5", "text-gray-400", "text-sm"], ["class", "absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden", 4, "ngIf"], [1, "text-gray-500", "hover:text-gray-700", "focus:outline-none", "relative", 3, "click"], ["class", "absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white", 4, "ngIf"], [1, "flex", "items-center", "text-red-500", "hover:text-red-700", "hover:bg-red-50", "px-3", "py-1.5", "rounded-lg", "transition-colors", "text-sm", "font-medium", "focus:outline-none", 3, "click"], [1, "material-icons-outlined", "mr-1", "text-[20px]"], [1, "flex-1", "overflow-auto", "p-4", "lg:p-8", "relative", 3, "scroll"], [1, "max-w-7xl", "mx-auto", "w-full"], [4, "ngIf"], ["class", "bg-white rounded-xl shadow-sm border border-gray-100 p-6", 4, "ngIf"], ["class", "w-full", 4, "ngIf"], ["class", "fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4", 4, "ngIf"], [1, "fixed", "inset-0", "bg-black", "bg-opacity-50", "z-40", "md:hidden", 3, "click"], [1, "absolute", "top-full", "mt-1", "w-full", "bg-white", "border", "border-gray-200", "rounded-lg", "shadow-lg", "z-50", "overflow-hidden"], [1, "max-h-60", "overflow-y-auto"], ["class", "px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 flex items-center", 3, "click", 4, "ngFor", "ngForOf"], [1, "px-4", "py-3", "hover:bg-gray-50", "cursor-pointer", "border-b", "border-gray-100", "last:border-0", "flex", "items-center", 3, "click"], [1, "material-icons-outlined", "text-gray-400", "mr-3", "text-[18px]"], [1, "text-xs", "text-gray-500", "truncate", "max-w-[200px]"], [1, "absolute", "-top-1", "-right-1", "w-4", "h-4", "bg-red-500", "text-white", "text-[10px]", "font-bold", "flex", "items-center", "justify-center", "rounded-full", "border", "border-white"], [1, "text-xs", "font-bold", "text-gray-400", "uppercase", "tracking-wider", "mb-3"], [1, "grid", "grid-cols-1", "sm:grid-cols-2", "lg:grid-cols-4", "gap-6", "mb-6"], ["class", "bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between", 4, "ngFor", "ngForOf"], [1, "grid", "grid-cols-1", "sm:grid-cols-3", "gap-6", "mb-8"], [1, "bg-white", "rounded-xl", "shadow-sm", "border", "border-gray-100", "p-5", "flex", "items-center", "justify-between"], [1, "text-sm", "font-medium", "text-gray-500", "mb-1"], [1, "text-2xl", "font-bold", "text-gray-800"], [1, "bg-white", "rounded-xl", "shadow-sm", "border", "border-gray-100", "p-6"], [1, "flex", "flex-col", "lg:flex-row", "justify-between", "items-start", "lg:items-center", "mb-6"], [1, "mb-4", "lg:mb-0"], [1, "text-lg", "font-bold", "text-gray-800"], [1, "flex", "flex-wrap", "items-center", "gap-2", "mt-2"], [1, "text-xs", "font-bold", "text-gray-400", "uppercase", "mr-1"], [1, "px-3", "py-1", "rounded-full", "text-xs", "font-bold", "transition-all", 3, "click", "ngClass"], ["class", "px-3 py-1 rounded-full bg-gray-800 text-white text-xs font-bold hover:bg-gray-900 transition-all ml-1", 3, "click", 4, "ngIf"], [1, "flex", "flex-wrap", "items-center", "gap-3", "w-full", "lg:w-auto"], [1, "w-12", "h-12", "bg-teal-400", "text-white", "rounded-full", "flex", "items-center", "justify-center", "hover:bg-teal-500", "shadow-md", "transition-colors"], [1, "flex", "items-center", "px-4", "py-2", "border", "border-gray-300", "text-gray-700", "rounded-lg", "hover:bg-gray-50", "font-medium", "text-sm", "transition-colors"], [1, "material-icons-outlined", "mr-2", "text-[18px]"], [1, "flex", "items-center", "px-4", "py-2", "bg-primary", "text-white", "rounded-lg", "hover:bg-primary-hover", "font-bold", "text-sm", "transition-colors", "shadow-sm", 3, "click"], [1, "overflow-x-auto"], [1, "w-full", "min-w-[800px]", "text-left", "border-collapse"], [1, "border-b", "border-gray-200", "text-xs", "font-bold", "text-gray-500", "uppercase", "tracking-wider"], [1, "py-4", "px-4"], [1, "py-4", "px-4", "text-center"], [1, "divide-y", "divide-gray-100"], ["class", "hover:bg-gray-50/50 transition-colors", 4, "ngFor", "ngForOf"], ["class", "flex justify-center items-center py-6", 4, "ngIf"], ["class", "text-center py-6 text-sm text-gray-400 font-medium", 4, "ngIf"], [1, "px-3", "py-1", "rounded-full", "bg-gray-800", "text-white", "text-xs", "font-bold", "hover:bg-gray-900", "transition-all", "ml-1", 3, "click"], [1, "hover:bg-gray-50/50", "transition-colors"], [1, "py-3", "px-4"], [1, "w-10", "h-10", "bg-primary", "text-white", "rounded", "flex", "items-center", "justify-center"], [1, "py-3", "px-4", "text-sm", "font-medium", "text-gray-800"], [1, "py-3", "px-4", "text-sm", "text-gray-500"], [1, "py-3", "px-4", "text-xs", "font-medium", "text-gray-600", "max-w-[200px]", "truncate", 3, "title"], [1, "py-3", "px-4", "text-xs", "font-bold", "text-gray-700"], [1, "py-3", "px-4", "text-xs", "font-medium", "text-gray-600"], [1, "px-2", "py-1", "rounded-md", "text-xs", "font-bold", "inline-flex", "items-center", 3, "ngClass"], [1, "px-2", "py-1", "rounded-md", "text-xs", "font-bold", "inline-flex", "items-center", 3, "ngClass", "title"], [1, "flex", "items-center", "justify-center", "space-x-2"], ["title", "Editar", 1, "w-8", "h-8", "rounded-md", "bg-gray-100", "text-gray-600", "flex", "items-center", "justify-center", "hover:bg-gray-200", "transition-colors", 3, "click"], [1, "material-icons-outlined", "text-[18px]"], ["title", "Desincorporar", 1, "w-8", "h-8", "rounded-md", "bg-gray-100", "text-gray-600", "flex", "items-center", "justify-center", "hover:bg-red-100", "hover:text-red-600", "transition-colors", 3, "click"], [1, "flex", "justify-center", "items-center", "py-6"], [1, "animate-spin", "rounded-full", "h-8", "w-8", "border-b-2", "border-primary"], [1, "ml-3", "text-sm", "font-medium", "text-gray-500"], [1, "text-center", "py-6", "text-sm", "text-gray-400", "font-medium"], [1, "flex", "flex-col", "sm:flex-row", "justify-between", "items-center", "mb-6"], [1, "text-lg", "font-bold", "text-gray-800", "flex", "items-center"], [1, "material-icons-outlined", "mr-2", "text-red-500"], [1, "text-sm", "text-gray-500", "mt-1", "flex", "items-center"], [1, "flex", "items-center", "space-x-4", "mt-4", "sm:mt-0"], ["class", "hover:bg-red-50/50 transition-colors bg-white cursor-pointer", 3, "click", 4, "ngFor", "ngForOf"], [1, "hover:bg-red-50/50", "transition-colors", "bg-white", "cursor-pointer", 3, "click"], [1, "py-3", "px-4", "text-sm", "font-bold", "text-gray-800"], [1, "py-3", "px-4", "text-xs", "font-medium", "text-red-600"], ["colspan", "4", 1, "py-8", "text-center", "text-gray-500", "text-sm"], [1, "w-full"], [1, "bg-white", "rounded-xl", "shadow-sm", "border", "border-gray-100", "overflow-hidden"], [1, "px-6", "py-5", "border-b", "border-gray-100", "flex", "items-center", "justify-between"], [1, "text-xl", "font-bold", "text-gray-800"], [1, "text-sm", "text-gray-500", "mt-1"], [1, "flex", "border-b", "border-gray-100"], [1, "px-6", "py-4", "border-b-2", "transition-colors", "relative", 3, "click", "ngClass"], ["class", "ml-2 bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-xs font-bold", 4, "ngIf"], [1, "px-6", "py-4", "border-b-2", "transition-colors", 3, "click", "ngClass"], [1, "p-6"], [1, "ml-2", "bg-red-100", "text-red-600", "py-0.5", "px-2", "rounded-full", "text-xs", "font-bold"], ["class", "text-center py-12 text-gray-500", 4, "ngIf"], ["class", "w-full text-left", 4, "ngIf"], [1, "text-center", "py-12", "text-gray-500"], [1, "w-full", "text-left"], [1, "text-xs", "font-bold", "text-gray-500", "uppercase"], [1, "py-3"], [4, "ngFor", "ngForOf"], [1, "py-3", "text-sm"], [1, "py-3", "text-sm", "text-red-500", "font-bold"], [1, "px-2.5", "py-1", "bg-red-100", "text-red-600", "rounded-lg", "text-xs", "font-bold", "flex", "items-center", "w-max"], [1, "material-icons-outlined", "text-[14px]", "mr-1"], [1, "py-3", "text-sm", "font-bold", "text-gray-800", "flex", "items-center"], ["title", "En reparaci\xF3n", 1, "material-icons-outlined", "text-red-500", "mr-2", "text-[20px]"], [1, "py-3", "text-sm", "text-gray-500"], [1, "px-3", "py-1.5", "bg-primary", "text-white", "rounded-lg", "text-xs", "font-bold", "hover:bg-primary-hover", "transition-colors", 3, "click"], [1, "py-3", "text-sm", "font-bold"], [1, "py-3", "text-sm", "text-gray-600"], [1, "w-full", "grid", "grid-cols-1", "lg:grid-cols-12", "gap-8", "items-start"], [1, "lg:col-span-4", "space-y-6", "sticky", "top-4"], [1, "bg-white", "rounded-2xl", "shadow-sm", "border", "border-gray-100", "p-6"], [1, "text-2xl", "font-bold", "text-gray-800", "mb-2", "flex", "items-center", "justify-center", "text-center"], [1, "material-icons-outlined", "mr-2", "text-primary"], [1, "text-sm", "text-gray-500", "text-center", "mb-6"], [1, "grid", "grid-cols-2", "gap-4", "mb-6"], [1, "bg-gray-50", "rounded-xl", "p-4", "flex", "flex-col", "items-center", "justify-center", "text-center"], [1, "text-2xl", "font-black", "text-gray-800"], [1, "text-xs", "font-bold", "text-gray-500", "uppercase", "mt-1"], [1, "bg-blue-50", "rounded-xl", "p-4", "flex", "flex-col", "items-center", "justify-center", "text-center", "border", "border-blue-100"], [1, "text-2xl", "font-black", "text-blue-600"], [1, "text-xs", "font-bold", "text-blue-500", "uppercase", "mt-1"], [1, "bg-green-50", "rounded-xl", "p-4", "flex", "flex-col", "items-center", "justify-center", "text-center", "border", "border-green-100"], [1, "text-2xl", "font-black", "text-green-600"], [1, "text-xs", "font-bold", "text-green-500", "uppercase", "mt-1"], [1, "bg-red-50", "rounded-xl", "p-4", "flex", "flex-col", "items-center", "justify-center", "text-center", "border", "border-red-100"], [1, "text-2xl", "font-black", "text-red-600"], [1, "text-xs", "font-bold", "text-red-500", "uppercase", "mt-1"], [1, "text-xs", "font-bold", "text-gray-400", "uppercase", "mb-3", "px-2", "tracking-wider"], [1, "space-y-2"], [1, "w-full", "flex", "items-center", "px-4", "py-3", "rounded-xl", "transition-all", 3, "click", "ngClass"], [1, "material-icons-outlined", "mr-3", "text-[20px]"], [1, "lg:col-span-8", "relative"], [1, "bg-white", "rounded-2xl", "shadow-sm", "border", "border-gray-100", "p-6", "md:p-8", "min-h-[500px]"], ["class", "flex flex-col items-center justify-center py-16", 4, "ngIf"], ["class", "relative border-l-2 border-gray-100 ml-4 space-y-8 pb-4", 4, "ngIf"], ["class", "flex justify-center items-center py-8", 4, "ngIf"], ["class", "text-center py-6 text-xs text-gray-400 font-bold uppercase tracking-wider", 4, "ngIf"], [1, "flex", "flex-col", "items-center", "justify-center", "py-16"], [1, "material-icons-outlined", "text-6xl", "text-gray-200", "mb-4"], [1, "text-gray-500", "font-medium"], [1, "relative", "border-l-2", "border-gray-100", "ml-4", "space-y-8", "pb-4"], ["class", "relative pl-8 group", 4, "ngFor", "ngForOf"], [1, "relative", "pl-8", "group"], [1, "absolute", "w-6", "h-px", "bg-gray-100", "left-0", "top-6", "-z-10", "group-hover:bg-primary", "transition-colors"], [1, "absolute", "w-4", "h-4", "rounded-full", "-left-[9px]", "top-4", "border-4", "border-white", "shadow-sm", "transition-transform", "group-hover:scale-125", 3, "ngClass"], [1, "bg-white", "rounded-xl", "shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)]", "border", "border-gray-100/60", "p-5", "hover:shadow-[0_8px_20px_-6px_rgba(6,81,237,0.15)]", "hover:border-gray-200", "transition-all"], [1, "flex", "flex-col", "sm:flex-row", "sm:items-center", "justify-between", "mb-3", "gap-2"], [1, "flex", "items-center", "space-x-3"], [1, "w-10", "h-10", "rounded-full", "flex", "items-center", "justify-center", "font-bold", "text-white", "shadow-inner", 3, "ngClass"], [1, "material-icons-outlined", "text-[20px]"], [1, "text-[15px]", "font-bold", "text-gray-800"], [1, "text-[11px]", "font-bold", "uppercase", "tracking-wider", "text-gray-400", "mt-0.5"], [1, "flex", "items-center", "text-xs", "font-bold", "text-gray-400", "bg-gray-50", "px-3", "py-1.5", "rounded-full", "border", "border-gray-100"], ["class", "text-sm text-gray-600 mb-4 leading-relaxed", 4, "ngIf"], ["class", "bg-gray-50/80 rounded-xl p-4 text-sm font-mono border border-gray-100 overflow-x-auto", 4, "ngIf"], [1, "text-sm", "text-gray-600", "mb-4", "leading-relaxed"], [1, "bg-gray-50/80", "rounded-xl", "p-4", "text-sm", "font-mono", "border", "border-gray-100", "overflow-x-auto"], ["class", "flex flex-col space-y-1.5 mb-3 last:mb-0", 4, "ngFor", "ngForOf"], [1, "flex", "flex-col", "space-y-1.5", "mb-3", "last:mb-0"], [1, "font-bold", "text-gray-400", "text-[10px]", "tracking-widest", "uppercase"], [1, "flex", "flex-wrap", "items-center", "gap-2"], [1, "flex", "items-center", "bg-red-50", "text-red-700", "px-3", "py-1.5", "rounded-lg", "border", "border-red-100/50", "shadow-sm"], [1, "no-underline", "opacity-80", "mr-1"], [1, "material-icons-outlined", "text-[16px]", "text-gray-300"], [1, "flex", "items-center", "bg-green-50", "text-green-700", "px-3", "py-1.5", "rounded-lg", "border", "border-green-100/50", "shadow-sm"], [1, "flex", "justify-center", "items-center", "py-8"], [1, "text-center", "py-6", "text-xs", "text-gray-400", "font-bold", "uppercase", "tracking-wider"], [1, "fixed", "inset-0", "z-50", "flex", "items-center", "justify-center", "bg-black", "bg-opacity-40", "backdrop-blur-sm", "p-4"], [1, "bg-white", "rounded-2xl", "shadow-xl", "w-full", "max-w-lg", "overflow-hidden", "flex", "flex-col"], [1, "px-6", "py-4", "border-b", "border-gray-100", "flex", "items-center", "justify-between"], [1, "text-gray-400", "hover:text-gray-600", "transition-colors", 3, "click"], [1, "p-6", "space-y-4"], [1, "text-sm", "font-bold", "text-gray-700"], [1, "text-red-500"], ["rows", "3", "placeholder", "Detalles de la reparaci\xF3n o mantenimiento...", 1, "w-full", "mt-1", "px-4", "py-2", "border", "border-gray-200", "rounded-xl", "focus:ring-2", "focus:ring-primary", "focus:outline-none", 3, "ngModelChange", "ngModel"], ["type", "date", 1, "w-full", "mt-1", "px-4", "py-2", "border", "border-gray-200", "rounded-xl", "focus:ring-2", "focus:ring-primary", "focus:outline-none", 3, "ngModelChange", "ngModel"], [1, "px-6", "py-4", "border-t", "border-gray-100", "flex", "justify-end", "space-x-3", "bg-gray-50"], [1, "px-5", "py-2", "text-gray-600", "font-bold", "hover:bg-gray-200", "rounded-xl", "transition-colors", 3, "click"], [1, "px-5", "py-2", "bg-primary", "text-white", "font-bold", "rounded-xl", "hover:bg-primary-hover", "transition-colors", "disabled:opacity-50", 3, "click", "disabled"], [1, "bg-white", "rounded-2xl", "shadow-xl", "w-full", "max-w-4xl", "max-h-[90vh]", "overflow-y-auto"], [1, "flex", "items-center", "justify-between", "p-6", "border-b", "border-gray-100", "sticky", "top-0", "bg-white", "z-10"], [1, "text-sm", "text-gray-500", "font-medium"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "rounded-full", "bg-red-100", "text-red-500", "hover:bg-red-200", "transition-colors", 3, "click"], [1, "grid", "grid-cols-1", "md:grid-cols-2", "gap-8"], [1, "space-y-6"], [1, "border-2", "border-dashed", "border-gray-300", "rounded-xl", "p-8", "flex", "flex-col", "items-center", "justify-center", "text-center", "bg-gray-50", "hover:bg-gray-100", "transition-colors", "cursor-pointer"], [1, "material-icons-outlined", "text-primary", "text-4xl", "mb-2"], [1, "text-sm", "font-medium", "text-primary"], [1, "text-gray-500", "font-normal"], [1, "text-xs", "text-gray-400", "mt-1"], ["type", "text", "placeholder", "Ex.: Notebook Dell Inspiron 15", 1, "w-full", "px-4", "py-3", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "focus:bg-white", "transition-all", "text-sm", 3, "ngModelChange", "ngModel"], [1, "flex", "space-x-2"], ["type", "text", "placeholder", "Ex.: PRD-001", 1, "flex-1", "px-4", "py-3", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "focus:bg-white", "transition-all", "text-sm", 3, "ngModelChange", "ngModel"], [1, "w-12", "bg-blue-100", "text-primary", "rounded-xl", "flex", "items-center", "justify-center", "hover:bg-blue-200", "transition-colors"], [1, "flex", "items-center", "space-x-6", "pt-2"], [1, "w-24", "h-24", "bg-gray-200", "rounded", "flex", "items-center", "justify-center"], [1, "material-icons-outlined", "text-gray-400", "text-4xl"], [1, "flex", "items-center", "px-6", "py-3", "bg-primary", "text-white", "rounded-xl", "font-bold", "hover:bg-primary-hover", "transition-colors", "shadow-sm"], [1, "material-icons-outlined", "mr-2"], [1, "grid", "grid-cols-2", "gap-4"], [1, "w-full", "px-4", "py-3", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "focus:bg-white", "transition-all", "text-sm", "text-gray-500", "appearance-none", 3, "ngModelChange", "ngModel"], [3, "ngValue"], [3, "ngValue", 4, "ngFor", "ngForOf"], ["type", "text", "disabled", "", 1, "w-full", "px-4", "py-3", "bg-gray-100", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "text-sm", "text-gray-500", "cursor-not-allowed", 3, "value"], ["rows", "4", "placeholder", "Lorem ipsum dolor sit amet...", 1, "w-full", "px-4", "py-3", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "focus:bg-white", "transition-all", "text-sm", "resize-none", 3, "ngModelChange", "ngModel"], [1, "grid", "grid-cols-2", "gap-4", "pt-4", "border-t", "border-gray-100"], ["value", "Activo"], ["value", "Inactivo"], ["value", "Mantenimiento"], ["value", "Buen estado"], ["value", "Regular"], ["value", "Mal estado"], [1, "space-y-1", "mt-4"], [1, "text-xs", "text-gray-400", "font-normal"], ["rows", "2", "placeholder", "Detalle raspones, fallas, componentes faltantes...", 1, "w-full", "px-4", "py-3", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "focus:bg-white", "transition-all", "text-sm", "resize-none", 3, "ngModelChange", "ngModel"], [1, "mt-8", "pt-6", "border-t", "border-gray-200"], [1, "text-primary", "font-bold", "flex", "items-center", "mb-4"], [1, "flex", "flex-wrap", "items-end", "gap-4"], [1, "flex-1", "min-w-[150px]"], [1, "text-xs", "font-bold", "text-gray-500", "block", "mb-1"], ["type", "text", "placeholder", "0,00", 1, "w-full", "px-4", "py-3", "bg-white", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "text-sm"], [1, "flex-[2]", "min-w-[200px]"], ["type", "text", "placeholder", "L x A x C", 1, "w-full", "px-4", "py-3", "bg-white", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "text-sm"], [1, "flex-[1.5]", "min-w-[150px]"], [1, "relative"], ["type", "text", "placeholder", "dd/mm/aaaa", 1, "w-full", "pl-4", "pr-10", "py-3", "bg-white", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-primary", "text-sm"], [1, "material-icons-outlined", "absolute", "right-3", "top-3", "text-primary"], [1, "px-8", "py-3", "bg-primary", "text-white", "rounded-xl", "font-bold", "flex", "items-center", "hover:bg-primary-hover", "transition-colors", "shadow-md", "h-[46px]", "disabled:opacity-50", 3, "click", "disabled"], [1, "material-icons-outlined", "mr-2", "text-[20px]"], [1, "bg-white", "rounded-2xl", "shadow-xl", "w-full", "max-w-lg", "overflow-hidden", "flex", "flex-col", "max-h-[90vh]"], [1, "px-6", "py-4", "border-b", "border-gray-100", "flex", "items-center", "justify-between", "bg-red-50"], [1, "text-xl", "font-bold", "text-red-700", "flex", "items-center"], [1, "p-6", "overflow-y-auto"], [1, "text-sm", "text-red-600", "mb-6"], [1, "space-y-4"], ["rows", "3", "placeholder", "Ej. Fin de vida \xFAtil, da\xF1o irreparable...", 1, "w-full", "px-4", "py-3", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-red-400", "transition-all", "text-sm", "resize-none", 3, "ngModelChange", "ngModel"], ["type", "date", 1, "w-full", "px-4", "py-3", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "focus:ring-2", "focus:ring-red-400", "transition-all", "text-sm", 3, "ngModelChange", "ngModel"], ["type", "file", "accept", "image/*", 1, "w-full", "px-4", "py-2", "bg-gray-50", "border", "border-gray-200", "rounded-xl", "focus:outline-none", "text-sm", "text-gray-500", "file:mr-4", "file:py-2", "file:px-4", "file:rounded-full", "file:border-0", "file:text-sm", "file:font-semibold", "file:bg-red-50", "file:text-red-700", "hover:file:bg-red-100", 3, "change"], [1, "pt-4"], [1, "flex", "items-start", "space-x-3", "cursor-pointer", "group"], [1, "relative", "flex", "items-center", "justify-center", "mt-0.5"], ["type", "checkbox", 1, "peer", "sr-only", 3, "ngModelChange", "ngModel"], [1, "w-5", "h-5", "border-2", "border-red-300", "rounded", "bg-white", "peer-checked:bg-red-500", "peer-checked:border-red-500", "transition-colors", "flex", "items-center", "justify-center"], [1, "material-icons-outlined", "text-white", "text-[14px]", "opacity-0", "peer-checked:opacity-100"], [1, "text-sm", "font-medium", "text-gray-700", "select-none"], ["href", "javascript:void(0)", 1, "text-blue-500", "underline", "ml-1"], [1, "px-5", "py-2.5", "text-gray-600", "font-bold", "hover:bg-gray-200", "rounded-xl", "transition-colors", "text-sm", 3, "click"], [1, "px-5", "py-2.5", "bg-red-500", "text-white", "font-bold", "rounded-xl", "hover:bg-red-600", "transition-colors", "shadow-sm", "text-sm", "disabled:opacity-50", "flex", "items-center", 3, "click", "disabled"], [1, "p-6", "overflow-y-auto", "space-y-6"], [1, "text-sm", "font-bold", "text-gray-500", "mb-1"], [1, "text-sm", "font-normal", "text-gray-500", "ml-2"], [1, "text-sm", "font-medium", "text-gray-800"], [1, "text-sm", "font-medium", "text-red-600"], [1, "text-sm", "text-gray-700", "bg-red-50", "p-3", "rounded-lg", "border", "border-red-100"], [1, "px-6", "py-4", "border-t", "border-gray-100", "flex", "justify-end", "bg-gray-50"], [1, "px-5", "py-2.5", "bg-gray-800", "text-white", "font-bold", "hover:bg-gray-900", "rounded-xl", "transition-colors", "text-sm", 3, "click"], [1, "text-sm", "font-bold", "text-gray-500", "mb-2"], [1, "w-full", "bg-gray-100", "rounded-xl", "overflow-hidden", "border", "border-gray-200", "flex", "items-center", "justify-center", "min-h-[200px]"], ["alt", "Evidencia", 1, "max-w-full", "h-auto", "object-contain", 3, "src"], [1, "text-sm", "text-gray-400", "italic"]], template: function DashboardComponent_Template(rf, ctx) {
     if (rf & 1) {
-      \u0275\u0275elementStart(0, "div", 0)(1, "aside", 1)(2, "div", 2);
-      \u0275\u0275element(3, "img", 3);
-      \u0275\u0275elementStart(4, "h2", 4)(5, "span", 5);
-      \u0275\u0275text(6, "ULA");
+      \u0275\u0275elementStart(0, "div", 0);
+      \u0275\u0275template(1, DashboardComponent_div_1_Template, 1, 0, "div", 1);
+      \u0275\u0275elementStart(2, "aside", 2)(3, "div", 3);
+      \u0275\u0275element(4, "img", 4);
+      \u0275\u0275elementStart(5, "h2", 5)(6, "span", 6);
+      \u0275\u0275text(7, "ULA");
       \u0275\u0275elementEnd();
-      \u0275\u0275text(7, " INVENTARIO");
+      \u0275\u0275text(8, " INVENTARIO");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(8, "p", 6);
-      \u0275\u0275text(9, "Registro de bienes");
+      \u0275\u0275elementStart(9, "p", 7);
+      \u0275\u0275text(10, "Registro de bienes");
       \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(10, "div", 7)(11, "p", 8);
-      \u0275\u0275text(12, "Menu Principal");
+      \u0275\u0275elementStart(11, "div", 8)(12, "p", 9);
+      \u0275\u0275text(13, "Menu Principal");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(13, "nav", 9)(14, "a", 10)(15, "span", 11);
-      \u0275\u0275text(16, "home");
+      \u0275\u0275elementStart(14, "nav", 10)(15, "a", 11);
+      \u0275\u0275listener("click", function DashboardComponent_Template_a_click_15_listener() {
+        return ctx.switchView("inicio");
+      });
+      \u0275\u0275elementStart(16, "span", 12);
+      \u0275\u0275text(17, "home");
       \u0275\u0275elementEnd();
-      \u0275\u0275text(17, " Inicio ");
+      \u0275\u0275text(18, " Inicio ");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(18, "a", 12)(19, "span", 11);
-      \u0275\u0275text(20, "inventory");
+      \u0275\u0275elementStart(19, "a", 11);
+      \u0275\u0275listener("click", function DashboardComponent_Template_a_click_19_listener() {
+        return ctx.switchView("inventario");
+      });
+      \u0275\u0275elementStart(20, "span", 12);
+      \u0275\u0275text(21, "inventory");
       \u0275\u0275elementEnd();
-      \u0275\u0275text(21, " Inventario ");
+      \u0275\u0275text(22, " Inventario ");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(22, "a", 12)(23, "span", 11);
-      \u0275\u0275text(24, "assessment");
+      \u0275\u0275elementStart(23, "a", 11);
+      \u0275\u0275listener("click", function DashboardComponent_Template_a_click_23_listener() {
+        return ctx.switchView("mantenimiento");
+      });
+      \u0275\u0275elementStart(24, "span", 12);
+      \u0275\u0275text(25, "build");
       \u0275\u0275elementEnd();
-      \u0275\u0275text(25, " Reportes ");
+      \u0275\u0275text(26, " Mantenimiento ");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(26, "a", 12)(27, "span", 11);
-      \u0275\u0275text(28, "delete_outline");
+      \u0275\u0275elementStart(27, "a", 11);
+      \u0275\u0275listener("click", function DashboardComponent_Template_a_click_27_listener() {
+        return ctx.switchView("desincorporacion");
+      });
+      \u0275\u0275elementStart(28, "span", 12);
+      \u0275\u0275text(29, "delete_outline");
       \u0275\u0275elementEnd();
-      \u0275\u0275text(29, " Desincorporaci\xF3n ");
+      \u0275\u0275text(30, " Desincorporaci\xF3n ");
+      \u0275\u0275elementEnd();
+      \u0275\u0275elementStart(31, "a", 11);
+      \u0275\u0275listener("click", function DashboardComponent_Template_a_click_31_listener() {
+        return ctx.switchView("reportes");
+      });
+      \u0275\u0275elementStart(32, "span", 12);
+      \u0275\u0275text(33, "history");
+      \u0275\u0275elementEnd();
+      \u0275\u0275text(34, " Bit\xE1cora ");
       \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(30, "p", 8);
-      \u0275\u0275text(31, "Configuraci\xF3n");
+      \u0275\u0275elementStart(35, "p", 9);
+      \u0275\u0275text(36, "Configuraci\xF3n");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(32, "nav", 13)(33, "a", 12)(34, "span", 11);
-      \u0275\u0275text(35, "settings");
+      \u0275\u0275elementStart(37, "nav", 13)(38, "a", 14)(39, "span", 12);
+      \u0275\u0275text(40, "settings");
       \u0275\u0275elementEnd();
-      \u0275\u0275text(36, " Sistema ");
+      \u0275\u0275text(41, " Sistema ");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(37, "a", 12)(38, "span", 11);
-      \u0275\u0275text(39, "people_alt");
+      \u0275\u0275elementStart(42, "a", 14)(43, "span", 12);
+      \u0275\u0275text(44, "people_alt");
       \u0275\u0275elementEnd();
-      \u0275\u0275text(40, " Usuarios ");
+      \u0275\u0275text(45, " Usuarios ");
       \u0275\u0275elementEnd()()();
-      \u0275\u0275elementStart(41, "div", 14)(42, "div", 15)(43, "div", 16)(44, "span", 17);
-      \u0275\u0275text(45, "person");
+      \u0275\u0275elementStart(46, "div", 15)(47, "div", 16)(48, "div", 17)(49, "span", 18);
+      \u0275\u0275text(50, "person");
       \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(46, "div", 18)(47, "p", 19);
-      \u0275\u0275text(48);
+      \u0275\u0275elementStart(51, "div", 19)(52, "p", 20);
+      \u0275\u0275text(53);
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(49, "p", 20);
-      \u0275\u0275text(50);
+      \u0275\u0275elementStart(54, "p", 21);
+      \u0275\u0275text(55);
       \u0275\u0275elementEnd()()()()();
-      \u0275\u0275elementStart(51, "main", 21)(52, "header", 22);
-      \u0275\u0275element(53, "div", 23);
-      \u0275\u0275elementStart(54, "div", 24)(55, "div", 25);
-      \u0275\u0275element(56, "input", 26);
-      \u0275\u0275elementStart(57, "span", 27);
-      \u0275\u0275text(58, "search");
-      \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(59, "button", 28)(60, "span", 17);
-      \u0275\u0275text(61, "notifications");
+      \u0275\u0275elementStart(56, "main", 22)(57, "header", 23)(58, "div", 16)(59, "button", 24);
+      \u0275\u0275listener("click", function DashboardComponent_Template_button_click_59_listener() {
+        return ctx.toggleSidebar();
+      });
+      \u0275\u0275elementStart(60, "span", 18);
+      \u0275\u0275text(61, "menu");
+      \u0275\u0275elementEnd()()();
+      \u0275\u0275element(62, "div", 25);
+      \u0275\u0275elementStart(63, "div", 26)(64, "div", 27)(65, "input", 28);
+      \u0275\u0275twoWayListener("ngModelChange", function DashboardComponent_Template_input_ngModelChange_65_listener($event) {
+        \u0275\u0275twoWayBindingSet(ctx.searchQuery, $event) || (ctx.searchQuery = $event);
+        return $event;
+      });
+      \u0275\u0275listener("input", function DashboardComponent_Template_input_input_65_listener() {
+        return ctx.onSearchInput();
+      });
       \u0275\u0275elementEnd();
-      \u0275\u0275element(62, "span", 29);
+      \u0275\u0275elementStart(66, "span", 29);
+      \u0275\u0275text(67, "search");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(63, "button", 30);
-      \u0275\u0275listener("click", function DashboardComponent_Template_button_click_63_listener() {
+      \u0275\u0275template(68, DashboardComponent_div_68_Template, 3, 1, "div", 30);
+      \u0275\u0275elementEnd();
+      \u0275\u0275elementStart(69, "button", 31);
+      \u0275\u0275listener("click", function DashboardComponent_Template_button_click_69_listener() {
+        ctx.switchView("mantenimiento");
+        return ctx.switchMantenimientoTab("alertas");
+      });
+      \u0275\u0275elementStart(70, "span", 18);
+      \u0275\u0275text(71, "notifications");
+      \u0275\u0275elementEnd();
+      \u0275\u0275template(72, DashboardComponent_span_72_Template, 2, 1, "span", 32);
+      \u0275\u0275elementEnd();
+      \u0275\u0275elementStart(73, "button", 33);
+      \u0275\u0275listener("click", function DashboardComponent_Template_button_click_73_listener() {
         return ctx.logout();
       });
-      \u0275\u0275elementStart(64, "span", 31);
-      \u0275\u0275text(65, "logout");
+      \u0275\u0275elementStart(74, "span", 34);
+      \u0275\u0275text(75, "logout");
       \u0275\u0275elementEnd();
-      \u0275\u0275text(66, " Salir ");
+      \u0275\u0275text(76, " Salir ");
       \u0275\u0275elementEnd()()();
-      \u0275\u0275elementStart(67, "div", 32)(68, "div", 33);
-      \u0275\u0275template(69, DashboardComponent_div_69_Template, 9, 7, "div", 34);
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(70, "div", 35)(71, "div", 36)(72, "div")(73, "h2", 37);
-      \u0275\u0275text(74, "Inventario total");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(75, "p", 38);
-      \u0275\u0275text(76, " Ordenar por fecha de registro ");
-      \u0275\u0275elementStart(77, "span", 39);
-      \u0275\u0275text(78, "swap_vert");
-      \u0275\u0275elementEnd()()();
-      \u0275\u0275elementStart(79, "div", 40)(80, "button", 41)(81, "span", 17);
-      \u0275\u0275text(82, "qr_code_scanner");
-      \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(83, "button", 42)(84, "span", 43);
-      \u0275\u0275text(85, "file_download");
-      \u0275\u0275elementEnd();
-      \u0275\u0275text(86, " Exportar ");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(87, "button", 44);
-      \u0275\u0275listener("click", function DashboardComponent_Template_button_click_87_listener() {
-        return ctx.toggleAddModal();
+      \u0275\u0275elementStart(77, "div", 35);
+      \u0275\u0275listener("scroll", function DashboardComponent_Template_div_scroll_77_listener($event) {
+        return ctx.onScroll($event);
       });
-      \u0275\u0275text(88, " + Agregar inventario ");
+      \u0275\u0275elementStart(78, "div", 36);
+      \u0275\u0275template(79, DashboardComponent_div_79_Template, 11, 10, "div", 37)(80, DashboardComponent_div_80_Template, 51, 16, "div", 38)(81, DashboardComponent_div_81_Template, 29, 2, "div", 38)(82, DashboardComponent_div_82_Template, 20, 16, "div", 39)(83, DashboardComponent_div_83_Template, 56, 24, "div", 39)(84, DashboardComponent_div_84_Template, 26, 3, "div", 40);
       \u0275\u0275elementEnd()()();
-      \u0275\u0275elementStart(89, "div", 45)(90, "table", 46)(91, "thead")(92, "tr", 47)(93, "th", 48);
-      \u0275\u0275text(94, "Inventario");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(95, "th", 48);
-      \u0275\u0275text(96, "C\xF3digo ID");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(97, "th", 48);
-      \u0275\u0275text(98, "Fecha");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(99, "th", 48);
-      \u0275\u0275text(100, "Descripci\xF3n");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(101, "th", 48);
-      \u0275\u0275text(102, "Ubicaci\xF3n");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(103, "th", 48);
-      \u0275\u0275text(104, "Categor\xEDa");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(105, "th", 48);
-      \u0275\u0275text(106, "Estado");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(107, "th", 49);
-      \u0275\u0275text(108, "Acci\xF3n");
-      \u0275\u0275elementEnd()()();
-      \u0275\u0275elementStart(109, "tbody", 50);
-      \u0275\u0275template(110, DashboardComponent_tr_110_Template, 27, 15, "tr", 51);
-      \u0275\u0275elementEnd()()();
-      \u0275\u0275elementStart(111, "div", 52)(112, "button", 53)(113, "span", 54);
-      \u0275\u0275text(114, "chevron_left");
-      \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(115, "button", 55);
-      \u0275\u0275text(116, "1");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(117, "button", 56);
-      \u0275\u0275text(118, "2");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(119, "button", 56);
-      \u0275\u0275text(120, "3");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(121, "button", 56);
-      \u0275\u0275text(122, "4");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(123, "button", 56);
-      \u0275\u0275text(124, "5");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(125, "button", 53)(126, "span", 54);
-      \u0275\u0275text(127, "chevron_right");
-      \u0275\u0275elementEnd()()()()()();
-      \u0275\u0275template(128, DashboardComponent_div_128_Template, 119, 20, "div", 57);
+      \u0275\u0275template(85, DashboardComponent_div_85_Template, 132, 21, "div", 40)(86, DashboardComponent_div_86_Template, 50, 5, "div", 40)(87, DashboardComponent_div_87_Template, 38, 10, "div", 40);
       \u0275\u0275elementEnd();
     }
     if (rf & 2) {
-      \u0275\u0275advance(48);
+      \u0275\u0275advance();
+      \u0275\u0275property("ngIf", ctx.isSidebarOpen);
+      \u0275\u0275advance();
+      \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(21, _c0, ctx.isSidebarOpen, !ctx.isSidebarOpen));
+      \u0275\u0275advance(13);
+      \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(24, _c1, ctx.currentView === "inicio", ctx.currentView !== "inicio"));
+      \u0275\u0275advance(4);
+      \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(27, _c1, ctx.currentView === "inventario", ctx.currentView !== "inventario"));
+      \u0275\u0275advance(4);
+      \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(30, _c1, ctx.currentView === "mantenimiento", ctx.currentView !== "mantenimiento"));
+      \u0275\u0275advance(4);
+      \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(33, _c1, ctx.currentView === "desincorporacion", ctx.currentView !== "desincorporacion"));
+      \u0275\u0275advance(4);
+      \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(36, _c1, ctx.currentView === "reportes", ctx.currentView !== "reportes"));
+      \u0275\u0275advance(22);
       \u0275\u0275textInterpolate((ctx.user == null ? null : ctx.user.nombre) || "Usuario");
       \u0275\u0275advance(2);
       \u0275\u0275textInterpolate((ctx.user == null ? null : ctx.user.rol) || "Admin");
-      \u0275\u0275advance(19);
-      \u0275\u0275property("ngForOf", ctx.stats);
-      \u0275\u0275advance(41);
-      \u0275\u0275property("ngForOf", ctx.inventory);
-      \u0275\u0275advance(18);
+      \u0275\u0275advance(10);
+      \u0275\u0275twoWayProperty("ngModel", ctx.searchQuery);
+      \u0275\u0275advance(3);
+      \u0275\u0275property("ngIf", ctx.showAutocomplete);
+      \u0275\u0275advance(4);
+      \u0275\u0275property("ngIf", ctx.alertasMantenimiento.length > 0);
+      \u0275\u0275advance(7);
+      \u0275\u0275property("ngIf", ctx.currentView === "inicio");
+      \u0275\u0275advance();
+      \u0275\u0275property("ngIf", ctx.currentView === "inventario");
+      \u0275\u0275advance();
+      \u0275\u0275property("ngIf", ctx.currentView === "desincorporacion");
+      \u0275\u0275advance();
+      \u0275\u0275property("ngIf", ctx.currentView === "mantenimiento");
+      \u0275\u0275advance();
+      \u0275\u0275property("ngIf", ctx.currentView === "reportes");
+      \u0275\u0275advance();
+      \u0275\u0275property("ngIf", ctx.showFinalizarModal);
+      \u0275\u0275advance();
       \u0275\u0275property("ngIf", ctx.showAddModal);
+      \u0275\u0275advance();
+      \u0275\u0275property("ngIf", ctx.showDesincorporarModal);
+      \u0275\u0275advance();
+      \u0275\u0275property("ngIf", ctx.showDetailsModal);
     }
-  }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, DatePipe, FormsModule, NgSelectOption, \u0275NgSelectMultipleOption, DefaultValueAccessor, SelectControlValueAccessor, NgControlStatus, NgModel], encapsulation: 2 });
+  }, dependencies: [CommonModule, NgClass, NgForOf, NgIf, SlicePipe, DatePipe, FormsModule, NgSelectOption, \u0275NgSelectMultipleOption, DefaultValueAccessor, CheckboxControlValueAccessor, SelectControlValueAccessor, NgControlStatus, NgModel], encapsulation: 2 });
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "src/app/pages/dashboard/dashboard.component.ts", lineNumber: 14 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "src\\app\\pages\\dashboard\\dashboard.component.ts", lineNumber: 15 });
 })();
 
 // src/app/guards/auth.guard.ts
@@ -42619,19 +44203,133 @@ var appConfig = {
   ]
 };
 
-// src/app/app.component.ts
-var AppComponent = class _AppComponent {
-  static \u0275fac = function AppComponent_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _AppComponent)();
+// src/app/components/toasts/toasts.component.ts
+var _c02 = (a0, a1, a2) => ({ "bg-green-50 border-green-200 text-green-800": a0, "bg-red-50 border-red-200 text-red-800": a1, "bg-yellow-50 border-yellow-200 text-yellow-800": a2 });
+var _c15 = (a0, a1, a2) => ({ "text-green-500": a0, "text-red-500": a1, "text-yellow-500": a2 });
+function ToastsComponent_div_1_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 2)(1, "span", 3);
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "div", 4)(4, "p", 5);
+    \u0275\u0275text(5);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(6, "button", 6);
+    \u0275\u0275listener("click", function ToastsComponent_div_1_Template_button_click_6_listener() {
+      const toast_r2 = \u0275\u0275restoreView(_r1).$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.toastService.remove(toast_r2.id));
+    });
+    \u0275\u0275elementStart(7, "span", 7);
+    \u0275\u0275text(8, "close");
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const toast_r2 = ctx.$implicit;
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction3(4, _c02, toast_r2.type === "success", toast_r2.type === "error", toast_r2.type === "warning"));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction3(8, _c15, toast_r2.type === "success", toast_r2.type === "error", toast_r2.type === "warning"));
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", toast_r2.type === "success" ? "check_circle" : toast_r2.type === "error" ? "error_outline" : "warning", " ");
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(toast_r2.message);
+  }
+}
+var ToastsComponent = class _ToastsComponent {
+  toastService;
+  constructor(toastService) {
+    this.toastService = toastService;
+  }
+  static \u0275fac = function ToastsComponent_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _ToastsComponent)(\u0275\u0275directiveInject(ToastService));
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _AppComponent, selectors: [["app-root"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 1, vars: 0, template: function AppComponent_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ToastsComponent, selectors: [["app-toasts"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 3, vars: 3, consts: [[1, "fixed", "top-4", "right-4", "z-[9999]", "flex", "flex-col", "gap-2", "pointer-events-none"], ["class", "pointer-events-auto flex items-center p-4 min-w-[300px] max-w-sm rounded-xl shadow-lg border transform transition-all duration-300 translate-x-0 opacity-100", 3, "ngClass", 4, "ngFor", "ngForOf"], [1, "pointer-events-auto", "flex", "items-center", "p-4", "min-w-[300px]", "max-w-sm", "rounded-xl", "shadow-lg", "border", "transform", "transition-all", "duration-300", "translate-x-0", "opacity-100", 3, "ngClass"], [1, "material-icons-outlined", "mr-3", 3, "ngClass"], [1, "flex-1"], [1, "text-sm", "font-bold"], [1, "ml-4", "text-gray-400", "hover:text-gray-600", "focus:outline-none", 3, "click"], [1, "material-icons-outlined", "text-sm"]], template: function ToastsComponent_Template(rf, ctx) {
     if (rf & 1) {
-      \u0275\u0275element(0, "router-outlet");
+      \u0275\u0275elementStart(0, "div", 0);
+      \u0275\u0275template(1, ToastsComponent_div_1_Template, 9, 12, "div", 1);
+      \u0275\u0275pipe(2, "async");
+      \u0275\u0275elementEnd();
     }
-  }, dependencies: [RouterOutlet], encapsulation: 2 });
+    if (rf & 2) {
+      \u0275\u0275advance();
+      \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(2, 1, ctx.toastService.toasts$));
+    }
+  }, dependencies: [CommonModule, NgClass, NgForOf, AsyncPipe], encapsulation: 2 });
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "src/app/app.component.ts", lineNumber: 12 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ToastsComponent, { className: "ToastsComponent", filePath: "src\\app\\components\\toasts\\toasts.component.ts", lineNumber: 38 });
+})();
+
+// src/app/services/session.service.ts
+var SessionService = class _SessionService {
+  router;
+  authService;
+  toastService;
+  ngZone;
+  timeoutId;
+  warningId;
+  WARNING_TIME = 15 * 60 * 1e3;
+  // 15 mins
+  LOGOUT_TIME = 16 * 60 * 1e3;
+  // 16 mins
+  constructor(router, authService, toastService, ngZone) {
+    this.router = router;
+    this.authService = authService;
+    this.toastService = toastService;
+    this.ngZone = ngZone;
+    this.initListener();
+    this.resetTimer();
+  }
+  initListener() {
+    window.addEventListener("mousemove", () => this.resetTimer());
+    window.addEventListener("keydown", () => this.resetTimer());
+    window.addEventListener("click", () => this.resetTimer());
+    window.addEventListener("scroll", () => this.resetTimer());
+  }
+  resetTimer() {
+    if (!this.authService.token)
+      return;
+    clearTimeout(this.timeoutId);
+    clearTimeout(this.warningId);
+    this.ngZone.runOutsideAngular(() => {
+      this.warningId = setTimeout(() => {
+        this.ngZone.run(() => {
+          this.toastService.show("Atenci\xF3n: Su sesi\xF3n expirar\xE1 por inactividad en 1 minuto.", "warning");
+        });
+      }, this.WARNING_TIME);
+      this.timeoutId = setTimeout(() => {
+        this.ngZone.run(() => {
+          this.authService.logout();
+          this.toastService.show("Sesi\xF3n cerrada por inactividad.", "error");
+          this.router.navigate(["/login"]);
+        });
+      }, this.LOGOUT_TIME);
+    });
+  }
+  static \u0275fac = function SessionService_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _SessionService)(\u0275\u0275inject(Router), \u0275\u0275inject(AuthService), \u0275\u0275inject(ToastService), \u0275\u0275inject(NgZone));
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _SessionService, factory: _SessionService.\u0275fac, providedIn: "root" });
+};
+
+// src/app/app.component.ts
+var AppComponent = class _AppComponent {
+  sessionService;
+  constructor(sessionService) {
+    this.sessionService = sessionService;
+  }
+  static \u0275fac = function AppComponent_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(SessionService));
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _AppComponent, selectors: [["app-root"]], standalone: true, features: [\u0275\u0275StandaloneFeature], decls: 2, vars: 0, template: function AppComponent_Template(rf, ctx) {
+    if (rf & 1) {
+      \u0275\u0275element(0, "app-toasts")(1, "router-outlet");
+    }
+  }, dependencies: [RouterOutlet, ToastsComponent], encapsulation: 2 });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "src\\app\\app.component.ts", lineNumber: 17 });
 })();
 bootstrapApplication(AppComponent, appConfig).catch(console.error);
 
