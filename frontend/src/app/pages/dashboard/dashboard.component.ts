@@ -16,7 +16,26 @@ export class DashboardComponent implements OnInit {
   
   showAddModal = false;
   user: any = null;
-  inventory: any[] = [];
+  // --- Inventory Data & Infinite Scroll ---
+  allInventory: any[] = [];
+  filteredInventory: any[] = [];
+  displayedInventory: any[] = [];
+  pageSize = 12;
+  currentPage = 1;
+  isLoadingMore = false;
+
+  // --- Search & Filters ---
+  searchQuery = '';
+  searchResults: any[] = [];
+  showAutocomplete = false;
+  activeFilter: string | null = null;
+
+  // --- Sidebar ---
+  isSidebarOpen = false;
+
+  toggleSidebar() {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
   categorias: any[] = [];
   dependencias: any[] = [];
   encargados: any[] = [];
@@ -47,7 +66,7 @@ export class DashboardComponent implements OnInit {
   showDetailsModal = false;
   selectedItemDetails: any = null;
 
-  currentView: 'inventario' | 'desincorporacion' | 'mantenimiento' | 'reportes' = 'inventario';
+  currentView: 'inicio' | 'inventario' | 'desincorporacion' | 'mantenimiento' | 'reportes' = 'inicio';
   desincorporados: any[] = [];
 
   // --- Mantenimiento ---
@@ -62,7 +81,19 @@ export class DashboardComponent implements OnInit {
   finalizandoBienId: number | null = null;
   
   // --- Bitacora ---
+  allBitacoraLogs: any[] = [];
   bitacoraLogs: any[] = [];
+  displayedBitacoraLogs: any[] = [];
+  bitacoraPageSize = 10;
+  bitacoraCurrentPage = 1;
+  isLoadingMoreBitacora = false;
+  bitacoraFilter: string | null = null;
+  
+  // Bitacora KPIs
+  kpiTotalLogs = 0;
+  kpiMantenimientoLogs = 0;
+  kpiAltasLogs = 0;
+  kpiBajasLogs = 0;
 
   constructor(
     private authService: AuthService, 
@@ -92,14 +123,15 @@ export class DashboardComponent implements OnInit {
 
   loadInventory() {
     this.inventarioService.getBienes().subscribe((data: any) => {
-      this.inventory = data;
-      this.stats[0].value = this.inventory.length.toString();
-      this.stats[1].value = this.inventory.filter(i => i.estado_operativo === 'Activo').length.toString();
-      this.stats[2].value = this.inventory.filter(i => i.estado_operativo === 'Inactivo').length.toString();
-      this.stats[3].value = this.inventory.filter(i => i.estado_operativo === 'Mantenimiento').length.toString();
-      this.stats[4].value = this.inventory.filter(i => i.condicion_fisica === 'Buen estado').length.toString();
-      this.stats[5].value = this.inventory.filter(i => i.condicion_fisica === 'Regular').length.toString();
-      this.stats[6].value = this.inventory.filter(i => i.condicion_fisica === 'Mal estado').length.toString();
+      this.allInventory = data;
+      this.applyFilters();
+      this.stats[0].value = this.allInventory.length.toString();
+      this.stats[1].value = this.allInventory.filter((i: any) => i.estado_operativo === 'Activo').length.toString();
+      this.stats[2].value = this.allInventory.filter((i: any) => i.estado_operativo === 'Inactivo').length.toString();
+      this.stats[3].value = this.allInventory.filter((i: any) => i.estado_operativo === 'Mantenimiento').length.toString();
+      this.stats[4].value = this.allInventory.filter((i: any) => i.condicion_fisica === 'Buen estado').length.toString();
+      this.stats[5].value = this.allInventory.filter((i: any) => i.condicion_fisica === 'Regular').length.toString();
+      this.stats[6].value = this.allInventory.filter((i: any) => i.condicion_fisica === 'Mal estado').length.toString();
     });
     if (this.currentView === 'desincorporacion') {
       this.inventarioService.getBienesDesincorporados().subscribe((data: any) => {
@@ -121,10 +153,17 @@ export class DashboardComponent implements OnInit {
   }
 
   loadBitacora() {
-    this.inventarioService.getBitacora().subscribe((data: any) => this.bitacoraLogs = data);
+    this.inventarioService.getBitacora().subscribe((data: any) => {
+      this.allBitacoraLogs = data;
+      this.kpiTotalLogs = data.length;
+      this.kpiMantenimientoLogs = data.filter((log: any) => log.accion.includes('MANTENIMIENTO')).length;
+      this.kpiAltasLogs = data.filter((log: any) => log.accion === 'ALTA').length;
+      this.kpiBajasLogs = data.filter((log: any) => log.accion === 'DESINCORPORACION').length;
+      this.applyBitacoraFilter();
+    });
   }
 
-  switchView(view: 'inventario' | 'desincorporacion' | 'mantenimiento' | 'reportes') {
+  switchView(view: 'inicio' | 'inventario' | 'desincorporacion' | 'mantenimiento' | 'reportes') {
     this.currentView = view;
     this.loadInventory();
   }
@@ -313,5 +352,132 @@ export class DashboardComponent implements OnInit {
       old: diff[key].old,
       new: diff[key].new
     }));
+  }
+
+  // --- Filtering & Infinite Scroll ---
+  applyFilters() {
+    let result = this.allInventory;
+    
+    if (this.activeFilter) {
+      result = result.filter(item => item.estado_operativo === this.activeFilter);
+    }
+    
+    if (this.searchQuery && this.searchQuery.trim() !== '') {
+      const q = this.searchQuery.toLowerCase();
+      result = result.filter(item => 
+        (item.nombre && item.nombre.toLowerCase().includes(q)) || 
+        (item.codigo && item.codigo.toLowerCase().includes(q)) ||
+        (item.encargado?.nombre && item.encargado.nombre.toLowerCase().includes(q))
+      );
+    }
+    
+    this.filteredInventory = result;
+    this.currentPage = 1;
+    this.displayedInventory = this.filteredInventory.slice(0, this.pageSize);
+  }
+
+  onSearchInput() {
+    if (this.searchQuery && this.searchQuery.trim().length > 0) {
+      const q = this.searchQuery.toLowerCase();
+      this.searchResults = this.allInventory.filter(item => 
+        (item.nombre && item.nombre.toLowerCase().includes(q)) || 
+        (item.codigo && item.codigo.toLowerCase().includes(q)) ||
+        (item.encargado?.nombre && item.encargado.nombre.toLowerCase().includes(q))
+      ).slice(0, 5);
+      this.showAutocomplete = this.searchResults.length > 0;
+    } else {
+      this.searchResults = [];
+      this.showAutocomplete = false;
+    }
+    this.applyFilters();
+  }
+
+  selectSearchResult(item: any) {
+    this.searchQuery = item.codigo;
+    this.showAutocomplete = false;
+    this.applyFilters();
+  }
+
+  applyQuickFilter(status: string | null) {
+    if (this.activeFilter === status) {
+      this.activeFilter = null;
+    } else {
+      this.activeFilter = status;
+    }
+    this.applyFilters();
+  }
+
+  onScroll(event: any) {
+    const element = event.target;
+    if (element.scrollHeight - element.scrollTop - element.clientHeight < 50) {
+      if (this.currentView === 'inventario') {
+        this.loadMoreItems();
+      } else if (this.currentView === 'reportes') {
+        this.loadMoreBitacoraLogs();
+      }
+    }
+  }
+
+  loadMoreItems() {
+    if (this.isLoadingMore || this.displayedInventory.length >= this.filteredInventory.length) return;
+    
+    this.isLoadingMore = true;
+    setTimeout(() => {
+      this.currentPage++;
+      const nextItems = this.filteredInventory.slice(
+        (this.currentPage - 1) * this.pageSize, 
+        this.currentPage * this.pageSize
+      );
+      this.displayedInventory = [...this.displayedInventory, ...nextItems];
+      this.isLoadingMore = false;
+    }, 500); // simulated loading time
+  }
+
+  // --- Bitacora Filtering & Scroll ---
+  applyBitacoraFilter(filter?: string | null) {
+    if (filter !== undefined) {
+      if (this.bitacoraFilter === filter) {
+        this.bitacoraFilter = null;
+      } else {
+        this.bitacoraFilter = filter;
+      }
+    }
+    
+    let result = this.allBitacoraLogs;
+    if (this.bitacoraFilter === 'MANTENIMIENTO') {
+      result = result.filter(log => log.accion.includes('MANTENIMIENTO'));
+    } else if (this.bitacoraFilter === 'ALTA') {
+      result = result.filter(log => log.accion === 'ALTA');
+    } else if (this.bitacoraFilter === 'DESINCORPORACION') {
+      result = result.filter(log => log.accion === 'DESINCORPORACION');
+    } else if (this.bitacoraFilter === 'MODIFICACION') {
+      result = result.filter(log => log.accion === 'MODIFICACION');
+    }
+    
+    this.bitacoraLogs = result;
+    this.bitacoraCurrentPage = 1;
+    this.displayedBitacoraLogs = this.bitacoraLogs.slice(0, this.bitacoraPageSize);
+  }
+
+  onBitacoraScroll(event: any) {
+    const element = event.target;
+    if (element.scrollHeight - element.scrollTop - element.clientHeight < 50) {
+      this.loadMoreBitacoraLogs();
+    }
+  }
+
+  loadMoreBitacoraLogs() {
+    if (this.isLoadingMoreBitacora || this.displayedBitacoraLogs.length >= this.bitacoraLogs.length) return;
+    
+    this.isLoadingMoreBitacora = true;
+    setTimeout(() => {
+      this.bitacoraCurrentPage++;
+      const nextItems = this.bitacoraLogs.slice(
+        (this.bitacoraCurrentPage - 1) * this.bitacoraPageSize, 
+        this.bitacoraCurrentPage * this.bitacoraPageSize
+      );
+      this.displayedBitacoraLogs = [...this.displayedBitacoraLogs, ...nextItems];
+      this.isLoadingMoreBitacora = false;
+    }, 500);
   }
 }

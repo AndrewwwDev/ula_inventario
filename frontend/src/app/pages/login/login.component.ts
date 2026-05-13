@@ -17,11 +17,12 @@ export class LoginComponent {
   errorMessage = '';
   isLoading = false;
 
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(private router: Router, private authService: AuthService) { }
 
   togglePassword() {
     this.showPassword = !this.showPassword;
   }
+
 
   login() {
     if (this.id && this.password) {

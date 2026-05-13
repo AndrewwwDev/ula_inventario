@@ -1,0 +1,27 @@
+# Database Backups
+ula_Inventario_BD/backups/
+*.sql.gz
+
+# Node Modules
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Build Output
+dist/
+build/
+backend/dist/
+frontend/dist/
+.angular/
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Uploads
+backend/uploads/
+
+# OS Files
+.DS_Store
+Thumbs.db

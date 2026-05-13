@@ -61,6 +61,22 @@ services:
     depends_on:
       - backend
 
+  db_backup:
+    image: prodrigestivill/postgres-backup-local
+    container_name: ula_db_backup
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: 7
+    volumes:
+      - ./ula_Inventario_BD/backups:/backups
+
 volumes:
   db_data:
   backend_node_modules:
