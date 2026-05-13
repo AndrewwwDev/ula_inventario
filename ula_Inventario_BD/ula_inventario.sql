@@ -29,6 +29,7 @@ CREATE TABLE dependencias (
 CREATE TABLE encargados (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
+    cedula INT,
     cargo VARCHAR(100),
     telefono VARCHAR(20),
     email VARCHAR(100),
@@ -62,7 +63,12 @@ CREATE TABLE bienes (
     fecha_actualizacion TIMESTAMP DEFAULT NOW(),
     imagen_url TEXT,
     qr_code TEXT,
-    activo BOOLEAN DEFAULT TRUE
+    activo BOOLEAN DEFAULT TRUE,
+    motivo_desincorporacion TEXT,
+    fecha_desincorporacion DATE,
+    foto_desincorporacion TEXT,
+    condicion_fisica VARCHAR(50) DEFAULT 'Buen estado',
+    especificaciones_condicion TEXT
 );
 
 -- =======================
@@ -77,6 +83,34 @@ CREATE TABLE movimientos (
     destino_id INT REFERENCES dependencias(id),
     observaciones TEXT,
     id_usuario INT REFERENCES usuarios(id)
+);
+
+-- =======================
+-- Tabla de mantenimientos
+-- =======================
+CREATE TABLE mantenimientos (
+    id SERIAL PRIMARY KEY,
+    bien_id INT REFERENCES bienes(id) ON DELETE CASCADE,
+    fecha_inicio DATE,
+    fecha_fin DATE,
+    trabajo_realizado TEXT,
+    proxima_fecha DATE,
+    estado VARCHAR(50) DEFAULT 'En Reparación',
+    fecha_registro TIMESTAMP DEFAULT NOW()
+);
+
+-- =======================
+-- Tabla de bitacora
+-- =======================
+CREATE TABLE bitacora (
+    id SERIAL PRIMARY KEY,
+    usuario_id INT REFERENCES usuarios(id),
+    accion VARCHAR(100),
+    entidad VARCHAR(50),
+    entidad_id INT,
+    diff_visual JSON,
+    detalles TEXT,
+    fecha TIMESTAMP DEFAULT NOW()
 );
 
 -- =======================

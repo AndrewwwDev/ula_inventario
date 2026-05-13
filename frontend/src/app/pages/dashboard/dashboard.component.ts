@@ -13,7 +13,7 @@ import { ToastService } from '../../services/toast.service';
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
-  
+
   showAddModal = false;
   user: any = null;
   // --- Inventory Data & Infinite Scroll ---
@@ -74,12 +74,12 @@ export class DashboardComponent implements OnInit {
   alertasMantenimiento: any[] = [];
   enReparacion: any[] = [];
   historialMantenimiento: any[] = [];
-  
+
   showFinalizarModal = false;
   trabajoRealizado = '';
   proximaFechaMantenimiento = '';
   finalizandoBienId: number | null = null;
-  
+
   // --- Bitacora ---
   allBitacoraLogs: any[] = [];
   bitacoraLogs: any[] = [];
@@ -88,7 +88,7 @@ export class DashboardComponent implements OnInit {
   bitacoraCurrentPage = 1;
   isLoadingMoreBitacora = false;
   bitacoraFilter: string | null = null;
-  
+
   // Bitacora KPIs
   kpiTotalLogs = 0;
   kpiMantenimientoLogs = 0;
@@ -96,11 +96,11 @@ export class DashboardComponent implements OnInit {
   kpiBajasLogs = 0;
 
   constructor(
-    private authService: AuthService, 
+    private authService: AuthService,
     private router: Router,
     private inventarioService: InventarioService,
     public toastService: ToastService
-  ) {}
+  ) { }
 
   stats = [
     { label: 'Total de bienes', value: '0', icon: 'inventory_2', color: 'text-blue-500', bg: 'bg-blue-100' },
@@ -189,17 +189,19 @@ export class DashboardComponent implements OnInit {
     this.confirmarDesincorporacion = false;
     this.motivoDesincorporacion = '';
     this.fechaDesincorporacion = '';
-    this.newBien = { 
-      nombre: '', 
-      codigo: '', 
-      categoria_id: null, 
-      encargado_id: null, 
-      ubicacion_id: null, 
-      descripcion: '', 
+    this.newBien = {
+      nombre: '',
+      codigo: '',
+      categoria_id: null,
+      encargado_id: null,
+      ubicacion_id: null,
+      descripcion: '',
       estado_operativo: 'Activo',
       condicion_fisica: 'Buen estado',
-      especificaciones_condicion: ''
+      especificaciones_condicion: '',
+      imagen_url: ''
     };
+    this.selectedFile = null; // Reset selected file
     this.showAddModal = !this.showAddModal;
     if (this.showAddModal && this.categorias.length === 0) {
       this.loadDropdowns();
@@ -233,11 +235,21 @@ export class DashboardComponent implements OnInit {
       descripcion: item.descripcion || '',
       estado_operativo: item.estado_operativo,
       condicion_fisica: item.condicion_fisica || 'Buen estado',
-      especificaciones_condicion: item.especificaciones_condicion || ''
+      especificaciones_condicion: item.especificaciones_condicion || '',
+      imagen_url: item.imagen_url || ''
     };
+    this.selectedFile = null; // Reset selected file
     this.showAddModal = true;
     if (this.categorias.length === 0) {
       this.loadDropdowns();
+    }
+  }
+
+  selectedImageFile: File | null = null;
+
+  onImageSelected(event: any) {
+    if (event.target.files?.length) {
+      this.selectedImageFile = event.target.files[0];
     }
   }
 
@@ -249,20 +261,53 @@ export class DashboardComponent implements OnInit {
     this.isSubmitting = true;
 
     if (this.isEditMode && this.editingBienId) {
-      this.inventarioService.updateBien(this.editingBienId, this.newBien).subscribe({
-        next: () => {
-          this.isSubmitting = false;
-          this.showAddModal = false;
-          this.toastService.show('Guardado exitosamente', 'success');
-          this.loadInventory();
-        },
-        error: (err: any) => {
-          this.isSubmitting = false;
-          this.toastService.show('Error al actualizar: ' + (err.error?.message || err.message), 'error');
+      if (this.selectedImageFile) {
+        // Update with new image
+        const payload = new FormData();
+        Object.entries(this.newBien).forEach(([key, value]) => {
+          if (value !== null && value !== undefined && key !== 'imagen_url') { // Exclude imagen_url when uploading new image
+            payload.append(key, value.toString());
+          }
+        });
+        payload.append('imagen', this.selectedImageFile);
+        this.inventarioService.updateBienWithFile(this.editingBienId, payload).subscribe({
+          next: () => {
+            this.isSubmitting = false;
+            this.showAddModal = false;
+            this.toastService.show('Guardado exitosamente', 'success');
+            this.loadInventory();
+          },
+          error: (err: any) => {
+            this.isSubmitting = false;
+            this.toastService.show('Error al actualizar: ' + (err.error?.message || err.message), 'error');
+          }
+        });
+      } else {
+        // Update without new image
+        this.inventarioService.updateBien(this.editingBienId, this.newBien).subscribe({
+          next: () => {
+            this.isSubmitting = false;
+            this.showAddModal = false;
+            this.toastService.show('Guardado exitosamente', 'success');
+            this.loadInventory();
+          },
+          error: (err: any) => {
+            this.isSubmitting = false;
+            this.toastService.show('Error al actualizar: ' + (err.error?.message || err.message), 'error');
+          }
+        });
+      }
+    } else {
+      const payload = new FormData();
+      Object.entries(this.newBien).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          payload.append(key, value.toString());
         }
       });
-    } else {
-      this.inventarioService.createBien(this.newBien).subscribe({
+      if (this.selectedImageFile) {
+        payload.append('imagen', this.selectedImageFile);
+      }
+      this.inventarioService.createBien(payload).subscribe({
         next: () => {
           this.isSubmitting = false;
           this.showAddModal = false;
@@ -329,7 +374,7 @@ export class DashboardComponent implements OnInit {
       this.toastService.show('Por favor llene todos los campos', 'warning');
       return;
     }
-    
+
     this.isSubmitting = true;
     this.inventarioService.finalizarMantenimiento(this.finalizandoBienId, this.trabajoRealizado, this.proximaFechaMantenimiento).subscribe({
       next: () => {
@@ -357,20 +402,20 @@ export class DashboardComponent implements OnInit {
   // --- Filtering & Infinite Scroll ---
   applyFilters() {
     let result = this.allInventory;
-    
+
     if (this.activeFilter) {
       result = result.filter(item => item.estado_operativo === this.activeFilter);
     }
-    
+
     if (this.searchQuery && this.searchQuery.trim() !== '') {
       const q = this.searchQuery.toLowerCase();
-      result = result.filter(item => 
-        (item.nombre && item.nombre.toLowerCase().includes(q)) || 
+      result = result.filter(item =>
+        (item.nombre && item.nombre.toLowerCase().includes(q)) ||
         (item.codigo && item.codigo.toLowerCase().includes(q)) ||
         (item.encargado?.nombre && item.encargado.nombre.toLowerCase().includes(q))
       );
     }
-    
+
     this.filteredInventory = result;
     this.currentPage = 1;
     this.displayedInventory = this.filteredInventory.slice(0, this.pageSize);
@@ -379,8 +424,8 @@ export class DashboardComponent implements OnInit {
   onSearchInput() {
     if (this.searchQuery && this.searchQuery.trim().length > 0) {
       const q = this.searchQuery.toLowerCase();
-      this.searchResults = this.allInventory.filter(item => 
-        (item.nombre && item.nombre.toLowerCase().includes(q)) || 
+      this.searchResults = this.allInventory.filter(item =>
+        (item.nombre && item.nombre.toLowerCase().includes(q)) ||
         (item.codigo && item.codigo.toLowerCase().includes(q)) ||
         (item.encargado?.nombre && item.encargado.nombre.toLowerCase().includes(q))
       ).slice(0, 5);
@@ -420,12 +465,12 @@ export class DashboardComponent implements OnInit {
 
   loadMoreItems() {
     if (this.isLoadingMore || this.displayedInventory.length >= this.filteredInventory.length) return;
-    
+
     this.isLoadingMore = true;
     setTimeout(() => {
       this.currentPage++;
       const nextItems = this.filteredInventory.slice(
-        (this.currentPage - 1) * this.pageSize, 
+        (this.currentPage - 1) * this.pageSize,
         this.currentPage * this.pageSize
       );
       this.displayedInventory = [...this.displayedInventory, ...nextItems];
@@ -442,7 +487,7 @@ export class DashboardComponent implements OnInit {
         this.bitacoraFilter = filter;
       }
     }
-    
+
     let result = this.allBitacoraLogs;
     if (this.bitacoraFilter === 'MANTENIMIENTO') {
       result = result.filter(log => log.accion.includes('MANTENIMIENTO'));
@@ -453,7 +498,7 @@ export class DashboardComponent implements OnInit {
     } else if (this.bitacoraFilter === 'MODIFICACION') {
       result = result.filter(log => log.accion === 'MODIFICACION');
     }
-    
+
     this.bitacoraLogs = result;
     this.bitacoraCurrentPage = 1;
     this.displayedBitacoraLogs = this.bitacoraLogs.slice(0, this.bitacoraPageSize);
@@ -468,12 +513,12 @@ export class DashboardComponent implements OnInit {
 
   loadMoreBitacoraLogs() {
     if (this.isLoadingMoreBitacora || this.displayedBitacoraLogs.length >= this.bitacoraLogs.length) return;
-    
+
     this.isLoadingMoreBitacora = true;
     setTimeout(() => {
       this.bitacoraCurrentPage++;
       const nextItems = this.bitacoraLogs.slice(
-        (this.bitacoraCurrentPage - 1) * this.bitacoraPageSize, 
+        (this.bitacoraCurrentPage - 1) * this.bitacoraPageSize,
         this.bitacoraCurrentPage * this.bitacoraPageSize
       );
       this.displayedBitacoraLogs = [...this.displayedBitacoraLogs, ...nextItems];

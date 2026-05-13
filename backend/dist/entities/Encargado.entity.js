@@ -24,6 +24,10 @@ __decorate([
     __metadata("design:type", String)
 ], Encargado.prototype, "nombre", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'int', nullable: false }),
+    __metadata("design:type", Number)
+], Encargado.prototype, "cedula", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
     __metadata("design:type", String)
 ], Encargado.prototype, "cargo", void 0);

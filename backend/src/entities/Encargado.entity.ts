@@ -9,6 +9,9 @@ export class Encargado {
   @Column({ type: 'varchar', length: 150 })
   nombre: string;
 
+  @Column({ type: 'int', nullable: false })
+  cedula: number;
+
   @Column({ type: 'varchar', length: 100, nullable: true })
   cargo: string;
 

@@ -181,4 +181,27 @@ export class InventarioService {
     });
     await this.bitacoraRepo.save(log);
   }
+
+  async findBienesByEncargadoCedula(cedula: number) {
+    return this.bienRepo.createQueryBuilder('bien')
+      .leftJoinAndSelect('bien.categoria', 'categoria')
+      .leftJoinAndSelect('bien.encargado', 'encargado')
+      .leftJoinAndSelect('bien.ubicacion', 'ubicacion')
+      .where('encargado.cedula = :cedula', { cedula })
+      .andWhere('bien.activo = :activo', { activo: true })
+      .select([
+        'bien.id',
+        'bien.codigo',
+        'bien.nombre',
+        'bien.imagen_url',
+        'bien.estado_operativo',
+        'categoria.id',
+        'categoria.nombre',
+        'encargado.id',
+        'encargado.nombre',
+        'ubicacion.id',
+        'ubicacion.nombre'
+      ])
+      .getMany();
+  }
 }

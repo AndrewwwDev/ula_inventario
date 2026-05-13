@@ -10,6 +10,7 @@ exports.InventarioModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const inventario_controller_1 = require("./inventario.controller");
+const public_controller_1 = require("./public.controller");
 const inventario_service_1 = require("./inventario.service");
 const Bien_entity_1 = require("../entities/Bien.entity");
 const Categoria_entity_1 = require("../entities/Categoria.entity");
@@ -25,7 +26,7 @@ exports.InventarioModule = InventarioModule = __decorate([
         imports: [
             typeorm_1.TypeOrmModule.forFeature([Bien_entity_1.Bien, Categoria_entity_1.Categoria, Dependencia_entity_1.Dependencia, Encargado_entity_1.Encargado, Mantenimiento_entity_1.Mantenimiento, Bitacora_entity_1.Bitacora])
         ],
-        controllers: [inventario_controller_1.InventarioController],
+        controllers: [inventario_controller_1.InventarioController, public_controller_1.PublicController],
         providers: [inventario_service_1.InventarioService]
     })
 ], InventarioModule);

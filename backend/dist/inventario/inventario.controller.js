@@ -19,6 +19,8 @@ const multer_1 = require("multer");
 const path_1 = require("path");
 const inventario_service_1 = require("./inventario.service");
 const passport_1 = require("@nestjs/passport");
+const multer = require('multer');
+const path_2 = require("path");
 let InventarioController = class InventarioController {
     constructor(inventarioService) {
         this.inventarioService = inventarioService;
@@ -26,10 +28,32 @@ let InventarioController = class InventarioController {
     async getBienes() {
         return this.inventarioService.findAllBienes();
     }
-    async createBien(body, req) {
+    async createBien(file, body, req) {
+        if (file) {
+            const sharp = require('sharp');
+            const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${(0, path_1.extname)(file.originalname)}`;
+            const outputPath = (0, path_2.join)(process.cwd(), 'uploads', filename);
+            await sharp(file.buffer)
+                .resize({ width: 1200, withoutEnlargement: true })
+                .jpeg({ quality: 80 })
+                .toFile(outputPath);
+            body.imagen_url = `/uploads/${filename}`;
+        }
+        console.log('Creando bien con datos:', body);
+        console.log('Operador ID:', req.user.id);
         return this.inventarioService.createBien(body, req.user.id);
     }
-    async updateBien(id, body) {
+    async updateBien(id, file, body) {
+        if (file) {
+            const sharp = require('sharp');
+            const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${(0, path_1.extname)(file.originalname)}`;
+            const outputPath = (0, path_2.join)(process.cwd(), 'uploads', filename);
+            await sharp(file.buffer)
+                .resize({ width: 1200, withoutEnlargement: true })
+                .jpeg({ quality: 80 })
+                .toFile(outputPath);
+            body.imagen_url = `/uploads/${filename}`;
+        }
         return this.inventarioService.updateBien(+id, body);
     }
     async getDesincorporados() {
@@ -74,19 +98,27 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], InventarioController.prototype, "getBienes", null);
 __decorate([
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('imagen', {
+        storage: multer.memoryStorage(),
+    })),
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Request)()),
+    __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, Object, Object]),
     __metadata("design:returntype", Promise)
 ], InventarioController.prototype, "createBien", null);
 __decorate([
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('imagen', {
+        storage: multer.memoryStorage(),
+    })),
     (0, common_1.Put)(':id'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], InventarioController.prototype, "updateBien", null);
 __decorate([

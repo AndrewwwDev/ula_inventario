@@ -29,6 +29,13 @@ export class InventarioService {
     return this.http.put<any>(`${this.apiUrl}/inventario/${id}`, data, { headers: this.getHeaders() });
   }
 
+  updateBienWithFile(id: number, data: FormData) {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${this.authService.token}`
+    });
+    return this.http.put<any>(`${this.apiUrl}/inventario/${id}`, data, { headers });
+  }
+
   getBienesDesincorporados() {
     return this.http.get<any[]>(`${this.apiUrl}/inventario/desincorporados`, { headers: this.getHeaders() });
   }
@@ -79,5 +86,10 @@ export class InventarioService {
   // --- BITACORA ---
   getBitacora() {
     return this.http.get<any[]>(`${this.apiUrl}/inventario/bitacora`, { headers: this.getHeaders() });
+  }
+
+  // --- PUBLIC ---
+  getBienesByEncargado(cedula: string) {
+    return this.http.get<any[]>(`${this.apiUrl}/public/bienes-por-encargado?cedula=${cedula}`);
   }
 }

@@ -27,4 +27,5 @@ export declare class InventarioService {
     finalizarMantenimiento(bienId: number, trabajo: string, proximaFecha: Date, usuarioId: number): Promise<Mantenimiento>;
     getBitacora(): Promise<Bitacora[]>;
     logAudit(usuarioId: number | null, accion: string, entidad: string, entidadId: number, diffVisual: any, detalles: string): Promise<void>;
+    findBienesByEncargadoCedula(cedula: number): Promise<Bien[]>;
 }

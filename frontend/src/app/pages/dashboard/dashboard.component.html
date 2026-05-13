@@ -180,8 +180,11 @@
             <tbody class="divide-y divide-gray-100">
               <tr *ngFor="let item of displayedInventory" class="hover:bg-gray-50/50 transition-colors">
                 <td class="py-3 px-4">
-                  <div class="w-10 h-10 bg-primary text-white rounded flex items-center justify-center">
-                    <span class="material-icons-outlined">inventory_2</span>
+                  <div class="w-10 h-10 rounded flex items-center justify-center overflow-hidden">
+                    <img *ngIf="item.imagen_url" [src]="'http://localhost:3000' + item.imagen_url" alt="Imagen del bien" class="w-full h-full object-cover">
+                    <div *ngIf="!item.imagen_url" class="w-10 h-10 bg-primary text-white rounded flex items-center justify-center">
+                      <span class="material-icons-outlined">inventory_2</span>
+                    </div>
                   </div>
                 </td>
                 <td class="py-3 px-4 text-sm font-medium text-gray-800">{{item.codigo}}</td>
@@ -538,10 +541,18 @@
           <div class="space-y-6">
             
             <!-- Image Upload -->
-            <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
-              <span class="material-icons-outlined text-primary text-4xl mb-2">image</span>
-              <p class="text-sm font-medium text-primary">Subir imagen: <span class="text-gray-500 font-normal">arrastra y suelta.</span></p>
-              <p class="text-xs text-gray-400 mt-1">PNG, JPG, GIF até 5MB</p>
+            <div class="space-y-4">
+              <label class="text-sm font-bold text-gray-700">Imagen del bien</label>
+              <div *ngIf="newBien.imagen_url" class="mb-4">
+                <p class="text-xs text-gray-500 mb-2">Imagen actual:</p>
+                <img [src]="'http://localhost:3000' + newBien.imagen_url" alt="Imagen actual" class="w-full h-32 object-cover rounded-lg border border-gray-200">
+              </div>
+              <div *ngIf="!newBien.imagen_url" class="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                <span class="material-icons-outlined text-primary text-3xl mb-2">image</span>
+                <p class="text-sm font-medium text-primary">{{ newBien.imagen_url ? 'Cambiar imagen' : 'Subir imagen' }}: <span class="text-gray-500 font-normal">selecciona un archivo.</span></p>
+                <p class="text-xs text-gray-400 mt-1">PNG o JPG < 5MB</p>
+                <input type="file" (change)="onImageSelected($event)" accept="image/*" class="mt-2" />
+              </div>
             </div>
 
             <!-- Nombre del bien -->

@@ -3,8 +3,8 @@ export declare class InventarioController {
     private inventarioService;
     constructor(inventarioService: InventarioService);
     getBienes(): Promise<import("../entities/Bien.entity").Bien[]>;
-    createBien(body: any, req: any): Promise<import("../entities/Bien.entity").Bien[]>;
-    updateBien(id: string, body: any): Promise<import("../entities/Bien.entity").Bien>;
+    createBien(file: any, body: any, req: any): Promise<import("../entities/Bien.entity").Bien[]>;
+    updateBien(id: string, file: any, body: any): Promise<import("../entities/Bien.entity").Bien>;
     getDesincorporados(): Promise<import("../entities/Bien.entity").Bien[]>;
     desincorporarBien(id: string, body: any, file: any): Promise<import("../entities/Bien.entity").Bien>;
     getCategorias(): Promise<import("../entities/Categoria.entity").Categoria[]>;
