@@ -25,3 +25,30 @@ backend/uploads/
 # OS Files
 .DS_Store
 Thumbs.db
+
+
+# 1. Archivos de Base de Datos y Backups (Para evitar el error Fatal)
+*.sql
+*.gz
+*.zip
+ula_Inventario_BD/backups/
+ula_inventario-latest.sql.gz
+
+# 2. Credenciales y Variables de Entorno (¡Crítico para tu seguridad!)
+.env
+.env.*
+*.local
+
+# 3. Dependencias de Node/Angular (Pesan muchísimo y se generan solas)
+node_modules/
+
+# 4. Archivos de compilación, logs y caché de Angular
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log*
+*.log
+
+# 5. Archivos del Sistema Operativo
+.DS_Store
+Thumbs.db

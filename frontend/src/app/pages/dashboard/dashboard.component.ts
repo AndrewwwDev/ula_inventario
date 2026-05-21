@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -57,6 +57,23 @@ export class DashboardComponent implements OnInit {
   isEditMode = false;
   editingBienId: number | null = null;
 
+  scannerActive = false;
+
+  simulateScanner() {
+    this.scannerActive = true;
+    setTimeout(() => {
+      this.scannerActive = false;
+      if (this.allInventory.length > 0) {
+        const randomItem = this.allInventory[Math.floor(Math.random() * this.allInventory.length)];
+        this.searchQuery = randomItem.codigo;
+        this.onSearchInput();
+        this.toastService.show(`Código ${randomItem.codigo} escaneado con éxito`, 'success');
+      } else {
+        this.toastService.show('No hay bienes para escanear', 'warning');
+      }
+    }, 1500);
+  }
+
   showDesincorporarModal = false;
   confirmarDesincorporacion = false;
   motivoDesincorporacion = '';
@@ -64,6 +81,8 @@ export class DashboardComponent implements OnInit {
   selectedFile: File | null = null;
 
   showDetailsModal = false;
+  isDetallesBienModalOpen = false;
+  selectedBienDetails: any = null;
   selectedItemDetails: any = null;
 
   currentView: 'inicio' | 'inventario' | 'desincorporacion' | 'mantenimiento' | 'reportes' = 'inicio';
@@ -255,7 +274,7 @@ export class DashboardComponent implements OnInit {
 
   saveBien() {
     if (!this.newBien.nombre || !this.newBien.codigo) {
-      alert('Por favor llene los campos requeridos (Nombre, Código)');
+      alert('Por favor llene los campos requeridos (Nombre, CÃ³digo)');
       return;
     }
     this.isSubmitting = true;
@@ -325,15 +344,15 @@ export class DashboardComponent implements OnInit {
   desincorporar() {
     if (!this.editingBienId) return;
     if (!this.motivoDesincorporacion || this.motivoDesincorporacion.trim() === '') {
-      alert('Debe especificar un motivo para la desincorporación.');
+      alert('Debe especificar un motivo para la desincorporaciÃ³n.');
       return;
     }
     if (!this.fechaDesincorporacion) {
-      alert('Debe especificar la fecha de desincorporación.');
+      alert('Debe especificar la fecha de desincorporaciÃ³n.');
       return;
     }
     if (!this.selectedFile) {
-      alert('Debe adjuntar una fotografía del bien.');
+      alert('Debe adjuntar una fotografÃ­a del bien.');
       return;
     }
 
@@ -354,6 +373,17 @@ export class DashboardComponent implements OnInit {
   openDetailsModal(item: any) {
     this.selectedItemDetails = item;
     this.showDetailsModal = true;
+  }
+
+  
+  openDetallesBienModal(bien: any) {
+    this.selectedBienDetails = bien;
+    this.isDetallesBienModalOpen = true;
+  }
+
+  closeDetallesBienModal() {
+    this.isDetallesBienModalOpen = false;
+    this.selectedBienDetails = null;
   }
 
   closeDetailsModal() {
@@ -380,12 +410,12 @@ export class DashboardComponent implements OnInit {
       next: () => {
         this.isSubmitting = false;
         this.showFinalizarModal = false;
-        this.toastService.show('Reincorporado con éxito', 'success');
+        this.toastService.show('Reincorporado con Ã©xito', 'success');
         this.loadInventory();
       },
       error: (err: any) => {
         this.isSubmitting = false;
-        this.toastService.show('Fallo en la operación: ' + (err.error?.message || err.message), 'error');
+        this.toastService.show('Fallo en la operaciÃ³n: ' + (err.error?.message || err.message), 'error');
       }
     });
   }
@@ -526,3 +556,4 @@ export class DashboardComponent implements OnInit {
     }, 500);
   }
 }
+

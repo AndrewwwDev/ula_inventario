@@ -2,43 +2,6 @@ version: "3.9"
 name: ula_inventario
 
 services:
-  db:
-    image: postgres:16-alpine
-    container_name: ula_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: ula_backend
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      NODE_ENV: development
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: ${POSTGRES_USER}
-      DB_PASS: ${POSTGRES_PASSWORD}
-      DB_NAME: ${POSTGRES_DB}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRES_IN: 1d
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./backend:/app
-      - backend_node_modules:/app/node_modules
-    depends_on:
-      - db
-
   frontend:
     build:
       context: ./frontend
@@ -46,38 +9,13 @@ services:
     container_name: ula_frontend
     restart: unless-stopped
     environment:
-      API_URL: http://backend:3000
       NODE_ENV: development
     ports:
       - "4200:4200"
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
-
-# ESTA LÍNEA ES VITAL PARA QUE NO FALLE EN EL MAC:
     command: sh -c "npm install && chmod +x ./node_modules/.bin/ng && npm start"
-    
-
-    depends_on:
-      - backend
-
-  db_backup:
-    image: prodrigestivill/postgres-backup-local
-    container_name: ula_db_backup
-    restart: unless-stopped
-    depends_on:
-      - db
-    environment:
-      POSTGRES_HOST: db
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      SCHEDULE: "@daily"
-      BACKUP_KEEP_DAYS: 7
-    volumes:
-      - ./ula_Inventario_BD/backups:/backups
 
 volumes:
-  db_data:
-  backend_node_modules:
   frontend_node_modules:

@@ -1,46 +1,42 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, tap, catchError } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { SupabaseService } from './supabase.service';
+import { from, map, catchError, throwError, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = environment.apiUrl || 'http://localhost:3000/api';
-  private currentUserSubject = new BehaviorSubject<any>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
+  public currentUser$: Observable<any>;
 
-  constructor(private http: HttpClient) {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      this.currentUserSubject.next(JSON.parse(savedUser));
-    }
+  constructor(private supabase: SupabaseService) {
+    this.currentUser$ = this.supabase.user$;
   }
 
   login(usuario: string, contrasena: string) {
-    return this.http.post<any>(`${this.apiUrl}/auth/login`, { usuario, contrasena }).pipe(
-      tap((response: any) => {
-        if (response && response.access_token) {
-          localStorage.setItem('token', response.access_token);
-          localStorage.setItem('user', JSON.stringify(response.user));
-          this.currentUserSubject.next(response.user);
-        }
+    return from(this.supabase.auth.signInWithPassword({
+      email: usuario,
+      password: contrasena
+    })).pipe(
+      map(response => {
+        if (response.error) throw response.error;
+        return {
+          user: response.data.user,
+          access_token: response.data.session?.access_token
+        };
       })
     );
   }
 
-  logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    this.currentUserSubject.next(null);
+  async logout() {
+    await this.supabase.auth.signOut();
   }
 
   get token(): string | null {
-    return localStorage.getItem('token');
+    // Supabase handles session internally, but if needed:
+    return null; 
   }
 
   get currentUserValue() {
-    return this.currentUserSubject.value;
+    return this.supabase.user;
   }
 }
