@@ -1,0 +1,108 @@
+<div class="w-full">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    
+    <!-- Header -->
+    <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-gray-800">Gestión de Mantenimiento</h2>
+        <p class="text-sm text-gray-500 mt-1">Control de reparaciones y mantenimientos preventivos</p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-gray-100">
+      <button (click)="switchMantenimientoTab('alertas')" [ngClass]="{'border-primary text-primary font-bold': mantenimientoTab === 'alertas', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'alertas'}" class="px-6 py-4 border-b-2 transition-colors relative">
+        Alertas
+        <span *ngIf="alertasMantenimiento.length > 0" class="ml-2 bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-xs font-bold">{{ alertasMantenimiento.length }}</span>
+      </button>
+      <button (click)="switchMantenimientoTab('reparacion')" [ngClass]="{'border-primary text-primary font-bold': mantenimientoTab === 'reparacion', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'reparacion'}" class="px-6 py-4 border-b-2 transition-colors">
+        En Reparación
+      </button>
+      <button (click)="switchMantenimientoTab('historial')" [ngClass]="{'border-primary text-primary font-bold': mantenimientoTab === 'historial', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'historial'}" class="px-6 py-4 border-b-2 transition-colors">
+        Historial
+      </button>
+    </div>
+
+    <div class="p-6">
+      <!-- Tab: Alertas -->
+      <div *ngIf="mantenimientoTab === 'alertas'">
+        <div *ngIf="alertasMantenimiento.length === 0" class="text-center py-12 text-gray-500">No hay alertas de mantenimiento actuales.</div>
+        <table *ngIf="alertasMantenimiento.length > 0" class="w-full text-left">
+          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3">Bien</th><th class="py-3">Próxima Fecha</th><th class="py-3">Estado</th></tr></thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr *ngFor="let m of alertasMantenimiento">
+              <td class="py-3 text-sm">{{ m.bien?.nombre }} ({{ m.bien?.codigo_id }})</td>
+              <td class="py-3 text-sm text-red-500 font-bold">{{ m.proxima_fecha | date:'mediumDate' }}</td>
+              <td class="py-3"><span class="px-2.5 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-bold flex items-center w-max"><span class="material-icons-outlined text-[14px] mr-1">warning</span> Vencido</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tab: En Reparación -->
+      <div *ngIf="mantenimientoTab === 'reparacion'">
+        <div *ngIf="enReparacion.length === 0" class="text-center py-12 text-gray-500">No hay equipos en reparación.</div>
+        <table *ngIf="enReparacion.length > 0" class="w-full text-left">
+          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3">Código</th><th class="py-3">Nombre</th><th class="py-3">Ubicación</th><th class="py-3">Acciones</th></tr></thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr *ngFor="let item of enReparacion">
+              <!-- UI de Mantenimiento: Mantener estrictamente el diseño del ícono de admiración rojo -->
+              <td class="py-3 text-sm font-bold text-gray-800 flex items-center">
+                <span class="material-icons-outlined text-red-500 mr-2 text-[20px]" title="En reparación">error</span>
+                {{ item.codigo_id }}
+              </td>
+              <td class="py-3 text-sm">{{ item.nombre }}</td>
+              <td class="py-3 text-sm text-gray-500">{{ item.ubicacion }}</td>
+              <td class="py-3">
+                <button (click)="openFinalizarMantenimiento(item)" class="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary-hover transition-colors">Finalizar y Reincorporar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tab: Historial -->
+      <div *ngIf="mantenimientoTab === 'historial'">
+        <div *ngIf="historialMantenimiento.length === 0" class="text-center py-12 text-gray-500">No hay historial de mantenimientos.</div>
+        <table *ngIf="historialMantenimiento.length > 0" class="w-full text-left">
+          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3">Bien</th><th class="py-3">Motivo Falla</th><th class="py-3">Trabajo Realizado</th><th class="py-3">Fecha Salida</th></tr></thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr *ngFor="let m of historialMantenimiento">
+              <td class="py-3 text-sm font-bold">{{ m.bienes?.nombre || 'Bien ' + m.codigo_bien }} ({{ m.codigo_bien }})</td>
+              <td class="py-3 text-sm text-gray-600">{{ m.motivo_falla }}</td>
+              <td class="py-3 text-sm text-gray-600">{{ m.trabajo_realizado || 'N/A' }}</td>
+              <td class="py-3 text-sm">
+                <span *ngIf="m.fecha_salida">{{ m.fecha_salida | date:'mediumDate' }}</span>
+                <span *ngIf="!m.fecha_salida" class="text-yellow-600 font-bold">En Proceso</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Finalizar Mantenimiento -->
+<div *ngIf="showFinalizarModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h2 class="text-xl font-bold text-gray-800">Finalizar Mantenimiento</h2>
+      <button (click)="showFinalizarModal = false" class="text-gray-400 hover:text-gray-600 transition-colors"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div>
+        <label class="text-sm font-bold text-gray-700">Trabajo Realizado <span class="text-red-500">*</span></label>
+        <textarea [(ngModel)]="trabajoRealizado" rows="3" placeholder="Detalles de la reparación o mantenimiento..." class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
+      </div>
+      <div>
+        <label class="text-sm font-bold text-gray-700">Próxima Fecha de Mantenimiento <span class="text-red-500">*</span></label>
+        <input type="date" [(ngModel)]="proximaFechaMantenimiento" class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none">
+      </div>
+    </div>
+    <div class="px-6 py-4 border-t border-gray-100 flex justify-end space-x-3 bg-gray-50">
+      <button (click)="showFinalizarModal = false" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
+      <button (click)="finalizarMantenimiento()" [disabled]="!trabajoRealizado || !proximaFechaMantenimiento || isSubmitting" class="px-5 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50">Guardar y Reincorporar</button>
+    </div>
+  </div>
+</div>

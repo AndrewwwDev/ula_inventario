@@ -6,23 +6,30 @@
     <div class="flex flex-col items-center space-y-4">
       <img src="assets/logo.png" alt="Universidad de Los Andes" class="h-28 object-contain">
       <h1 class="text-3xl font-bold tracking-tight">
-        <span class="text-primary">ULA</span> <span class="text-gray-800">INVENTARIO</span>
+        <span class="text-primary">ULA </span> <span class="text-gray-800">INVENTARIO</span>
       </h1>
       <h2 class="text-xl font-medium text-gray-800 mt-2">Registro de bienes</h2>
     </div>
 
     <!-- Login Form -->
-    <form class="w-full space-y-6 mt-8" (ngSubmit)="login()">
+    <form class="w-full space-y-6 mt-8" (ngSubmit)="login()" #loginForm="ngForm">
 
-      <!-- Usuario Field -->
+      <!-- Usuario Field (Correo Electrónico) -->
       <div class="space-y-2">
         <label class="flex items-center text-sm font-semibold text-gray-700">
-          <span class="material-icons-outlined text-primary mr-2 text-xl">person</span>
-          Usuario
+          <span class="material-icons-outlined text-primary mr-2 text-xl">email</span>
+          Correo Electrónico
         </label>
-        <input type="text" name="id" [(ngModel)]="id" placeholder="ID"
-          class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow"
-          required>
+        <input type="email" name="id" [(ngModel)]="id" placeholder="correo@ejemplo.com"
+          class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow"
+          [ngClass]="{'border-red-500': emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched), 'border-gray-300': !(emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched))}"
+          required email #emailCtrl="ngModel">
+        <div *ngIf="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)"
+          class="text-red-500 text-xs mt-1 font-medium">
+          <div *ngIf="emailCtrl.errors?.['required']">El correo es obligatorio.</div>
+          <div *ngIf="emailCtrl.errors?.['email']">Ingrese un correo electrónico válido (ej. nombre&#64;dominio.com).
+          </div>
+        </div>
       </div>
 
       <!-- Password Field -->
@@ -33,15 +40,21 @@
         </label>
         <div class="relative">
           <input [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="password"
-            placeholder="No compartas tu contraseña con nadie!"
-            class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow"
-            required>
+            placeholder="Ingresa tu contraseña"
+            class="w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow"
+            [ngClass]="{'border-red-500': pwdCtrl.invalid && (pwdCtrl.dirty || pwdCtrl.touched), 'border-gray-300': !(pwdCtrl.invalid && (pwdCtrl.dirty || pwdCtrl.touched))}"
+            required minlength="4" #pwdCtrl="ngModel"> <!-- Validators.minLength(6) a (4) -->
           <button type="button" (click)="togglePassword()"
             class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
             <span class="material-icons-outlined">
               {{ showPassword ? 'visibility_off' : 'visibility' }}
             </span>
           </button>
+        </div>
+        <div *ngIf="pwdCtrl.invalid && (pwdCtrl.dirty || pwdCtrl.touched)"
+          class="text-red-500 text-xs mt-1 font-medium">
+          <div *ngIf="pwdCtrl.errors?.['required']">La contraseña es obligatoria.</div>
+          <div *ngIf="pwdCtrl.errors?.['minlength']">La contraseña debe tener al menos 4 caracteres.</div>
         </div>
       </div>
 
@@ -51,9 +64,9 @@
           class="mb-4 text-red-600 text-sm font-medium text-center bg-red-50 p-2 rounded-lg border border-red-200">
           {{ errorMessage }}
         </div>
-        <button type="submit" [disabled]="!id || !password || isLoading"
+        <button type="submit" [disabled]="loginForm.invalid || isLoading"
           class="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-          {{ isLoading ? 'CARGANDO...' : 'INICIO' }}
+          {{ isLoading ? 'CARGANDO...' : 'INICIAR SESIÓN' }}
         </button>
       </div>
 

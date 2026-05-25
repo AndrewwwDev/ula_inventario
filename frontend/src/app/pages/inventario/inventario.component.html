@@ -1,0 +1,459 @@
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+  
+  <!-- Header / Top Bar -->
+  <div class="flex justify-between items-center gap-4 mb-6">
+    <h2 class="text-lg font-bold text-gray-800 whitespace-nowrap hidden lg:block">Inventario total</h2>
+    <div class="flex-1 max-w-lg mx-auto relative w-full">
+      <input type="text" [(ngModel)]="searchQuery" (input)="onSearchInput()" placeholder="Buscar por Nombre, Código ID o Descripción..." class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-sm shadow-sm">
+      <span class="material-icons-outlined absolute right-3 top-2.5 text-gray-400 text-sm pointer-events-none">search</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button (click)="simulateScanner()" [disabled]="scannerActive" class="w-10 h-10 lg:w-12 lg:h-12 bg-teal-400 text-white rounded-full flex items-center justify-center hover:bg-teal-500 shadow-md transition-colors disabled:opacity-75 disabled:cursor-wait shrink-0">
+        <span class="material-icons-outlined" [class.animate-pulse]="scannerActive" [class.text-teal-100]="scannerActive">qr_code_scanner</span>
+      </button>
+      <button class="hidden lg:flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors whitespace-nowrap shrink-0">
+        <span class="material-icons-outlined mr-2 text-[18px]">file_download</span> Exportar
+      </button>
+      <button (click)="toggleAddModal()" class="flex items-center px-3 py-2 lg:px-4 lg:py-2 bg-primary text-white rounded-lg hover:bg-primary-hover font-bold text-sm transition-colors shadow-sm whitespace-nowrap shrink-0">
+        + <span class="hidden lg:inline ml-1">Agregar inventario</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto" (scroll)="onScroll($event)">
+    <table class="w-full min-w-[1000px] text-left border-collapse">
+      <thead>
+        <tr class="border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50/50">
+          <th class="py-3 px-4 w-16">Item</th>
+          <th class="py-3 px-4">Código ID</th>
+          <th class="py-3 px-4">Descripción</th>
+          
+          <th class="py-2 px-2 min-w-[140px] relative">
+            <input type="text" [(ngModel)]="filtroUbicacion" (input)="applyFilters()" placeholder="UBICACIÓN" class="bg-transparent border-none text-xs font-bold uppercase text-gray-500 focus:ring-0 w-full hover:bg-gray-100 rounded px-2 py-1 transition-colors placeholder-gray-500">
+          </th>
+          
+          <th class="py-2 px-2 min-w-[140px] relative">
+            <select [(ngModel)]="filtroCategoria" (change)="applyFilters()" class="bg-transparent border-none text-xs font-bold uppercase text-gray-500 focus:ring-0 cursor-pointer w-full appearance-none hover:bg-gray-100 rounded px-2 py-1 pr-6 transition-colors">
+              <option value="">CATEGORÍA (Todas)</option>
+              <option *ngFor="let cat of categorias" [value]="cat.id">{{ cat.nombre }}</option>
+            </select>
+          </th>
+          
+          <th class="py-2 px-2 min-w-[160px] relative">
+            <select [(ngModel)]="filtroEstado" (change)="applyFilters()" class="bg-transparent border-none text-xs font-bold uppercase text-gray-500 focus:ring-0 cursor-pointer w-full appearance-none hover:bg-gray-100 rounded px-2 py-1 pr-6 transition-colors">
+              <option value="">ESTADO (Todos)</option>
+              <option *ngFor="let est of cat_estados" [value]="est.id">{{ est.nombre }}</option>
+            </select>
+          </th>
+          
+          <th class="py-2 px-2 min-w-[150px] relative">
+            <select [(ngModel)]="filtroCondicion" (change)="applyFilters()" class="bg-transparent border-none text-xs font-bold uppercase text-gray-500 focus:ring-0 cursor-pointer w-full appearance-none hover:bg-gray-100 rounded px-2 py-1 pr-6 transition-colors">
+              <option value="">CONDICIÓN (Todas)</option>
+              <option value="Buen estado">Buen estado</option>
+              <option value="Regular">Regular</option>
+              <option value="Mal estado">Mal estado</option>
+            </select>
+          </th>
+          
+          <th class="py-3 px-4 text-center">Acción</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr *ngFor="let item of displayedInventory" (click)="abrirVistaPrevia(item)" class="hover:bg-gray-50 transition-colors group cursor-pointer">
+          <td class="py-3 px-4">
+            <div class="w-10 h-10 rounded flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm bg-white">
+              <img *ngIf="item.url_foto_principal" [src]="item.url_foto_principal" alt="Imagen del bien" class="w-full h-full object-cover">
+              <div *ngIf="!item.url_foto_principal" class="w-full h-full bg-blue-50 text-blue-500 flex items-center justify-center">
+                <span class="material-icons-outlined text-[20px]">inventory_2</span>
+              </div>
+            </div>
+          </td>
+          <td class="py-3 px-4 text-sm font-bold text-gray-800">{{item.codigo_id}}</td>
+          <td class="py-3 px-4">
+            <p class="text-sm font-semibold text-gray-800 line-clamp-1" title="{{item.nombre}}">{{item.nombre}}</p>
+            <p class="text-xs text-gray-500 line-clamp-1 mt-0.5" title="{{item.descripcion}}">{{item.descripcion || 'Sin descripción detallada'}}</p>
+          </td>
+          <td class="py-3 px-4 text-sm font-medium text-gray-700">{{item.ubicacion || 'N/A'}} <br> <span class="text-xs text-gray-400">{{item.area}}</span></td>
+          <td class="py-3 px-4 text-sm text-gray-600">{{item.categorias?.nombre || 'N/A'}}</td>
+          <td class="py-3 px-4">
+            <div class="px-2.5 py-1 rounded-md text-xs font-bold inline-flex items-center"
+                 [ngClass]="{
+                   'bg-green-50 text-green-700 border-green-200': item.cat_estados?.nombre === 'Activo',
+                   'bg-red-50 text-red-700 border-red-200': item.cat_estados?.nombre === 'Inactivo' || item.cat_estados?.nombre === 'Desincorporado',
+                   'bg-yellow-50 text-yellow-700 border-yellow-200': item.cat_estados?.nombre === 'Mantenimiento' || item.cat_estados?.nombre === 'Faltante',
+                   'bg-gray-50 text-gray-700 border-gray-200': !['Activo','Inactivo','Desincorporado','Mantenimiento','Faltante'].includes(item.cat_estados?.nombre)
+                 }">
+              <span class="w-1.5 h-1.5 rounded-full mr-1.5"
+                    [ngClass]="{
+                      'bg-green-500': item.cat_estados?.nombre === 'Activo',
+                      'bg-red-500': item.cat_estados?.nombre === 'Inactivo' || item.cat_estados?.nombre === 'Desincorporado',
+                      'bg-yellow-500': item.cat_estados?.nombre === 'Mantenimiento' || item.cat_estados?.nombre === 'Faltante',
+                      'bg-gray-400': !['Activo','Inactivo','Desincorporado','Mantenimiento','Faltante'].includes(item.cat_estados?.nombre)
+                    }"></span>
+              {{ item.cat_estados?.nombre || item.estado_id }}
+            </div>
+          </td>
+          <td class="py-3 px-4">
+            <div class="text-xs font-bold flex items-center"
+                 [ngClass]="{
+                   'text-teal-600': item.condicion_fisica === 'Buen estado',
+                   'text-yellow-600': item.condicion_fisica === 'Regular',
+                   'text-red-600': item.condicion_fisica === 'Mal estado'
+                 }">
+              {{ item.condicion_fisica }}
+            </div>
+          </td>
+          <td class="py-3 px-4">
+            <div class="flex items-center justify-center space-x-2 transition-opacity">
+              <button (click)="$event.stopPropagation(); openEditModal(item)" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-blue-100 hover:text-blue-600 transition-colors" title="Editar">
+                <span class="material-icons-outlined text-[18px]">edit</span>
+              </button>
+              <button (click)="$event.stopPropagation(); openMantenimientoModal(item)" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-orange-100 hover:text-orange-600 transition-colors" title="Enviar a Mantenimiento">
+                <span class="material-icons-outlined text-[18px]">build</span>
+              </button>
+              <button (click)="$event.stopPropagation(); openTrasladoModal(item)" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-purple-100 hover:text-purple-600 transition-colors" title="Trasladar">
+                <span class="material-icons-outlined text-[18px]">swap_horiz</span>
+              </button>
+              <button (click)="$event.stopPropagation(); openDesincorporarModal(item)" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors" title="Desincorporar">
+                <span class="material-icons-outlined text-[18px]">gavel</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="displayedInventory.length === 0 && !isLoadingMore" class="flex flex-col items-center justify-center py-12 text-center">
+    <span class="material-icons-outlined text-gray-300 text-5xl mb-3">search_off</span>
+    <h3 class="text-gray-500 font-medium text-lg">No se encontraron bienes</h3>
+  </div>
+</div>
+
+<!-- Modal Agregar Bien -->
+<div *ngIf="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+      <h2 class="text-xl font-bold text-gray-800">Agregar Nuevo Bien</h2>
+      <button (click)="cerrarModal()" class="text-gray-400 hover:text-gray-600 transition-colors"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="p-6 overflow-y-auto space-y-4">
+      <form (ngSubmit)="guardarBien()" #addForm="ngForm">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          
+          <div class="col-span-1 md:col-span-2 lg:col-span-1">
+            <label class="text-sm font-bold text-gray-700">Nombre del Equipo/Bien *</label>
+            <input type="text" [(ngModel)]="nuevoBien.nombre" name="nombre" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Código ID *</label>
+            <input type="text" [(ngModel)]="nuevoBien.codigo_id" name="codigo_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Categoría *</label>
+            <select [(ngModel)]="nuevoBien.categoria_id" name="categoria_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+              <option *ngFor="let cat of categorias" [value]="cat.id">{{cat.nombre}}</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Ubicación *</label>
+            <input type="text" [(ngModel)]="nuevoBien.ubicacion" name="ubicacion" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Área *</label>
+            <input type="text" [(ngModel)]="nuevoBien.area" name="area" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Responsable Cédula *</label>
+            <input type="text" [(ngModel)]="nuevoBien.responsable_cedula" name="responsable_cedula" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Estado *</label>
+            <select [(ngModel)]="nuevoBien.estado_id" name="estado_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+              <option value="" disabled selected>Seleccione estado</option>
+              <option *ngFor="let est of cat_estados" [value]="est.id">{{ est.nombre }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Condición Física *</label>
+            <select [(ngModel)]="nuevoBien.condicion_fisica" name="condicion_fisica" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+              <option value="Buen estado">Buen estado</option>
+              <option value="Regular">Regular</option>
+              <option value="Mal estado">Mal estado</option>
+            </select>
+          </div>
+          
+          <div class="col-span-1 md:col-span-2 lg:col-span-3">
+            <label class="text-sm font-bold text-gray-700">Descripción detallada</label>
+            <textarea [(ngModel)]="nuevoBien.descripcion" name="descripcion" class="w-full mt-1 px-4 py-2 border rounded-xl" rows="3"></textarea>
+          </div>
+
+          <div class="col-span-1 md:col-span-2 lg:col-span-3">
+            <label class="text-sm font-bold text-gray-700">Fotografía Principal</label>
+            <input type="file" (change)="onFileSelected($event)" accept="image/*" class="w-full mt-1 px-4 py-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-hover">
+          </div>
+        </div>
+        
+        <div class="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-100">
+          <button type="button" (click)="cerrarModal()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
+          <button type="submit" [disabled]="!addForm.valid || isSubmitting" class="px-5 py-2 bg-primary text-white font-bold rounded-xl disabled:opacity-50 flex items-center">
+            <span *ngIf="isSubmitting" class="material-icons-outlined animate-spin mr-2 text-sm">autorenew</span> Guardar Bien
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Bien -->
+<div *ngIf="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+      <h2 class="text-xl font-bold text-gray-800">Editar Bien Físico</h2>
+      <button (click)="cerrarModal()" class="text-gray-400 hover:text-gray-600 transition-colors"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="p-6 overflow-y-auto space-y-4">
+      <form (ngSubmit)="guardarEdicion()" #editForm="ngForm">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="col-span-1 md:col-span-2 lg:col-span-1">
+            <label class="text-sm font-bold text-gray-700">Nombre del Equipo/Bien *</label>
+            <input type="text" [(ngModel)]="editingBien.nombre" name="nombre" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Código ID *</label>
+            <input type="text" [(ngModel)]="editingBien.codigo_id" name="codigo_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required disabled>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Categoría *</label>
+            <select [(ngModel)]="editingBien.categoria_id" name="categoria_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+              <option *ngFor="let cat of categorias" [value]="cat.id">{{cat.nombre}}</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Ubicación *</label>
+            <input type="text" [(ngModel)]="editingBien.ubicacion" name="ubicacion" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Área *</label>
+            <input type="text" [(ngModel)]="editingBien.area" name="area" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Responsable Cédula *</label>
+            <input type="text" [(ngModel)]="editingBien.responsable_cedula" name="responsable_cedula" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Estado *</label>
+            <select [(ngModel)]="editingBien.estado_id" name="estado_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+              <option value="" disabled selected>Seleccione estado</option>
+              <option *ngFor="let est of cat_estados" [value]="est.id">{{ est.nombre }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Condición Física *</label>
+            <select [(ngModel)]="editingBien.condicion_fisica" name="condicion_fisica" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+              <option value="Buen estado">Buen estado</option>
+              <option value="Regular">Regular</option>
+              <option value="Mal estado">Mal estado</option>
+            </select>
+          </div>
+          
+          <div class="col-span-1 md:col-span-2 lg:col-span-3">
+            <label class="text-sm font-bold text-gray-700">Descripción detallada</label>
+            <textarea [(ngModel)]="editingBien.descripcion" name="descripcion" class="w-full mt-1 px-4 py-2 border rounded-xl" rows="3"></textarea>
+          </div>
+
+          <div class="col-span-1 md:col-span-2 lg:col-span-3">
+            <label class="text-sm font-bold text-gray-700">Actualizar Fotografía Principal</label>
+            <input type="file" (change)="onFileSelected($event)" accept="image/*" class="w-full mt-1 px-4 py-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-hover">
+          </div>
+        </div>
+        
+        <div class="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-100">
+          <button type="button" (click)="cerrarModal()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
+          <button type="submit" [disabled]="!editForm.valid || isSubmitting" class="px-5 py-2 bg-primary text-white font-bold rounded-xl disabled:opacity-50 flex items-center">
+             <span *ngIf="isSubmitting" class="material-icons-outlined animate-spin mr-2 text-sm">autorenew</span> Actualizar Bien
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Desincorporar -->
+<div *ngIf="showDesincorporarModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] border-t-8 border-red-500">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+      <h2 class="text-xl font-bold text-gray-800 flex items-center">
+        <span class="material-icons-outlined text-red-500 mr-2">gavel</span> Desincorporar Bien
+      </h2>
+      <button (click)="cerrarModal()" class="text-gray-400 hover:text-gray-600 transition-colors"><span class="material-icons-outlined">close</span></button>
+    </div>
+    
+    <div class="p-6 overflow-y-auto space-y-4">
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <p class="text-sm text-gray-500">Equipo a desincorporar:</p>
+        <p class="text-lg font-bold text-gray-800">{{bienADesincorporar?.nombre}}</p>
+        <p class="text-sm font-mono text-gray-600">ID: {{bienADesincorporar?.codigo_id}}</p>
+      </div>
+
+      <form (ngSubmit)="desincorporar()" #desincForm="ngForm" class="space-y-4">
+        <div>
+          <label class="text-sm font-bold text-gray-700">Motivo / Justificación *</label>
+          <textarea [(ngModel)]="motivoDesincorporacion" name="motivo" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-red-500 focus:border-red-500" rows="3" required></textarea>
+        </div>
+        <div>
+          <label class="text-sm font-bold text-gray-700">Fotografía de Evidencia (Obligatoria) *</label>
+          <input type="file" (change)="onFileSelected($event)" accept="image/*" class="w-full mt-1 px-4 py-2 border rounded-xl text-sm" required>
+        </div>
+
+        <div class="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-100">
+          <button type="button" (click)="cerrarModal()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
+          <button type="submit" [disabled]="!desincForm.valid || !selectedFile || isSubmitting" class="px-5 py-2 bg-red-600 text-white font-bold rounded-xl disabled:opacity-50 hover:bg-red-700 flex items-center">
+             Confirmar Desincorporación
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Gestión de Traslados -->
+<div *ngIf="showTrasladoModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] border-t-8 border-purple-500">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+      <h2 class="text-xl font-bold text-gray-800 flex items-center">
+        <span class="material-icons-outlined text-purple-500 mr-2">swap_horiz</span> Gestión de Traslados
+      </h2>
+      <button (click)="cerrarModal()" class="text-gray-400 hover:text-gray-600 transition-colors"><span class="material-icons-outlined">close</span></button>
+    </div>
+    
+    <div class="p-6 overflow-y-auto space-y-6">
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center gap-4">
+        <div>
+          <p class="text-sm text-gray-500 font-bold">Equipo a trasladar:</p>
+          <p class="text-lg font-bold text-gray-800 leading-tight">{{bienATrasladar?.nombre}}</p>
+          <p class="text-sm font-mono text-gray-600">Código ID: {{bienATrasladar?.codigo_id}}</p>
+        </div>
+      </div>
+
+      <form (ngSubmit)="confirmarTraslado()" #trasladoForm="ngForm" class="space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm font-bold text-gray-700">Ubicación Destino *</label>
+            <input type="text" [(ngModel)]="datosTraslado.ubicacion" name="ubicacion" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Área Destino *</label>
+            <input type="text" [(ngModel)]="datosTraslado.area" name="area" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Cédula del Nuevo Encargado *</label>
+            <input type="text" [(ngModel)]="datosTraslado.responsable_cedula" name="responsable_cedula" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-100">
+          <button type="button" (click)="cerrarModal()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
+          <button type="submit" [disabled]="!trasladoForm.valid || isSubmitting" class="px-5 py-2 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-50 hover:bg-purple-700 flex items-center transition-colors shadow-sm">
+             Generar Comprobante
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Vista Previa -->
+<div *ngIf="showVistaPreviaModal && bienSeleccionado" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+      <h2 class="text-xl font-bold text-gray-800">Detalles del Bien</h2>
+      <button (click)="cerrarVistaPrevia()" class="text-gray-400 hover:text-gray-600"><span class="material-icons-outlined text-2xl">close</span></button>
+    </div>
+    
+    <div class="p-6 overflow-y-auto space-y-6">
+      <div class="w-full h-64 bg-gray-100 rounded-2xl flex items-center justify-center overflow-hidden border border-gray-200">
+        <img *ngIf="bienSeleccionado.url_foto_principal" [src]="bienSeleccionado.url_foto_principal" alt="Foto" class="w-full h-full object-cover">
+        <span *ngIf="!bienSeleccionado.url_foto_principal" class="material-icons-outlined text-6xl text-gray-300">inventory_2</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Nombre</h3>
+          <p class="text-lg font-bold text-gray-800">{{bienSeleccionado.nombre}}</p>
+        </div>
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Código ID</h3>
+          <p class="text-lg font-mono text-gray-800">{{bienSeleccionado.codigo_id}}</p>
+        </div>
+        <div>
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Estado</h3>
+            <p class="text-sm font-bold">{{bienSeleccionado.cat_estados?.nombre || bienSeleccionado.estado_id}}</p>
+          </div>
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Condición Física</h3>
+          <p class="text-sm font-bold">{{bienSeleccionado.condicion_fisica}}</p>
+        </div>
+        <div class="col-span-1 md:col-span-2">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Descripción</h3>
+          <p class="text-sm text-gray-700 leading-relaxed">{{bienSeleccionado.descripcion || 'No se proporcionó descripción.'}}</p>
+        </div>
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Ubicación / Área</h3>
+          <p class="text-sm font-medium text-gray-800">{{bienSeleccionado.ubicacion}} - {{bienSeleccionado.area}}</p>
+        </div>
+        <div>
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Categoría</h3>
+            <p class="text-sm font-medium text-gray-800">{{bienSeleccionado.categorias?.nombre || bienSeleccionado.categoria_id}}</p>
+          </div>
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Responsable Cédula</h3>
+          <p class="text-sm font-medium text-gray-800">{{bienSeleccionado.responsable_cedula}}</p>
+        </div>
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Fecha de Registro</h3>
+          <p class="text-sm font-medium text-gray-800">{{bienSeleccionado.fecha_registro | date:'longDate'}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Enviar a Mantenimiento -->
+<div *ngIf="showMantenimientoModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] border-t-8 border-orange-500">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+      <h2 class="text-xl font-bold text-gray-800 flex items-center">
+        <span class="material-icons-outlined text-orange-500 mr-2">build</span> Enviar a Mantenimiento
+      </h2>
+      <button (click)="cerrarModal()" class="text-gray-400 hover:text-gray-600 transition-colors"><span class="material-icons-outlined">close</span></button>
+    </div>
+    
+    <div class="p-6 overflow-y-auto space-y-4">
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <p class="text-sm text-gray-500">Equipo a mantenimiento:</p>
+        <p class="text-lg font-bold text-gray-800">{{bienAMantenimiento?.nombre}}</p>
+        <p class="text-sm font-mono text-gray-600">ID: {{bienAMantenimiento?.codigo_id}}</p>
+      </div>
+
+      <form (ngSubmit)="enviarAMantenimiento()" #mantForm="ngForm" class="space-y-4">
+        <div>
+          <label class="text-sm font-bold text-gray-700">Motivo de Falla / Diagnóstico *</label>
+          <textarea [(ngModel)]="motivoFalla" name="motivo_falla" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-orange-500 focus:border-orange-500" rows="3" required></textarea>
+        </div>
+        <div>
+          <label class="text-sm font-bold text-gray-700">Fotografía de Ingreso (Opcional)</label>
+          <input type="file" (change)="onFileSelected($event)" accept="image/*" class="w-full mt-1 px-4 py-2 border rounded-xl text-sm">
+        </div>
+
+        <div class="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-100">
+          <button type="button" (click)="cerrarModal()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
+          <button type="submit" [disabled]="!mantForm.valid || isSubmitting" class="px-5 py-2 bg-orange-500 text-white font-bold rounded-xl disabled:opacity-50 hover:bg-orange-600 flex items-center">
+             Confirmar Envío
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

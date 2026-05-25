@@ -1,0 +1,211 @@
+<div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start h-full">
+  
+  <!-- Left Column (Menu & KPIs) -->
+  <div class="lg:col-span-4 space-y-6 sticky top-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-2 flex items-center justify-center text-center"><span class="material-icons-outlined mr-2 text-primary">history</span> Bitácora de Auditoría</h2>
+      <p class="text-sm text-gray-500 text-center mb-6">Registro detallado de actividades y mantenimientos</p>
+      
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center text-center">
+          <span class="text-2xl font-black text-gray-800">{{kpiTotalLogs}}</span>
+          <span class="text-xs font-bold text-gray-500 uppercase mt-1">Total</span>
+        </div>
+        <div class="bg-blue-50 rounded-xl p-4 flex flex-col items-center justify-center text-center border border-blue-100">
+          <span class="text-2xl font-black text-blue-600">{{kpiMantenimientoLogs}}</span>
+          <span class="text-xs font-bold text-blue-500 uppercase mt-1">Mantenimientos</span>
+        </div>
+        <div class="bg-green-50 rounded-xl p-4 flex flex-col items-center justify-center text-center border border-green-100">
+          <span class="text-2xl font-black text-green-600">{{kpiAltasLogs}}</span>
+          <span class="text-xs font-bold text-green-500 uppercase mt-1">Altas</span>
+        </div>
+        <div class="bg-red-50 rounded-xl p-4 flex flex-col items-center justify-center text-center border border-red-100">
+          <span class="text-2xl font-black text-red-600">{{kpiBajasLogs}}</span>
+          <span class="text-xs font-bold text-red-500 uppercase mt-1">Bajas</span>
+        </div>
+      </div>
+
+      <h3 class="text-xs font-bold text-gray-400 uppercase mb-3 px-2 tracking-wider">Filtros Rápidos</h3>
+      <nav class="space-y-2">
+        <button (click)="applyBitacoraFilter(null)" [ngClass]="{'bg-gray-100 text-gray-800 font-bold ring-2 ring-gray-300 ring-offset-1': bitacoraFilter === null, 'text-gray-600 hover:bg-gray-50': bitacoraFilter !== null}" class="w-full flex items-center px-4 py-3 rounded-xl transition-all">
+          <span class="material-icons-outlined mr-3 text-[20px]">format_list_bulleted</span> Todos los registros
+        </button>
+        <button (click)="applyBitacoraFilter('MANTENIMIENTO')" [ngClass]="{'bg-blue-50 text-blue-700 font-bold ring-2 ring-blue-300 ring-offset-1': bitacoraFilter === 'MANTENIMIENTO', 'text-gray-600 hover:bg-gray-50': bitacoraFilter !== 'MANTENIMIENTO'}" class="w-full flex items-center px-4 py-3 rounded-xl transition-all">
+          <span class="material-icons-outlined mr-3 text-[20px]">build</span> Mantenimientos
+        </button>
+        <button (click)="applyBitacoraFilter('ALTA')" [ngClass]="{'bg-green-50 text-green-700 font-bold ring-2 ring-green-300 ring-offset-1': bitacoraFilter === 'ALTA', 'text-gray-600 hover:bg-gray-50': bitacoraFilter !== 'ALTA'}" class="w-full flex items-center px-4 py-3 rounded-xl transition-all">
+          <span class="material-icons-outlined mr-3 text-[20px]">add_circle_outline</span> Altas
+        </button>
+        <button (click)="applyBitacoraFilter('DESINCORPORACION')" [ngClass]="{'bg-red-50 text-red-700 font-bold ring-2 ring-red-300 ring-offset-1': bitacoraFilter === 'DESINCORPORACION', 'text-gray-600 hover:bg-gray-50': bitacoraFilter !== 'DESINCORPORACION'}" class="w-full flex items-center px-4 py-3 rounded-xl transition-all">
+          <span class="material-icons-outlined mr-3 text-[20px]">delete_outline</span> Bajas (Desincorporación)
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Right Column (Timeline) -->
+  <div class="lg:col-span-8 relative">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 min-h-[500px] overflow-auto h-full" (scroll)="onBitacoraScroll($event)">
+      
+      <div *ngIf="displayedBitacoraLogs.length === 0" class="flex flex-col items-center justify-center py-16">
+        <span class="material-icons-outlined text-6xl text-gray-200 mb-4">history_toggle_off</span>
+        <p class="text-gray-500 font-medium">No hay registros para este filtro.</p>
+      </div>
+
+      <div class="relative border-l-2 border-gray-100 ml-4 space-y-8 pb-4" *ngIf="displayedBitacoraLogs.length > 0">
+        <div *ngFor="let log of displayedBitacoraLogs" class="relative pl-8 group">
+          <!-- Timeline branch line effect -->
+          <div class="absolute w-6 h-px bg-gray-100 left-0 top-6 -z-10 group-hover:bg-primary transition-colors"></div>
+          <!-- Timeline dot -->
+          <div class="absolute w-4 h-4 rounded-full -left-[9px] top-4 border-4 border-white shadow-sm transition-transform group-hover:scale-125"
+               [ngClass]="{
+                 'bg-green-500': log.accion === 'ALTA',
+                 'bg-red-500': log.accion === 'DESINCORPORACION',
+                 'bg-orange-500': log.accion === 'MANTENIMIENTO_INICIO',
+                 'bg-blue-500': log.accion === 'MODIFICACION' || log.accion === 'MANTENIMIENTO_FIN',
+                 'bg-purple-500': log.accion === 'TRASLADO_INTERNO',
+                 'bg-indigo-500': log.accion === 'TRASLADO_EXTERNO',
+                 'bg-gray-400': !['ALTA', 'DESINCORPORACION', 'MANTENIMIENTO_INICIO', 'MODIFICACION', 'MANTENIMIENTO_FIN', 'TRASLADO_INTERNO', 'TRASLADO_EXTERNO'].includes(log.accion)
+               }">
+          </div>
+          
+          <div class="bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100/60 p-5 hover:shadow-[0_8px_20px_-6px_rgba(6,81,237,0.15)] hover:border-gray-200 transition-all cursor-pointer" (click)="abrirDetalle(log)">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-inner"
+                     [ngClass]="{
+                       'bg-gradient-to-br from-green-400 to-green-600': log.accion === 'ALTA',
+                       'bg-gradient-to-br from-red-400 to-red-600': log.accion === 'DESINCORPORACION',
+                       'bg-gradient-to-br from-orange-400 to-orange-600': log.accion === 'MANTENIMIENTO_INICIO',
+                       'bg-gradient-to-br from-blue-400 to-blue-600': log.accion === 'MODIFICACION' || log.accion === 'MANTENIMIENTO_FIN',
+                       'bg-gradient-to-br from-purple-400 to-purple-600': log.accion === 'TRASLADO_INTERNO',
+                       'bg-gradient-to-br from-indigo-400 to-indigo-600': log.accion === 'TRASLADO_EXTERNO',
+                       'bg-gradient-to-br from-gray-400 to-gray-600': !['ALTA', 'DESINCORPORACION', 'MANTENIMIENTO_INICIO', 'MODIFICACION', 'MANTENIMIENTO_FIN', 'TRASLADO_INTERNO', 'TRASLADO_EXTERNO'].includes(log.accion)
+                     }">
+                  <span class="material-icons-outlined text-[20px]">{{ log.accion === 'ALTA' ? 'add' : (log.accion === 'DESINCORPORACION' ? 'delete' : (log.accion === 'MODIFICACION' ? 'edit' : (log.accion === 'TRASLADO_INTERNO' ? 'apartment' : (log.accion === 'TRASLADO_EXTERNO' ? 'flight_takeoff' : 'build')))) }}</span>
+                </div>
+                <div>
+                  <p class="text-[15px] font-bold text-gray-800">{{ log.usuario?.nombre || 'Sistema' }}</p>
+                  <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mt-0.5">{{ log.accion.replace('_', ' ') }}</p>
+                </div>
+              </div>
+              <div class="flex items-center text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+                <span class="material-icons-outlined text-[14px] mr-1">schedule</span>
+                {{ log.fecha | date:'medium' }}
+              </div>
+            </div>
+            
+            <p class="text-sm text-gray-600 mb-4 leading-relaxed" *ngIf="log.detalles">
+              {{ log.detalles?.mensaje || (isString(log.detalles) ? log.detalles : 'Ver detalles para más información') }}
+            </p>
+            
+            <div *ngIf="log.diff_visual && parseDiff(log.diff_visual).length > 0" class="bg-gray-50/80 rounded-xl p-4 text-sm font-mono border border-gray-100 overflow-x-auto">
+              <div *ngFor="let diff of parseDiff(log.diff_visual)" class="flex flex-col space-y-1.5 mb-3 last:mb-0">
+                <p class="font-bold text-gray-400 text-[10px] tracking-widest uppercase">{{ diff.key }}</p>
+                <div class="flex flex-wrap items-center gap-2">
+                  <div class="flex items-center bg-red-50 text-red-700 px-3 py-1.5 rounded-lg border border-red-100/50 shadow-sm">
+                    <del class="no-underline opacity-80 mr-1">-</del> <span>{{ diff.old || '(Vacío)' }}</span>
+                  </div>
+                  <span class="material-icons-outlined text-[16px] text-gray-300">arrow_forward</span>
+                  <div class="flex items-center bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100/50 shadow-sm">
+                    <ins class="no-underline opacity-80 mr-1">+</ins> <span>{{ diff.new || '(Vacío)' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Infinite Scroll Loader -->
+      <div *ngIf="isLoadingMoreBitacora" class="flex justify-center items-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span class="ml-3 text-sm font-medium text-gray-500">Cargando más registros...</span>
+      </div>
+      <div *ngIf="!isLoadingMoreBitacora && displayedBitacoraLogs.length === bitacoraLogs.length && displayedBitacoraLogs.length > 0" class="text-center py-6 text-xs text-gray-400 font-bold uppercase tracking-wider">
+        Fin de la bitácora
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal Vista Previa de Bitácora -->
+<div *ngIf="showModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+      <h3 class="text-lg font-bold text-gray-800 flex items-center">
+        <span class="material-icons-outlined text-primary mr-2">visibility</span>
+        Detalle de Auditoría
+      </h3>
+      <button (click)="cerrarDetalle()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    
+    <div class="p-6 overflow-y-auto" *ngIf="selectedLog">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Log Info -->
+        <div class="space-y-4">
+          <h4 class="font-bold text-gray-700 border-b pb-2 mb-3">Información del Registro</h4>
+          
+          <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+             <div class="flex justify-between items-center border-b border-gray-200 pb-2">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Acción</span>
+                <span class="text-sm font-bold text-primary">{{selectedLog.accion}}</span>
+             </div>
+             <div class="flex justify-between items-center border-b border-gray-200 pb-2">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Usuario</span>
+                <span class="text-sm font-bold text-gray-700">{{selectedLog.usuario?.nombre || selectedLog.usuario?.email || 'Sistema'}}</span>
+             </div>
+             <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha</span>
+                <span class="text-sm font-medium text-gray-600">{{selectedLog.fecha | date:'medium'}}</span>
+             </div>
+          </div>
+
+          <div *ngIf="!isString(selectedLog.detalles) && selectedLog.detalles" class="bg-blue-50 rounded-lg p-4 mt-4 border border-blue-100">
+             <h5 class="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">Detalles del Cambio</h5>
+             <p class="text-sm text-gray-700 mb-2"><strong>Mensaje:</strong> {{selectedLog.detalles.mensaje}}</p>
+             <p class="text-sm text-gray-700 mb-2" *ngIf="selectedLog.detalles.estado_anterior"><strong>Estado Anterior:</strong> {{selectedLog.detalles.estado_anterior}}</p>
+             <p class="text-sm text-gray-700 mb-2" *ngIf="selectedLog.detalles.estado_nuevo"><strong>Nuevo Estado:</strong> {{selectedLog.detalles.estado_nuevo}}</p>
+             <p class="text-sm text-gray-700" *ngIf="selectedLog.detalles.justificacion"><strong>Justificación:</strong> {{selectedLog.detalles.justificacion}}</p>
+          </div>
+        </div>
+
+        <!-- Entity Preview (Bien) -->
+        <div>
+          <h4 class="font-bold text-gray-700 border-b pb-2 mb-3">Bien Afectado</h4>
+          <div *ngIf="selectedBien" class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+             <div class="h-40 bg-gray-100 relative">
+               <img *ngIf="selectedBien.imagen_url" [src]="selectedBien.imagen_url" class="w-full h-full object-cover" alt="Foto del bien">
+               <div *ngIf="!selectedBien.imagen_url" class="absolute inset-0 flex items-center justify-center">
+                 <span class="material-icons-outlined text-4xl text-gray-300">image_not_supported</span>
+               </div>
+               <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm">
+                 {{selectedBien.codigo}}
+               </div>
+             </div>
+             <div class="p-4 space-y-2">
+               <p class="font-bold text-gray-800 text-lg leading-tight">{{selectedBien.nombre}}</p>
+               <p class="text-sm text-gray-500">{{selectedBien.descripcion || 'Sin descripción'}}</p>
+               <div class="pt-2 mt-2 border-t border-gray-100 flex gap-2">
+                  <span class="px-2 py-1 bg-gray-100 rounded text-xs font-bold text-gray-600">{{selectedBien.categoria?.nombre || 'Categoría'}}</span>
+                  <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-bold">{{selectedBien.estado_operativo}}</span>
+               </div>
+             </div>
+          </div>
+          <div *ngIf="!selectedBien" class="bg-gray-50 rounded-xl border border-gray-200 border-dashed p-8 text-center">
+             <span class="material-icons-outlined text-gray-300 text-4xl mb-2">inventory_2</span>
+             <p class="text-sm text-gray-500 font-medium">No se pudo cargar la vista previa del bien.<br>Es posible que haya sido eliminado.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+      <button (click)="cerrarDetalle()" class="px-5 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors shadow-sm">Cerrar</button>
+    </div>
+  </div>
+</div>

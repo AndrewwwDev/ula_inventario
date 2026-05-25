@@ -1,8 +1,5 @@
 import { Component } from '@angular/core';
-import { bootstrapApplication } from '@angular/platform-browser';
 import { RouterOutlet } from '@angular/router';
-import { appConfig } from './app.config';
-import { SessionService } from './services/session.service';
 import { ToastsComponent } from './components/toasts/toasts.component';
 
 @Component({
@@ -10,13 +7,13 @@ import { ToastsComponent } from './components/toasts/toasts.component';
   standalone: true,
   imports: [RouterOutlet, ToastsComponent],
   template: `
+    <!-- Bloque simple y directo -->
     <app-toasts></app-toasts>
     <router-outlet></router-outlet>
   `
 })
 export class AppComponent {
-  constructor(private sessionService: SessionService) {}
+  constructor() {
+    console.log('2. AppComponent (Raíz) Inicializado Exitosamente');
+  }
 }
-
-bootstrapApplication(AppComponent, appConfig).catch(console.error);
-

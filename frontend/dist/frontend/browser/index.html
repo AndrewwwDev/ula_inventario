@@ -16,6 +16,20 @@
 
 <body class="bg-gray-50 text-gray-900 font-sans antialiased">
   <app-root></app-root>
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      var errDiv = document.createElement('div');
+      errDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:white;padding:20px;z-index:99999;font-family:monospace;white-space:pre-wrap;';
+      errDiv.innerText = 'JS Error: ' + message + '\n\n' + (error && error.stack ? error.stack : '');
+      document.body.appendChild(errDiv);
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+      var errDiv = document.createElement('div');
+      errDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:darkred;color:white;padding:20px;z-index:99999;font-family:monospace;white-space:pre-wrap;';
+      errDiv.innerText = 'Promise Rejection: ' + (event.reason && event.reason.stack ? event.reason.stack : event.reason);
+      document.body.appendChild(errDiv);
+    });
+  </script>
 <script src="polyfills.js" type="module"></script><script src="main.js" type="module"></script></body>
 
 </html>

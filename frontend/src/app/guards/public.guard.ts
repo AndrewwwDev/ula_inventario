@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { SupabaseService } from '../services/supabase.service';
 
-export const authGuard: CanActivateFn = async (route, state) => {
+export const publicGuard: CanActivateFn = async (route, state) => {
   const router = inject(Router);
   const supabaseService = inject(SupabaseService);
 
@@ -12,12 +12,12 @@ export const authGuard: CanActivateFn = async (route, state) => {
 
     // Código defensivo: Validar que la sesión exista
     if (session) {
-      return true; // Hay sesión, permitir paso
+      return router.createUrlTree(['/dashboard/inicio']);
     }
 
-    return router.createUrlTree(['/login']);
+    return true; // No hay sesión, puede ver el login
   } catch (error) {
-    console.error('[authGuard] Error consultando sesión:', error);
-    return router.createUrlTree(['/login']); // Redirigir por seguridad si falla
+    console.error('[publicGuard] Error consultando sesión:', error);
+    return true; // En caso de fallo de red, asumimos sin sesión para permitir intentar logueo
   }
 };

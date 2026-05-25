@@ -14,8 +14,6 @@ services:
       - "4200:4200"
     volumes:
       - ./frontend:/app
-      - frontend_node_modules:/app/node_modules
-    command: sh -c "npm install && chmod +x ./node_modules/.bin/ng && npm start"
-
-volumes:
-  frontend_node_modules:
+      - /app/node_modules
+      - /app/.angular
+    command: npm start
