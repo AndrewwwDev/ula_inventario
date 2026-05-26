@@ -10,7 +10,22 @@ export class InventarioService {
   constructor(private supabase: SupabaseService) {}
 
   getBienes() {
-    return from(this.supabase.from('bienes').select('*, categorias(nombre), cat_estados(nombre)')).pipe(map(res => res.data || []));
+    return from((async () => {
+      try {
+        const { data, error } = await this.supabase.from('bienes')
+          .select('*, categorias(nombre), cat_estados(nombre), usuarios(nombres, apellidos)');
+          
+        if (error) {
+          console.error('[InventarioService] Error consultando bienes:', error);
+          return [];
+        }
+        
+        return data || [];
+      } catch (err) {
+        console.error('[InventarioService] Excepción asíncrona en getBienes:', err);
+        return [];
+      }
+    })());
   }
 
   private async uploadImage(file: File): Promise<string> {
@@ -142,7 +157,29 @@ export class InventarioService {
   // Métodos que deben adaptarse si existen estados de mantenimiento/desincorporado en la nueva DB. 
   // Por ahora lo simplificamos para que no fallen las peticiones.
   getBienesDesincorporados() {
-    return from(this.supabase.from('bienes').select('*').eq('condicion_fisica', 'Desincorporado')).pipe(map(res => res.data || []));
+    return from((async () => {
+      try {
+        const { data: desincData, error: desincError } = await this.supabase.from('desincorporaciones').select('*');
+        if (desincError) { console.warn('Error en getBienesDesincorporados:', desincError); return []; }
+        
+        if (!desincData || desincData.length === 0) return [];
+
+        const codigos = desincData.map((d: any) => d.codigo_bien);
+        const { data: bienesData, error: bienesError } = await this.supabase.from('bienes').select('codigo_id, nombre').in('codigo_id', codigos);
+        
+        const bienesMap = new Map();
+        if (bienesData) {
+          bienesData.forEach((b: any) => bienesMap.set(b.codigo_id, b.nombre));
+        }
+
+        return desincData.map((d: any) => ({
+          codigo_id: d.codigo_bien,
+          nombre: bienesMap.get(d.codigo_bien) || 'Bien Desconocido',
+          fecha_desincorporacion: d.fecha,
+          motivo_desincorporacion: d.motivo_desincorporacion
+        }));
+      } catch (err) { console.warn('Excepción en getBienesDesincorporados:', err); return []; }
+    })());
   }
 
   desincorporarBien(id: string, motivo: string, fecha: string, foto: File | null) {
@@ -178,29 +215,60 @@ export class InventarioService {
   }
 
   getCategorias() {
-    return from(this.supabase.from('categorias').select('*')).pipe(map(res => res.data || []));
+    return from((async () => {
+      try {
+        const { data, error } = await this.supabase.from('categorias').select('*');
+        if (error) { console.warn('Error en getCategorias:', error); return []; }
+        return data || [];
+      } catch (err) { console.warn('Excepción en getCategorias:', err); return []; }
+    })());
   }
 
   getCatEstados() {
-    return from(this.supabase.from('cat_estados').select('*').order('id')).pipe(map(res => res.data || []));
+    return from((async () => {
+      try {
+        const { data, error } = await this.supabase.from('cat_estados').select('*').order('id');
+        if (error) { console.warn('Error en getCatEstados:', error); return []; }
+        return data || [];
+      } catch (err) { console.warn('Excepción en getCatEstados:', err); return []; }
+    })());
   }
 
   // --- MANTENIMIENTO ---
   getAlertasMantenimiento() {
-    const today = new Date().toISOString().split('T')[0];
-    return from(this.supabase.from('bienes').select('*, categorias!inner(nombre)')
-      .eq('categorias.nombre', 'Computadoras')
-      .lte('fecha_proximo_mantenimiento', today)).pipe(
-        map(res => (res.data || []).map((b: any) => ({ bien: b, proxima_fecha: b.fecha_proximo_mantenimiento })))
-      );
+    return from((async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const { data, error } = await this.supabase.from('bienes')
+          .select('*, categorias!inner(nombre)')
+          .eq('categorias.nombre', 'Computadoras')
+          .lte('fecha_proximo_mantenimiento', today);
+        if (error) { console.warn('Error en getAlertasMantenimiento:', error); return []; }
+        return (data || []).map((b: any) => ({ bien: b, proxima_fecha: b.fecha_proximo_mantenimiento }));
+      } catch (err) { console.warn('Excepción en getAlertasMantenimiento:', err); return []; }
+    })());
   }
 
   getEnReparacion() {
-    return from(this.supabase.from('bienes').select('*, categorias(nombre), cat_estados!inner(nombre)').eq('cat_estados.nombre', 'Mantenimiento')).pipe(map(res => res.data || []));
+    return from((async () => {
+      try {
+        const { data, error } = await this.supabase.from('bienes')
+          .select('*, categorias(nombre), cat_estados!inner(nombre)')
+          .eq('cat_estados.nombre', 'Mantenimiento');
+        if (error) { console.warn('Error en getEnReparacion:', error); return []; }
+        return data || [];
+      } catch (err) { console.warn('Excepción en getEnReparacion:', err); return []; }
+    })());
   }
 
   getHistorialMantenimiento() {
-    return from(this.supabase.from('mantenimientos').select('*, bienes(nombre)')).pipe(map(res => res.data || []));
+    return from((async () => {
+      try {
+        const { data, error } = await this.supabase.from('mantenimientos').select('*, bienes(nombre)');
+        if (error) { console.warn('Error en getHistorialMantenimiento:', error); return []; }
+        return data || [];
+      } catch (err) { console.warn('Excepción en getHistorialMantenimiento:', err); return []; }
+    })());
   }
 
   enviarAMantenimiento(payload: any, file: File | null) {
@@ -262,21 +330,34 @@ export class InventarioService {
 
   // --- BITACORA ---
   getBitacora() {
-    return from(this.supabase.from('bitacora').select('*').order('fecha', { ascending: false })).pipe(map(res => res.data || []));
+    return from((async () => {
+      try {
+        const { data, error } = await this.supabase.from('bitacora').select('*').order('fecha_hora', { ascending: false });
+        if (error) { console.warn('Error en getBitacora:', error); return []; }
+        return data || [];
+      } catch (err) { console.warn('Excepción en getBitacora:', err); return []; }
+    })());
   }
 
   private async logBitacora(accion: string, entidad: string, entidad_id: any, detalles: any) {
     const user = (await this.supabase.auth.getUser()).data.user;
     const userName = user?.user_metadata?.['nombres'] || user?.email?.split('@')[0] || 'Sistema';
     
-    let jsonDetalles = typeof detalles === 'string' ? { mensaje: detalles, usuario_nombre: userName } : { ...detalles, usuario_nombre: userName };
+    let cedula_usuario = '00000000';
+    if (user?.id) {
+       const { data } = await this.supabase.from('usuarios').select('cedula').eq('auth_id', user.id).single();
+       if (data) cedula_usuario = data.cedula;
+    }
+
+    let jsonDetalles = typeof detalles === 'string' 
+      ? { mensaje: detalles, usuario_nombre: userName, modulo_afectado: entidad } 
+      : { ...detalles, usuario_nombre: userName, modulo_afectado: entidad };
 
     await this.supabase.from('bitacora').insert([{
       accion,
-      entidad,
-      entidad_id,
-      detalles: jsonDetalles,
-      usuario_id: user?.id
+      codigo_bien: entidad === 'bienes' ? entidad_id : null,
+      cedula_usuario,
+      detalles: jsonDetalles
     }]);
   }
 
@@ -323,41 +404,62 @@ export class InventarioService {
   // --- PUBLIC ---
   getBienesByEncargado(cedula: string) {
     return from((async () => {
-      const { data } = await this.supabase.from('bienes').select('*').eq('responsable_cedula', cedula);
-      return data || [];
+      try {
+        const { data, error } = await this.supabase.from('bienes')
+          .select('*, categorias(nombre), cat_estados(nombre)')
+          .eq('responsable_cedula', cedula);
+        if (error) { console.warn('Error en getBienesByEncargado:', error); return []; }
+        return data || [];
+      } catch (err) { console.warn('Excepción en getBienesByEncargado:', err); return []; }
     })());
   }
 
   getDashboardMetrics() {
     return from((async () => {
-      const { data: estados } = await this.supabase.from('cat_estados').select('*');
-      
-      const metrics: any = {};
-      const { count: totalCount } = await this.supabase.from('bienes').select('*', { count: 'exact', head: true });
-      metrics['Total'] = totalCount || 0;
-
-      if (estados) {
-        const countPromises = estados.map(est => 
-          this.supabase.from('bienes').select('*', { count: 'exact', head: true }).eq('estado_id', est.id)
-        );
-        const results = await Promise.all(countPromises);
+      try {
+        const { data: estados, error: estadosError } = await this.supabase.from('cat_estados').select('*');
+        if (estadosError) {
+          console.warn('Error de acceso a tabla cat_estados:', estadosError);
+          return { metrics: {}, estados: [] };
+        }
         
-        estados.forEach((est, index) => {
-          metrics[est.nombre] = results[index].count || 0;
+        const metrics: any = {};
+        const { count: totalCount, error: countError } = await this.supabase.from('bienes').select('*', { count: 'exact', head: true });
+        if (countError) {
+          console.warn('Error de acceso a tabla bienes (count):', countError);
+        }
+        metrics['Total'] = totalCount || 0;
+
+        if (estados && estados.length > 0) {
+          const countPromises = estados.map(est => 
+            this.supabase.from('bienes').select('*', { count: 'exact', head: true }).eq('estado_id', est.id)
+          );
+          const results = await Promise.all(countPromises);
+          
+          estados.forEach((est, index) => {
+            const res = results[index];
+            if (res.error) console.warn(`Error contando estado ${est.nombre}:`, res.error);
+            metrics[est.nombre] = res.count || 0;
+          });
+        }
+
+        const conditions = ['Buen estado', 'Regular', 'Mal estado'];
+        const condPromises = conditions.map(cond => 
+          this.supabase.from('bienes').select('*', { count: 'exact', head: true }).eq('condicion_fisica', cond)
+        );
+        const condResults = await Promise.all(condPromises);
+        
+        conditions.forEach((cond, index) => {
+          const res = condResults[index];
+          if (res.error) console.warn(`Error contando condicion ${cond}:`, res.error);
+          metrics[cond] = res.count || 0;
         });
+
+        return { metrics, estados };
+      } catch (error) {
+        console.warn('Error de acceso a tabla en getDashboardMetrics:', error);
+        return { metrics: {}, estados: [] };
       }
-
-      const conditions = ['Buen estado', 'Regular', 'Mal estado'];
-      const condPromises = conditions.map(cond => 
-        this.supabase.from('bienes').select('*', { count: 'exact', head: true }).eq('condicion_fisica', cond)
-      );
-      const condResults = await Promise.all(condPromises);
-      
-      conditions.forEach((cond, index) => {
-        metrics[cond] = condResults[index].count || 0;
-      });
-
-      return { metrics, estados };
     })());
   }
 }

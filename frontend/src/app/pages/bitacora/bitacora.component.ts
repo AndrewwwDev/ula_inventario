@@ -109,9 +109,9 @@ export class BitacoraComponent implements OnInit {
   abrirDetalle(log: any) {
     this.selectedLog = log;
     this.showModal = true;
-    if (log.entidad === 'bienes' && log.entidad_id) {
+    if (log.codigo_bien) {
        this.inventarioService.getBienes().subscribe((data: any) => {
-         this.selectedBien = data.find((b: any) => b.codigo_id === log.entidad_id);
+         this.selectedBien = data.find((b: any) => b.codigo_id === log.codigo_bien);
        });
     } else {
        this.selectedBien = null;

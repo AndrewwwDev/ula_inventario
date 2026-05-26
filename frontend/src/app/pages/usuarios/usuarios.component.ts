@@ -29,15 +29,21 @@ export class UsuariosComponent implements OnInit {
 
   async loadUsuarios() {
     this.loading = true;
-    const { data, error } = await this.supabase
-      .from('usuarios')
-      .select('*')
-      .order('fecha_creacion', { ascending: false });
+    try {
+      const { data, error } = await this.supabase
+        .from('usuarios')
+        .select('*')
+        .order('fecha_creacion', { ascending: false });
 
-    if (error) {
-      console.error('Error cargando usuarios:', error);
-    } else {
-      this.usuarios = data || [];
+      if (error) {
+        console.warn('Error de acceso a tabla:', error);
+        this.usuarios = [];
+      } else {
+        this.usuarios = data || [];
+      }
+    } catch (err) {
+      console.warn('Error de acceso a tabla (Excepción):', err);
+      this.usuarios = [];
     }
     this.loading = false;
   }

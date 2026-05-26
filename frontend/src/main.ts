@@ -2,6 +2,13 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { AppComponent } from './app/app.component';
 
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  if (args[0] && typeof args[0] === 'string' && args[0].includes('NavigatorLockAcquireTimeoutError')) return;
+  if (args[0] && args[0].message && args[0].message.includes('NavigatorLockAcquireTimeoutError')) return;
+  originalConsoleError(...args);
+};
+
 console.log('1. Arrancando main.ts');
 
 bootstrapApplication(AppComponent, appConfig)

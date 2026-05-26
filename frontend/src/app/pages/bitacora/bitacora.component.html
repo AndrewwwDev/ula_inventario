@@ -85,13 +85,13 @@
                   <span class="material-icons-outlined text-[20px]">{{ log.accion === 'ALTA' ? 'add' : (log.accion === 'DESINCORPORACION' ? 'delete' : (log.accion === 'MODIFICACION' ? 'edit' : (log.accion === 'TRASLADO_INTERNO' ? 'apartment' : (log.accion === 'TRASLADO_EXTERNO' ? 'flight_takeoff' : 'build')))) }}</span>
                 </div>
                 <div>
-                  <p class="text-[15px] font-bold text-gray-800">{{ log.usuario?.nombre || 'Sistema' }}</p>
+                  <p class="text-[15px] font-bold text-gray-800">{{ log.detalles?.usuario_nombre || log.cedula_usuario || 'Sistema' }}</p>
                   <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mt-0.5">{{ log.accion.replace('_', ' ') }}</p>
                 </div>
               </div>
               <div class="flex items-center text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
                 <span class="material-icons-outlined text-[14px] mr-1">schedule</span>
-                {{ log.fecha | date:'medium' }}
+                {{ log.fecha_hora | date:'medium' }}
               </div>
             </div>
             
@@ -157,11 +157,11 @@
              </div>
              <div class="flex justify-between items-center border-b border-gray-200 pb-2">
                 <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Usuario</span>
-                <span class="text-sm font-bold text-gray-700">{{selectedLog.usuario?.nombre || selectedLog.usuario?.email || 'Sistema'}}</span>
+                <span class="text-sm font-bold text-gray-700">{{selectedLog.detalles?.usuario_nombre || selectedLog.cedula_usuario || 'Sistema'}}</span>
              </div>
              <div class="flex justify-between items-center">
                 <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha</span>
-                <span class="text-sm font-medium text-gray-600">{{selectedLog.fecha | date:'medium'}}</span>
+                <span class="text-sm font-medium text-gray-600">{{selectedLog.fecha_hora | date:'medium'}}</span>
              </div>
           </div>
 

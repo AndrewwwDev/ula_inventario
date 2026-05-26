@@ -29,17 +29,54 @@
     </form>
 
     <!-- Results -->
-    <div *ngIf="bienes.length > 0" class="w-full max-w-4xl">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">Bienes Asignados</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div *ngFor="let bien of bienes" class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-          <div *ngIf="bien.url_foto_principal" class="mb-3">
-            <img *ngIf="bien.url_foto_principal" [src]="bien.url_foto_principal" alt="Imagen del bien" class="w-full h-32 object-cover rounded">
+    <div *ngIf="bienes.length > 0" class="w-full max-w-5xl mt-4">
+      <div class="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
+        <h3 class="text-xl font-bold text-gray-800 flex items-center">
+          <span class="material-icons-outlined text-primary mr-2">inventory_2</span>
+          Bienes Asignados
+        </h3>
+        <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-bold border border-blue-100">
+          {{bienes.length}} equipos encontrados
+        </span>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div *ngFor="let bien of bienes" class="bg-white border border-gray-100 rounded-2xl p-5 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_20px_-6px_rgba(6,81,237,0.15)] transition-all hover:-translate-y-1 duration-300">
+          <div class="mb-4 bg-gray-50 rounded-xl overflow-hidden h-48 flex items-center justify-center border border-gray-100 relative group">
+            <img *ngIf="bien.url_foto_principal" [src]="bien.url_foto_principal" alt="Imagen del bien" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <span *ngIf="!bien.url_foto_principal" class="material-icons-outlined text-gray-300 text-6xl">image_not_supported</span>
+            <div class="absolute top-3 right-3">
+              <span class="inline-flex items-center px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider shadow-sm"
+                [ngClass]="{
+                  'bg-green-100 text-green-700 border border-green-200': bien.cat_estados?.nombre === 'Activo',
+                  'bg-orange-100 text-orange-700 border border-orange-200': bien.cat_estados?.nombre === 'Mantenimiento',
+                  'bg-red-100 text-red-700 border border-red-200': bien.cat_estados?.nombre === 'Desincorporado',
+                  'bg-gray-100 text-gray-700 border border-gray-200': !['Activo','Mantenimiento','Desincorporado'].includes(bien.cat_estados?.nombre)
+                }">
+                {{ bien.cat_estados?.nombre || 'Desconocido' }}
+              </span>
+            </div>
           </div>
-          <div class="space-y-1">
-            <p class="text-sm font-medium text-gray-900">{{ bien.nombre }}</p>
-            <p class="text-xs text-gray-600">Código: {{ bien.codigo_id }}</p>
-            <p class="text-xs text-gray-600">Estado ID: {{ bien.estado_id }}</p>
+          
+          <div class="space-y-3">
+            <p class="text-lg font-black text-gray-800 leading-tight">{{ bien.nombre }}</p>
+            
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100/50 space-y-2">
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-gray-500 font-medium flex items-center"><span class="material-icons-outlined text-[16px] mr-1">qr_code</span> Código</span>
+                <span class="text-gray-800 font-bold bg-white px-2 py-0.5 rounded shadow-sm border border-gray-100">{{ bien.codigo_id }}</span>
+              </div>
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-gray-500 font-medium flex items-center"><span class="material-icons-outlined text-[16px] mr-1">category</span> Categoría</span>
+                <span class="text-gray-800 font-bold">{{ bien.categorias?.nombre || 'General' }}</span>
+              </div>
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-gray-500 font-medium flex items-center"><span class="material-icons-outlined text-[16px] mr-1">health_and_safety</span> Condición</span>
+                <span class="font-bold flex items-center" [ngClass]="{'text-green-600': bien.condicion_fisica === 'Buen estado', 'text-yellow-600': bien.condicion_fisica === 'Regular', 'text-red-600': bien.condicion_fisica === 'Mal estado'}">
+                  {{ bien.condicion_fisica }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

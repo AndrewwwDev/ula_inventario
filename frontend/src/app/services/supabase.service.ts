@@ -15,9 +15,18 @@ export class SupabaseService {
     console.log('[SupabaseService] URL:', environment.supabaseUrl ? 'OK (Configurada)' : 'ERROR: URL VACÍA');
     console.log('[SupabaseService] KEY:', environment.supabaseKey ? 'OK (Configurada)' : 'ERROR: KEY VACÍA');
     
+    const supabaseOptions = {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false
+      }
+    };
+
     this.supabase = createClient(
       environment.supabaseUrl,
-      environment.supabaseKey
+      environment.supabaseKey,
+      supabaseOptions
     );
     console.log('[SupabaseService] createClient() ejecutado con éxito');
 
@@ -34,7 +43,14 @@ export class SupabaseService {
     }
     
     console.log('[SupabaseService] getClient() - Inicializando cliente bajo demanda...');
-    this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
+    const supabaseOptions = {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false
+      }
+    };
+    this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey, supabaseOptions);
     
     if (!this.supabase) {
       throw new Error('No se pudo inicializar el cliente de Supabase. Revisa environment.');
@@ -89,8 +105,12 @@ export class SupabaseService {
       const { data, error } = await client.auth.getSession();
       if (error || !data || !data.session) return null;
       return data.session;
-    } catch (err) {
-      console.error('[SupabaseService] Error en getSession:', err);
+    } catch (err: any) {
+      if (err?.name === 'NavigatorLockAcquireTimeoutError' || err?.message?.includes('timeout')) {
+        console.warn('⚠️ [SupabaseService] Timeout al adquirir lock de sesión (NavigatorLockAcquireTimeoutError). Devolviendo null para prevenir pantalla blanca.');
+      } else {
+        console.error('[SupabaseService] Error inesperado en getSession:', err);
+      }
       return null;
     }
   }

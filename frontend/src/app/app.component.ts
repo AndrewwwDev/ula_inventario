@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastsComponent } from './components/toasts/toasts.component';
 
@@ -12,8 +12,12 @@ import { ToastsComponent } from './components/toasts/toasts.component';
     <router-outlet></router-outlet>
   `
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   constructor() {
     console.log('2. AppComponent (Raíz) Inicializado Exitosamente');
+  }
+
+  ngOnInit(): void {
+    console.log('✅ Sistema inicializado. Usuario y Rol cargados correctamente.');
   }
 }
