@@ -31,6 +31,15 @@ export const roleGuard: CanActivateFn = async (route, state) => {
       // Acceso permitido al resto de rutas de inventario
       return true;
     }
+    
+    if (perfil.rol === 'Usuario') {
+      // Bloquear el acceso a la gestión de usuarios
+      if (state.url.includes('/usuarios')) {
+        console.warn('[RoleGuard] Acceso denegado: Usuario intentó acceder a gestión de usuarios.');
+        return router.createUrlTree(['/dashboard/inicio']);
+      }
+      return true;
+    }
 
     // Roles desconocidos
     console.warn(`[RoleGuard] Usuario denegado. Rol actual desconocido: ${perfil.rol}`);

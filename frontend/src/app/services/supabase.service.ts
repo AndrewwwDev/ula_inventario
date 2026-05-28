@@ -106,8 +106,8 @@ export class SupabaseService {
       if (error || !data || !data.session) return null;
       return data.session;
     } catch (err: any) {
-      if (err?.name === 'NavigatorLockAcquireTimeoutError' || err?.message?.includes('timeout')) {
-        console.warn('⚠️ [SupabaseService] Timeout al adquirir lock de sesión (NavigatorLockAcquireTimeoutError). Devolviendo null para prevenir pantalla blanca.');
+      if (err?.name === 'NavigatorLockAcquireTimeoutError' || err?.message?.includes('timeout') || err?.message?.includes('lock')) {
+        console.warn('⚠️ [SupabaseService] Timeout o error al adquirir lock de sesión. Devolviendo null temporalmente.');
       } else {
         console.error('[SupabaseService] Error inesperado en getSession:', err);
       }
