@@ -9,4 +9,12 @@ import { Component } from '@angular/core';
 })
 export class ManualUsuarioComponent {
 
+  scrollTo(elementId: string, event: Event): void {
+    event.preventDefault(); // Evitar la navegación predeterminada que recarga/redirige
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
 }
