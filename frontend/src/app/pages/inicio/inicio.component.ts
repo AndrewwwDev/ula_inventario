@@ -51,11 +51,12 @@ export class InicioComponent implements OnInit {
   }
 
   navigateTo(stat: any) {
-    if (stat.filterId) {
+    if (stat.filterName === 'Desincorporado') {
+      this.router.navigate(['/dashboard/desincorporacion']);
+    } else if (stat.filterId) {
       this.router.navigate(['/dashboard/inventario'], { queryParams: { estado: stat.filterId } });
     } else if (stat.isCondicion) {
-      // Si quieres filtrar por condición, deberías soportarlo en inventario, pero según el plan es por estado.
-      // Opcional: this.router.navigate(['/dashboard/inventario'], { queryParams: { condicion: stat.label } });
+      // Opcional: filtrar por condición
     } else {
       this.router.navigate(['/dashboard/inventario']);
     }

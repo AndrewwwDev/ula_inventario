@@ -1,14 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { InventarioService } from '../../services/inventario.service';
 import { ToastService } from '../../services/toast.service';
 import { ActivatedRoute } from '@angular/router';
+import { debounceTime, distinctUntilChanged, switchMap, filter, tap, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { ResponsableAutocompleteComponent } from '../../components/responsable-autocomplete/responsable-autocomplete.component';
 
 @Component({
   selector: 'app-inventario',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, ResponsableAutocompleteComponent],
   templateUrl: './inventario.component.html'
 })
 export class InventarioComponent implements OnInit {
@@ -24,6 +27,8 @@ export class InventarioComponent implements OnInit {
   // --- Select Options Data ---
   categorias: any[] = [];
   cat_estados: any[] = [];
+  cat_ubicaciones: any[] = [];
+  cat_areas: any[] = [];
 
   // --- Search & Filters ---
   searchQuery = '';
@@ -50,18 +55,52 @@ export class InventarioComponent implements OnInit {
   }
 
   loadInventory() {
-    this.inventarioService.getBienes().subscribe((data: any) => {
-      this.allInventory = data;
-      this.applyFilters();
+    this.inventarioService.getBienes().subscribe({
+      next: (data: any) => {
+        if (!data || data.length === 0) {
+          this.toastService.show('Error: No se pudieron cargar los datos del servidor. Verifica tus permisos', 'error');
+        }
+        this.allInventory = (data || []).filter((item: any) => item.cat_estados?.nombre !== 'Desincorporado');
+        this.applyFilters();
+      },
+      error: (err) => {
+        this.toastService.show('Error: No se pudieron cargar los datos del servidor. Verifica tus permisos', 'error');
+        this.allInventory = [];
+        this.applyFilters();
+      }
     });
   }
 
   loadOptions() {
     this.inventarioService.getCategorias().subscribe((res: any) => {
-      this.categorias = res;
+      this.categorias = res || [];
     });
     this.inventarioService.getCatEstados().subscribe((res: any) => {
-      this.cat_estados = res;
+      this.cat_estados = (res || []).filter((estado: any) => estado.nombre !== 'Desincorporado');
+    });
+    this.inventarioService.getUbicaciones().subscribe({
+      next: (res: any) => {
+        if (!res || res.length === 0) {
+          this.toastService.show('Error: No se pudieron cargar los datos del servidor. Verifica tus permisos', 'error');
+        }
+        this.cat_ubicaciones = res || [];
+      },
+      error: () => {
+        this.cat_ubicaciones = [];
+        this.toastService.show('Error: No se pudieron cargar los datos del servidor. Verifica tus permisos', 'error');
+      }
+    });
+    this.inventarioService.getAreas().subscribe({
+      next: (res: any) => {
+        if (!res || res.length === 0) {
+          this.toastService.show('Error: No se pudieron cargar los datos del servidor. Verifica tus permisos', 'error');
+        }
+        this.cat_areas = res || [];
+      },
+      error: () => {
+        this.cat_areas = [];
+        this.toastService.show('Error: No se pudieron cargar los datos del servidor. Verifica tus permisos', 'error');
+      }
     });
   }
 
@@ -153,8 +192,8 @@ export class InventarioComponent implements OnInit {
   bienATrasladar: any = null;
   datosTraslado: any = {
     tipoTraslado: '',
-    ubicacion: '',
-    area: '',
+    ubicacion_id: '',
+    area_id: '',
     responsable_cedula: ''
   };
   bienADesincorporar: any = null;
@@ -256,8 +295,8 @@ export class InventarioComponent implements OnInit {
     this.bienATrasladar = item;
     this.datosTraslado = {
       tipoTraslado: 'Interno',
-      ubicacion: '',
-      area: '',
+      ubicacion_id: '',
+      area_id: '',
       responsable_cedula: ''
     };
     this.showTrasladoModal = true;
@@ -265,17 +304,17 @@ export class InventarioComponent implements OnInit {
   }
 
   confirmarTraslado() {
-    if (!this.bienATrasladar || !this.datosTraslado.ubicacion || !this.datosTraslado.responsable_cedula) return;
+    if (!this.bienATrasladar || !this.datosTraslado.ubicacion_id || !this.datosTraslado.responsable_cedula) return;
 
     this.isSubmitting = true;
     
     const accion = this.datosTraslado.tipoTraslado === 'Interno' ? 'TRASLADO_INTERNO' : 'TRASLADO_EXTERNO';
-    const mensajeAuditoria = `Equipo trasladado de [${this.bienATrasladar.ubicacion}] a [${this.datosTraslado.ubicacion}] y entregado a [${this.datosTraslado.responsable_cedula}]`;
+    const mensajeAuditoria = `Equipo trasladado a nueva ubicación [ID: ${this.datosTraslado.ubicacion_id}] y entregado a [${this.datosTraslado.responsable_cedula}]`;
 
     const payloadUpdate = {
       ...this.bienATrasladar,
-      ubicacion: this.datosTraslado.ubicacion,
-      area: this.datosTraslado.area,
+      ubicacion_id: this.datosTraslado.ubicacion_id,
+      area_id: this.datosTraslado.area_id,
       responsable_cedula: this.datosTraslado.responsable_cedula
     };
 

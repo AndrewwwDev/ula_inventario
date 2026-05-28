@@ -1,0 +1,32 @@
+<div class="relative">
+  <label class="text-sm font-bold text-gray-700">{{ label }}</label>
+  <input 
+    type="text" 
+    [formControl]="internalControl" 
+    (blur)="validarCedulaOnBlur()" 
+    autocomplete="off" 
+    [placeholder]="placeholder"
+    class="w-full mt-1 px-4 py-2 border rounded-xl outline-none focus:border-blue-500" 
+    [ngClass]="{
+      'border-red-500': internalControl.invalid && (internalControl.dirty || internalControl.touched), 
+      'border-gray-300': !(internalControl.invalid && (internalControl.dirty || internalControl.touched))
+    }">
+  
+  <div *ngIf="buscandoUsuarios" class="absolute right-3 top-9 text-xs text-blue-500 font-bold">Buscando...</div>
+
+  <!-- Información Visual UX -->
+  <p *ngIf="nombreResponsable" class="text-xs text-blue-600 font-semibold mt-1 flex items-center">
+    <span class="material-icons-outlined text-[14px] mr-1">person</span> {{ nombreResponsable }}
+  </p>
+
+  <!-- Sugerencias (Dropdown) -->
+  <ul *ngIf="usuariosSugeridos.length > 0" class="absolute z-50 w-full bg-white border border-gray-200 mt-1 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+    <li *ngFor="let u of usuariosSugeridos" (click)="seleccionarUsuario(u)" class="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm">
+      <span class="font-bold text-blue-700">{{u.cedula}}</span> - <span class="text-gray-600">{{u.nombres}} {{u.apellidos}}</span>
+    </li>
+  </ul>
+
+  <!-- Mensajes de Error -->
+  <p *ngIf="internalControl.hasError('pattern') && (internalControl.dirty || internalControl.touched)" class="text-xs text-red-500 mt-1 font-semibold">Solo se admiten números.</p>
+  <p *ngIf="internalControl.hasError('notFound')" class="text-xs text-red-500 mt-1 font-semibold">Cédula no registrada en el sistema.</p>
+</div>

@@ -13,10 +13,11 @@ export class InventarioService {
     return from((async () => {
       try {
         const { data, error } = await this.supabase.from('bienes')
-          .select('*, categorias(nombre), cat_estados(nombre), usuarios(nombres, apellidos)');
+          .select('*, categorias(nombre), cat_estados!inner(nombre), cat_ubicaciones(nombre), cat_areas(nombre), usuarios(nombres, apellidos)')
+          .neq('cat_estados.nombre', 'Desincorporado');
           
         if (error) {
-          console.error('[InventarioService] Error consultando bienes:', error);
+          console.error('[InventarioService] Error consultando bienes. Revisa políticas RLS o conexión:', error.message || error);
           return [];
         }
         
@@ -72,10 +73,13 @@ export class InventarioService {
         descripcion: payload.descripcion,
         categoria_id: payload.categoria_id,
         condicion_fisica: payload.condicion_fisica,
-        ubicacion: payload.ubicacion,
-        area: payload.area,
+        ubicacion_id: payload.ubicacion_id,
+        area_id: payload.area_id,
         responsable_cedula: payload.responsable_cedula,
         estado_id: payload.estado_id,
+        marca: payload.marca,
+        modelo: payload.modelo,
+        serial_fabricante: payload.serial_fabricante,
         url_foto_principal: payload.url_foto_principal
       };
 
@@ -94,10 +98,13 @@ export class InventarioService {
         descripcion: data.descripcion,
         categoria_id: data.categoria_id,
         condicion_fisica: data.condicion_fisica,
-        ubicacion: data.ubicacion,
-        area: data.area,
+        ubicacion_id: data.ubicacion_id,
+        area_id: data.area_id,
         responsable_cedula: data.responsable_cedula,
-        estado_id: data.estado_id
+        estado_id: data.estado_id,
+        marca: data.marca,
+        modelo: data.modelo,
+        serial_fabricante: data.serial_fabricante
       };
 
       const { data: result, error } = await this.supabase.from('bienes').update(dbPayload).eq('codigo_id', id).select().single();
@@ -130,10 +137,13 @@ export class InventarioService {
         descripcion: payload.descripcion,
         categoria_id: payload.categoria_id,
         condicion_fisica: payload.condicion_fisica,
-        ubicacion: payload.ubicacion,
-        area: payload.area,
+        ubicacion_id: payload.ubicacion_id,
+        area_id: payload.area_id,
         responsable_cedula: payload.responsable_cedula,
         estado_id: payload.estado_id,
+        marca: payload.marca,
+        modelo: payload.modelo,
+        serial_fabricante: payload.serial_fabricante,
         ...(payload.url_foto_principal ? { url_foto_principal: payload.url_foto_principal } : {})
       };
 
@@ -234,15 +244,74 @@ export class InventarioService {
     })());
   }
 
+  getUbicaciones() {
+    return from((async () => {
+      try {
+        const { data, error } = await this.supabase.from('cat_ubicaciones').select('*').order('nombre');
+        if (error) { 
+          console.error('[InventarioService] Error cargando ubicaciones (Posible 403 Forbidden):', error.message || error); 
+          return []; 
+        }
+        return data || [];
+      } catch (err) { 
+        console.error('[InventarioService] Excepción crítica en getUbicaciones:', err); 
+        return []; 
+      }
+    })());
+  }
+
+  getAreas() {
+    return from((async () => {
+      try {
+        const { data, error } = await this.supabase.from('cat_areas').select('*').order('nombre');
+        if (error) { 
+          console.error('[InventarioService] Error cargando áreas (Posible 403 Forbidden):', error.message || error); 
+          return []; 
+        }
+        return data || [];
+      } catch (err) { 
+        console.error('[InventarioService] Excepción crítica en getAreas:', err); 
+        return []; 
+      }
+    })());
+  }
+
+  buscarUsuariosPorCedula(termino: string) {
+    return from((async () => {
+      try {
+        const { data, error } = await this.supabase.from('usuarios')
+          .select('cedula, nombres, apellidos')
+          .ilike('cedula', `${termino}%`)
+          .limit(10);
+        if (error) { console.warn('Error en buscarUsuariosPorCedula:', error); return []; }
+        return data || [];
+      } catch (err) { console.warn('Excepción en buscarUsuariosPorCedula:', err); return []; }
+    })());
+  }
+
+  verificarCedulaExistente(cedula: string) {
+    return from((async () => {
+      try {
+        const { data, error } = await this.supabase.from('usuarios')
+          .select('cedula')
+          .eq('cedula', cedula)
+          .single();
+        if (error || !data) return false;
+        return true;
+      } catch (err) { return false; }
+    })());
+  }
+
   // --- MANTENIMIENTO ---
   getAlertasMantenimiento() {
     return from((async () => {
       try {
         const today = new Date().toISOString().split('T')[0];
         const { data, error } = await this.supabase.from('bienes')
-          .select('*, categorias!inner(nombre)')
+          .select('*, categorias!inner(nombre), cat_estados!inner(nombre)')
           .eq('categorias.nombre', 'Computadoras')
-          .lte('fecha_proximo_mantenimiento', today);
+          .lte('fecha_proximo_mantenimiento', today)
+          .neq('cat_estados.nombre', 'Desincorporado');
         if (error) { console.warn('Error en getAlertasMantenimiento:', error); return []; }
         return (data || []).map((b: any) => ({ bien: b, proxima_fecha: b.fecha_proximo_mantenimiento }));
       } catch (err) { console.warn('Excepción en getAlertasMantenimiento:', err); return []; }
@@ -381,8 +450,8 @@ export class InventarioService {
   registrarTraslado(bienId: string, payloadUpdate: any, accion: string, mensajeAuditoria: string) {
     return from((async () => {
       const dbPayload: any = {
-        ubicacion: payloadUpdate.ubicacion,
-        area: payloadUpdate.area,
+        ubicacion_id: payloadUpdate.ubicacion_id,
+        area_id: payloadUpdate.area_id,
         responsable_cedula: payloadUpdate.responsable_cedula
       };
       
@@ -406,8 +475,9 @@ export class InventarioService {
     return from((async () => {
       try {
         const { data, error } = await this.supabase.from('bienes')
-          .select('*, categorias(nombre), cat_estados(nombre)')
-          .eq('responsable_cedula', cedula);
+          .select('*, categorias(nombre), cat_estados!inner(nombre)')
+          .eq('responsable_cedula', cedula)
+          .neq('cat_estados.nombre', 'Desincorporado');
         if (error) { console.warn('Error en getBienesByEncargado:', error); return []; }
         return data || [];
       } catch (err) { console.warn('Excepción en getBienesByEncargado:', err); return []; }
@@ -422,9 +492,15 @@ export class InventarioService {
           console.warn('Error de acceso a tabla cat_estados:', estadosError);
           return { metrics: {}, estados: [] };
         }
+        const estadoDes = estados?.find(e => e.nombre === 'Desincorporado');
+        const desincID = estadoDes ? estadoDes.id : null;
         
         const metrics: any = {};
-        const { count: totalCount, error: countError } = await this.supabase.from('bienes').select('*', { count: 'exact', head: true });
+        
+        let queryTotal = this.supabase.from('bienes').select('*', { count: 'exact', head: true });
+        if (desincID) queryTotal = queryTotal.neq('estado_id', desincID);
+        
+        const { count: totalCount, error: countError } = await queryTotal;
         if (countError) {
           console.warn('Error de acceso a tabla bienes (count):', countError);
         }
@@ -444,9 +520,11 @@ export class InventarioService {
         }
 
         const conditions = ['Buen estado', 'Regular', 'Mal estado'];
-        const condPromises = conditions.map(cond => 
-          this.supabase.from('bienes').select('*', { count: 'exact', head: true }).eq('condicion_fisica', cond)
-        );
+        const condPromises = conditions.map(cond => {
+          let q = this.supabase.from('bienes').select('*', { count: 'exact', head: true }).eq('condicion_fisica', cond);
+          if (desincID) q = q.neq('estado_id', desincID);
+          return q;
+        });
         const condResults = await Promise.all(condPromises);
         
         conditions.forEach((cond, index) => {

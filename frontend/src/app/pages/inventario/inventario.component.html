@@ -26,8 +26,8 @@
       <thead>
         <tr class="border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50/50">
           <th class="py-3 px-4 w-16">Item</th>
-          <th class="py-3 px-4">Código ID</th>
-          <th class="py-3 px-4">Descripción</th>
+          <th class="py-3 px-4">Código / Serial</th>
+          <th class="py-3 px-4">Bien / Descripción</th>
           
           <th class="py-2 px-2 min-w-[140px] relative">
             <input type="text" [(ngModel)]="filtroUbicacion" (input)="applyFilters()" placeholder="UBICACIÓN" class="bg-transparent border-none text-xs font-bold uppercase text-gray-500 focus:ring-0 w-full hover:bg-gray-100 rounded px-2 py-1 transition-colors placeholder-gray-500">
@@ -69,12 +69,19 @@
               </div>
             </div>
           </td>
-          <td class="py-3 px-4 text-sm font-bold text-gray-800">{{item.codigo_id}}</td>
+          <td class="py-3 px-4">
+            <p class="text-sm font-bold text-gray-800">{{item.codigo_id}}</p>
+            <p *ngIf="item.serial_fabricante" class="text-xs font-mono text-blue-600 font-semibold bg-blue-50 px-1 py-0.5 rounded inline-block mt-1" title="Serial de Fabricante">S/N: {{item.serial_fabricante}}</p>
+          </td>
           <td class="py-3 px-4">
             <p class="text-sm font-semibold text-gray-800 line-clamp-1" title="{{item.nombre}}">{{item.nombre}}</p>
-            <p class="text-xs text-gray-500 line-clamp-1 mt-0.5" title="{{item.descripcion}}">{{item.descripcion || 'Sin descripción detallada'}}</p>
+            <p class="text-xs text-gray-500 line-clamp-1 mt-0.5" title="{{item.marca}} {{item.modelo}}">
+              <span *ngIf="item.marca" class="font-bold">{{item.marca}}</span>
+              <span *ngIf="item.modelo"> {{item.modelo}}</span>
+              <span *ngIf="!item.marca && !item.modelo">{{item.descripcion || 'Sin descripción detallada'}}</span>
+            </p>
           </td>
-          <td class="py-3 px-4 text-sm font-medium text-gray-700">{{item.ubicacion || 'N/A'}} <br> <span class="text-xs text-gray-400">{{item.area}}</span></td>
+          <td class="py-3 px-4 text-sm font-medium text-gray-700">{{item.cat_ubicaciones?.nombre || 'N/A'}} <br> <span class="text-xs text-gray-400">{{item.cat_areas?.nombre || 'N/A'}}</span></td>
           <td class="py-3 px-4 text-sm text-gray-600">{{item.categorias?.nombre || 'N/A'}}</td>
           <td class="py-3 px-4">
             <div class="px-2.5 py-1 rounded-md text-xs font-bold inline-flex items-center"
@@ -151,6 +158,18 @@
             <input type="text" [(ngModel)]="nuevoBien.codigo_id" name="codigo_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
           </div>
           <div>
+            <label class="text-sm font-bold text-gray-700">Serial Fabricante *</label>
+            <input type="text" [(ngModel)]="nuevoBien.serial_fabricante" name="serial_fabricante" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required placeholder="Ej: SN-123456">
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Marca</label>
+            <input type="text" [(ngModel)]="nuevoBien.marca" name="marca" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" placeholder="Ej: Dell">
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Modelo</label>
+            <input type="text" [(ngModel)]="nuevoBien.modelo" name="modelo" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" placeholder="Ej: Optiplex 7040">
+          </div>
+          <div>
             <label class="text-sm font-bold text-gray-700">Categoría *</label>
             <select [(ngModel)]="nuevoBien.categoria_id" name="categoria_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
               <option *ngFor="let cat of categorias" [value]="cat.id">{{cat.nombre}}</option>
@@ -158,16 +177,19 @@
           </div>
           <div>
             <label class="text-sm font-bold text-gray-700">Ubicación *</label>
-            <input type="text" [(ngModel)]="nuevoBien.ubicacion" name="ubicacion" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+            <select [(ngModel)]="nuevoBien.ubicacion_id" name="ubicacion_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+              <option value="" disabled selected>Seleccione ubicación</option>
+              <option *ngFor="let u of cat_ubicaciones" [value]="u.id">{{u.nombre}}</option>
+            </select>
           </div>
           <div>
             <label class="text-sm font-bold text-gray-700">Área *</label>
-            <input type="text" [(ngModel)]="nuevoBien.area" name="area" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+            <select [(ngModel)]="nuevoBien.area_id" name="area_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+              <option value="" disabled selected>Seleccione área</option>
+              <option *ngFor="let a of cat_areas" [value]="a.id">{{a.nombre}}</option>
+            </select>
           </div>
-          <div>
-            <label class="text-sm font-bold text-gray-700">Responsable Cédula *</label>
-            <input type="text" [(ngModel)]="nuevoBien.responsable_cedula" name="responsable_cedula" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
-          </div>
+          <app-responsable-autocomplete [(ngModel)]="nuevoBien.responsable_cedula" name="responsable_cedula" required></app-responsable-autocomplete>
           <div>
             <label class="text-sm font-bold text-gray-700">Estado *</label>
             <select [(ngModel)]="nuevoBien.estado_id" name="estado_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
@@ -195,10 +217,10 @@
           </div>
         </div>
         
-        <div class="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-100">
-          <button type="button" (click)="cerrarModal()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
-          <button type="submit" [disabled]="!addForm.valid || isSubmitting" class="px-5 py-2 bg-primary text-white font-bold rounded-xl disabled:opacity-50 flex items-center">
-            <span *ngIf="isSubmitting" class="material-icons-outlined animate-spin mr-2 text-sm">autorenew</span> Guardar Bien
+          <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 rounded-b-2xl mt-4">
+          <button type="button" (click)="cerrarModal()" class="px-5 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Cancelar</button>
+          <button type="submit" [disabled]="isSubmitting || addForm.invalid" class="px-5 py-2 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ isSubmitting ? 'Guardando...' : 'Guardar Bien' }}
           </button>
         </div>
       </form>
@@ -225,6 +247,18 @@
             <input type="text" [(ngModel)]="editingBien.codigo_id" name="codigo_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required disabled>
           </div>
           <div>
+            <label class="text-sm font-bold text-gray-700">Serial Fabricante *</label>
+            <input type="text" [(ngModel)]="editingBien.serial_fabricante" name="serial_fabricante" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Marca</label>
+            <input type="text" [(ngModel)]="editingBien.marca" name="marca" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="text-sm font-bold text-gray-700">Modelo</label>
+            <input type="text" [(ngModel)]="editingBien.modelo" name="modelo" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500">
+          </div>
+          <div>
             <label class="text-sm font-bold text-gray-700">Categoría *</label>
             <select [(ngModel)]="editingBien.categoria_id" name="categoria_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
               <option *ngFor="let cat of categorias" [value]="cat.id">{{cat.nombre}}</option>
@@ -232,16 +266,19 @@
           </div>
           <div>
             <label class="text-sm font-bold text-gray-700">Ubicación *</label>
-            <input type="text" [(ngModel)]="editingBien.ubicacion" name="ubicacion" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+            <select [(ngModel)]="editingBien.ubicacion_id" name="ubicacion_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+              <option value="" disabled selected>Seleccione ubicación</option>
+              <option *ngFor="let u of cat_ubicaciones" [value]="u.id">{{u.nombre}}</option>
+            </select>
           </div>
           <div>
             <label class="text-sm font-bold text-gray-700">Área *</label>
-            <input type="text" [(ngModel)]="editingBien.area" name="area" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+            <select [(ngModel)]="editingBien.area_id" name="area_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+              <option value="" disabled selected>Seleccione área</option>
+              <option *ngFor="let a of cat_areas" [value]="a.id">{{a.nombre}}</option>
+            </select>
           </div>
-          <div>
-            <label class="text-sm font-bold text-gray-700">Responsable Cédula *</label>
-            <input type="text" [(ngModel)]="editingBien.responsable_cedula" name="responsable_cedula" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
-          </div>
+          <app-responsable-autocomplete [(ngModel)]="editingBien.responsable_cedula" name="responsable_cedula" required></app-responsable-autocomplete>
           <div>
             <label class="text-sm font-bold text-gray-700">Estado *</label>
             <select [(ngModel)]="editingBien.estado_id" name="estado_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
@@ -341,11 +378,17 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="text-sm font-bold text-gray-700">Ubicación Destino *</label>
-            <input type="text" [(ngModel)]="datosTraslado.ubicacion" name="ubicacion" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
+            <select [(ngModel)]="datosTraslado.ubicacion_id" name="ubicacion_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
+              <option value="" disabled selected>Seleccione ubicación</option>
+              <option *ngFor="let u of cat_ubicaciones" [value]="u.id">{{u.nombre}}</option>
+            </select>
           </div>
           <div>
             <label class="text-sm font-bold text-gray-700">Área Destino *</label>
-            <input type="text" [(ngModel)]="datosTraslado.area" name="area" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
+            <select [(ngModel)]="datosTraslado.area_id" name="area_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
+              <option value="" disabled selected>Seleccione área</option>
+              <option *ngFor="let a of cat_areas" [value]="a.id">{{a.nombre}}</option>
+            </select>
           </div>
           <div>
             <label class="text-sm font-bold text-gray-700">Cédula del Nuevo Encargado *</label>
@@ -388,6 +431,16 @@
           <p class="text-lg font-mono text-gray-800">{{bienSeleccionado.codigo_id}}</p>
         </div>
         <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Serial Fabricante</h3>
+          <p class="text-lg font-mono text-blue-600">{{bienSeleccionado.serial_fabricante || 'N/A'}}</p>
+        </div>
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Marca / Modelo</h3>
+          <p class="text-sm font-bold text-gray-800">
+             {{bienSeleccionado.marca || 'N/A'}} - {{bienSeleccionado.modelo || 'N/A'}}
+          </p>
+        </div>
+        <div>
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Estado</h3>
             <p class="text-sm font-bold">{{bienSeleccionado.cat_estados?.nombre || bienSeleccionado.estado_id}}</p>
           </div>
@@ -401,7 +454,7 @@
         </div>
         <div>
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Ubicación / Área</h3>
-          <p class="text-sm font-medium text-gray-800">{{bienSeleccionado.ubicacion}} - {{bienSeleccionado.area}}</p>
+          <p class="text-sm font-medium text-gray-800">{{bienSeleccionado.cat_ubicaciones?.nombre || 'N/A'}} - {{bienSeleccionado.cat_areas?.nombre || 'N/A'}}</p>
         </div>
         <div>
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Categoría</h3>
