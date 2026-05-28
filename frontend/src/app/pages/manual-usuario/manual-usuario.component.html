@@ -1,0 +1,166 @@
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <!-- Header -->
+  <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-8 text-white">
+    <h1 class="text-3xl font-bold mb-2">Manual de Usuario</h1>
+    <p class="text-blue-100 text-lg">Guía completa para el uso del Sistema de Inventario ULA</p>
+  </div>
+
+  <!-- Content Navigation & Body -->
+  <div class="p-8 flex flex-col md:flex-row gap-8">
+    
+    <!-- Index Sidebar -->
+    <div class="md:w-1/4 flex-shrink-0 border-r border-gray-100 pr-4">
+      <nav class="sticky top-8 space-y-1 text-sm font-medium text-gray-600">
+        <p class="text-xs font-bold text-gray-400 uppercase mb-4 tracking-wider">Contenido</p>
+        <a href="#introduccion" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-600 transition-colors">1. Introducción</a>
+        <a href="#inicio" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-600 transition-colors">2. Módulo de Inicio</a>
+        <a href="#inventario" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-600 transition-colors">3. Inventario</a>
+        <a href="#mantenimiento" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-600 transition-colors">4. Mantenimiento</a>
+        <a href="#desincorporacion" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-600 transition-colors">5. Desincorporación</a>
+        <a href="#bitacora" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-600 transition-colors">6. Bitácora</a>
+        <a href="#usuarios" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-600 transition-colors">7. Usuarios</a>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="md:w-3/4 space-y-12 text-gray-700 leading-relaxed pb-16 h-[calc(100vh-200px)] overflow-y-auto pr-4 custom-scrollbar">
+      
+      <!-- Introducción -->
+      <section id="introduccion" class="scroll-mt-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span class="material-icons-outlined text-blue-500">info</span> Introducción
+        </h2>
+        <p class="mb-4">
+          Bienvenido al <strong>Sistema de Inventario ULA</strong>. Esta herramienta ha sido diseñada para gestionar de manera eficiente el ciclo de vida de los bienes de la institución, abarcando desde su registro inicial (alta) hasta su desincorporación o envío a mantenimiento.
+        </p>
+        <p>
+          Este manual tiene como objetivo guiar a los usuarios a través de las diferentes funcionalidades del sistema, asegurando una experiencia fluida y el correcto manejo de la información.
+        </p>
+      </section>
+
+      <!-- Inicio -->
+      <section id="inicio" class="scroll-mt-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span class="material-icons-outlined text-blue-500">home</span> Módulo de Inicio
+        </h2>
+        <p class="mb-4">
+          El <strong>Dashboard</strong> o pantalla de inicio ofrece un resumen general del estado del inventario. Aquí podrá visualizar de un vistazo:
+        </p>
+        <ul class="list-disc list-inside space-y-2 ml-4">
+          <li><strong>Métricas Generales:</strong> Cantidad total de bienes registrados.</li>
+          <li><strong>Estado de los Bienes:</strong> Cuántos están Activos, en Mantenimiento o Desincorporados.</li>
+          <li><strong>Condición Física:</strong> Resumen de bienes en buen estado, regular o mal estado.</li>
+        </ul>
+        <div class="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-100 flex items-start gap-3">
+          <span class="material-icons-outlined text-blue-500 mt-0.5">lightbulb</span>
+          <p class="text-sm text-blue-800">Utilice esta vista para tomar decisiones rápidas e identificar áreas que requieran atención inmediata, como una gran cantidad de bienes en mantenimiento.</p>
+        </div>
+      </section>
+
+      <!-- Inventario -->
+      <section id="inventario" class="scroll-mt-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span class="material-icons-outlined text-blue-500">inventory</span> Inventario
+        </h2>
+        <p class="mb-4">El corazón del sistema. En este módulo se gestionan todos los bienes de la institución.</p>
+        
+        <h3 class="text-lg font-semibold text-gray-800 mt-6 mb-3">Funciones Principales:</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <span class="material-icons-outlined text-green-500 mt-0.5">add_circle</span>
+            <div>
+              <strong>Alta de Bienes:</strong> Permite registrar un nuevo artículo especificando su código, nombre, categoría, ubicación, responsable, y opcionalmente adjuntar una fotografía.
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="material-icons-outlined text-orange-500 mt-0.5">edit</span>
+            <div>
+              <strong>Modificación:</strong> Puede actualizar los detalles de un bien existente si sus características, responsable o ubicación cambian.
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="material-icons-outlined text-gray-500 mt-0.5">search</span>
+            <div>
+              <strong>Búsqueda y Filtros:</strong> Utilice la barra de búsqueda y los filtros por categoría y condición para localizar bienes rápidamente.
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="material-icons-outlined text-blue-500 mt-0.5">swap_horiz</span>
+            <div>
+              <strong>Traslado:</strong> Permite reasignar un bien a una nueva ubicación o a un nuevo responsable.
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Mantenimiento -->
+      <section id="mantenimiento" class="scroll-mt-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span class="material-icons-outlined text-blue-500">build</span> Mantenimiento
+        </h2>
+        <p class="mb-4">Lleve un control riguroso de los equipos que requieren reparaciones o mantenimiento preventivo.</p>
+        
+        <div class="grid md:grid-cols-2 gap-4 mt-6">
+          <div class="border border-gray-200 rounded-lg p-4">
+            <h4 class="font-bold text-gray-900 flex items-center gap-2 mb-2"><span class="material-icons-outlined text-red-500 text-sm">warning</span> Alertas</h4>
+            <p class="text-sm text-gray-600">Visualice equipos (como computadoras) cuya fecha de mantenimiento programado se ha cumplido o está por vencer.</p>
+          </div>
+          <div class="border border-gray-200 rounded-lg p-4">
+            <h4 class="font-bold text-gray-900 flex items-center gap-2 mb-2"><span class="material-icons-outlined text-blue-500 text-sm">construction</span> En Reparación</h4>
+            <p class="text-sm text-gray-600">Listado de bienes actualmente en el taller. Permite registrar la finalización del trabajo indicando lo que se realizó.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Desincorporacion -->
+      <section id="desincorporacion" class="scroll-mt-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span class="material-icons-outlined text-blue-500">delete_outline</span> Desincorporación
+        </h2>
+        <p class="mb-4">Este módulo permite dar de baja aquellos bienes que por obsolescencia, daño irreparable o pérdida ya no forman parte activa del inventario de la institución.</p>
+        <p class="mb-4">
+          Para desincorporar un bien, es necesario seleccionarlo desde el Inventario y proporcionar una <strong>justificación clara</strong>. Todos los bienes dados de baja quedarán registrados en el histórico de desincorporaciones, conservando su trazabilidad.
+        </p>
+      </section>
+
+      <!-- Bitacora -->
+      <section id="bitacora" class="scroll-mt-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span class="material-icons-outlined text-blue-500">history</span> Bitácora (Auditoría)
+        </h2>
+        <p class="mb-4">La seguridad y la transparencia son pilares del sistema. La bitácora registra de forma automática e inmutable todas las acciones críticas realizadas por los usuarios.</p>
+        <ul class="list-disc list-inside space-y-2 ml-4">
+          <li>Registra quién realizó la acción (Usuario).</li>
+          <li>Registra cuándo se realizó (Fecha y Hora).</li>
+          <li>Detalla qué se hizo (Creación, modificación, traslado, desincorporación).</li>
+        </ul>
+      </section>
+
+      <!-- Usuarios -->
+      <section id="usuarios" class="scroll-mt-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span class="material-icons-outlined text-blue-500">people_alt</span> Usuarios
+        </h2>
+        <p class="mb-4"><em>* Módulo exclusivo para Super Administradores.</em></p>
+        <p>
+          Permite la gestión del personal autorizado para acceder al sistema. Puede crear nuevos usuarios, asignarles roles (Ej. Super Administrador o Usuario Estándar), actualizar sus datos y gestionar sus credenciales de acceso.
+        </p>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Custom Scrollbar for inner content */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+  }
+</style>

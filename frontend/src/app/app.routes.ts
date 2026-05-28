@@ -8,6 +8,7 @@ import { MantenimientoComponent } from './pages/mantenimiento/mantenimiento.comp
 import { DesincorporacionComponent } from './pages/desincorporacion/desincorporacion.component';
 import { BitacoraComponent } from './pages/bitacora/bitacora.component';
 import { UsuariosComponent } from './pages/usuarios/usuarios.component';
+import { ManualUsuarioComponent } from './pages/manual-usuario/manual-usuario.component';
 import { authGuard } from './guards/auth.guard';
 import { publicGuard } from './guards/public.guard';
 import { roleGuard } from './guards/role.guard';
@@ -27,7 +28,8 @@ export const routes: Routes = [
       { path: 'mantenimiento', component: MantenimientoComponent },
       { path: 'desincorporacion', component: DesincorporacionComponent },
       { path: 'bitacora', component: BitacoraComponent },
-      { path: 'usuarios', component: UsuariosComponent, canActivate: [roleGuard] }
+      { path: 'usuarios', component: UsuariosComponent, canActivate: [roleGuard] },
+      { path: 'manual-usuario', component: ManualUsuarioComponent }
     ]
   },
   { path: '**', redirectTo: '/login' } // Wildcard fallback

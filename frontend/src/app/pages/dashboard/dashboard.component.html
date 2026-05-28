@@ -37,8 +37,8 @@
       <div *ngIf="isSuperAdmin$ | async">
         <p class="text-xs font-bold text-gray-400 uppercase mb-4 px-2 tracking-wider mt-8">Configuración</p>
         <nav class="space-y-1">
-          <a href="#" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors">
-            <span class="material-icons-outlined mr-3">settings</span> Sistema
+          <a routerLink="/dashboard/manual-usuario" routerLinkActive="bg-blue-50 text-blue-600 font-semibold shadow-sm" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors">
+            <span class="material-icons-outlined mr-3">menu_book</span> Manual de Usuario
           </a>
           <a *ngIf="isSuperAdmin$ | async" routerLink="/dashboard/usuarios" routerLinkActive="bg-blue-50 text-blue-600 font-semibold shadow-sm" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors">
             <span class="material-icons-outlined mr-3">people_alt</span> Usuarios
