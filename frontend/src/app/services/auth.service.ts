@@ -24,7 +24,7 @@ export class AuthService {
     this.initializeAuthState();
 
     // 1. Suscripción nativa a los cambios de Supabase (Misma pestaña)
-    this.supabase.auth.onAuthStateChange(async (event, session) => {
+    this.supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       if (event === 'SIGNED_IN') {
         await this.loadUserProfile(session?.user);
         // Despachamos evento a otras pestañas
@@ -125,7 +125,7 @@ export class AuthService {
           
         } else if (newValue && newValue.includes('_login')) {
           // Inicio de sesión en otra pestaña
-          this.supabase.auth.getSession().then(({ data }) => {
+          this.supabase.auth.getSession().then(({ data }: any) => {
             if (data.session) {
               this.loadUserProfile(data.session.user).then(() => {
                 this.router.navigate(['/dashboard']);

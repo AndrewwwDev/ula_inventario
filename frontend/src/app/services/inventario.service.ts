@@ -507,12 +507,12 @@ export class InventarioService {
         metrics['Total'] = totalCount || 0;
 
         if (estados && estados.length > 0) {
-          const countPromises = estados.map(est => 
+          const countPromises = estados.map((est: any) => 
             this.supabase.from('bienes').select('*', { count: 'exact', head: true }).eq('estado_id', est.id)
           );
           const results = await Promise.all(countPromises);
           
-          estados.forEach((est, index) => {
+          estados.forEach((est: any, index: any) => {
             const res = results[index];
             if (res.error) console.warn(`Error contando estado ${est.nombre}:`, res.error);
             metrics[est.nombre] = res.count || 0;

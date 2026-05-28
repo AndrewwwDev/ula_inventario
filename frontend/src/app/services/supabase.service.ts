@@ -31,7 +31,7 @@ export class SupabaseService {
     console.log('[SupabaseService] createClient() ejecutado con éxito');
 
     // Configurar listener para cambios de sesión (login, logout)
-    this.supabase.auth.onAuthStateChange((event, session) => {
+    this.supabase.auth.onAuthStateChange((event: any, session: any) => {
       this.currentUser.next(session?.user ?? null);
     });
   }
