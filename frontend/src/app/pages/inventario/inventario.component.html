@@ -125,7 +125,15 @@
               <button (click)="$event.stopPropagation(); openEditModal(item)" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-blue-100 hover:text-blue-600 transition-colors" title="Editar">
                 <span class="material-icons-outlined text-[18px]">edit</span>
               </button>
-              <button (click)="$event.stopPropagation(); openMantenimientoModal(item)" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-orange-100 hover:text-orange-600 transition-colors" title="Enviar a Mantenimiento">
+              <button 
+                [disabled]="item.cat_estados?.nombre === 'Mantenimiento'"
+                (click)="$event.stopPropagation(); openMantenimientoModal(item)" 
+                class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                [ngClass]="{
+                  'opacity-50 cursor-not-allowed pointer-events-none text-gray-400 bg-gray-50': item.cat_estados?.nombre === 'Mantenimiento',
+                  'bg-gray-100 text-gray-600 hover:bg-orange-100 hover:text-orange-600': item.cat_estados?.nombre !== 'Mantenimiento'
+                }"
+                title="Enviar a Mantenimiento">
                 <span class="material-icons-outlined text-[18px]">build</span>
               </button>
               <button (click)="$event.stopPropagation(); openTrasladoModal(item)" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-purple-100 hover:text-purple-600 transition-colors" title="Trasladar">
@@ -198,12 +206,12 @@
               <option *ngFor="let a of cat_areas" [value]="a.id">{{a.nombre}}</option>
             </select>
           </div>
-          <app-responsable-autocomplete [(ngModel)]="nuevoBien.responsable_cedula" name="responsable_cedula" required></app-responsable-autocomplete>
+          <app-responsable-autocomplete [ngModel]="nuevoBien.responsable_cedula" (ngModelChange)="nuevoBien.responsable_cedula = $event; onResponsableChange($event, false)" name="responsable_cedula"></app-responsable-autocomplete>
           <div>
             <label class="text-sm font-bold text-gray-700">Estado *</label>
-            <select [(ngModel)]="nuevoBien.estado_id" name="estado_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+            <select [(ngModel)]="nuevoBien.estado_id" name="estado_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" required [disabled]="!nuevoBien.responsable_cedula || isMantenimiento(nuevoBien.estado_id)">
               <option value="" disabled selected>Seleccione estado</option>
-              <option *ngFor="let est of cat_estados" [value]="est.id">{{ est.nombre }}</option>
+              <option *ngFor="let est of getEstadosPermitidos(nuevoBien.responsable_cedula, nuevoBien.estado_id)" [value]="est.id">{{ est.nombre }}</option>
             </select>
           </div>
           <div>
@@ -287,12 +295,12 @@
               <option *ngFor="let a of cat_areas" [value]="a.id">{{a.nombre}}</option>
             </select>
           </div>
-          <app-responsable-autocomplete [(ngModel)]="editingBien.responsable_cedula" name="responsable_cedula" required></app-responsable-autocomplete>
+          <app-responsable-autocomplete [ngModel]="editingBien.responsable_cedula" (ngModelChange)="editingBien.responsable_cedula = $event; onResponsableChange($event, true)" name="responsable_cedula"></app-responsable-autocomplete>
           <div>
             <label class="text-sm font-bold text-gray-700">Estado *</label>
-            <select [(ngModel)]="editingBien.estado_id" name="estado_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500" required>
+            <select [(ngModel)]="editingBien.estado_id" name="estado_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" required [disabled]="!editingBien.responsable_cedula || isMantenimiento(editingBien.estado_id)">
               <option value="" disabled selected>Seleccione estado</option>
-              <option *ngFor="let est of cat_estados" [value]="est.id">{{ est.nombre }}</option>
+              <option *ngFor="let est of getEstadosPermitidos(editingBien.responsable_cedula, editingBien.estado_id)" [value]="est.id">{{ est.nombre }}</option>
             </select>
           </div>
           <div>
@@ -353,9 +361,24 @@
           <input type="file" (change)="onFileSelected($event)" accept="image/*" class="w-full mt-1 px-4 py-2 border rounded-xl text-sm" required>
         </div>
 
+        <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 p-4 rounded-lg mt-4 animate-fade-in">
+          <input 
+            type="checkbox" 
+            id="checkResponsabilidad" 
+            [(ngModel)]="aceptaResponsabilidad" 
+            name="aceptaResponsabilidad"
+            class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+          <label for="checkResponsabilidad" class="text-sm text-gray-700 leading-relaxed cursor-pointer select-none">
+            Certifico que este bien cumple con las causales de desincorporación y me hago responsable de los datos suministrados. Declaro haber leído y aceptar los 
+            <a routerLink="/dashboard/reglas-desincorporacion" target="_blank" class="text-blue-600 hover:text-blue-800 underline font-medium">
+              Términos, Condiciones y Reglas de Bienes Públicos de la ULA
+            </a>.
+          </label>
+        </div>
+
         <div class="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-100">
           <button type="button" (click)="cerrarModal()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
-          <button type="submit" [disabled]="!desincForm.valid || !selectedFile || isSubmitting" class="px-5 py-2 bg-red-600 text-white font-bold rounded-xl disabled:opacity-50 hover:bg-red-700 flex items-center">
+          <button type="submit" [disabled]="!desincForm.valid || !selectedFile || isSubmitting || !aceptaResponsabilidad" class="px-5 py-2 bg-red-600 text-white font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed pointer-events-auto hover:bg-red-700 flex items-center">
              Confirmar Desincorporación
           </button>
         </div>
@@ -383,33 +406,59 @@
         </div>
       </div>
 
+      <!-- Tarjeta de Estado Actual -->
+      <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl">
+        <h3 class="text-sm font-bold text-blue-800 mb-2">Estado Actual</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div>
+            <p class="text-xs font-bold text-blue-400 uppercase tracking-wider">Ubicación</p>
+            <p class="text-sm font-medium text-blue-900">{{ bienATrasladar?.cat_ubicaciones?.nombre || 'N/A' }}</p>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-blue-400 uppercase tracking-wider">Área</p>
+            <p class="text-sm font-medium text-blue-900">{{ bienATrasladar?.cat_areas?.nombre || 'N/A' }}</p>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-blue-400 uppercase tracking-wider">Responsable</p>
+            <p class="text-sm font-medium text-blue-900">
+              {{ bienATrasladar?.responsable_cedula || 'Sin Asignación' }} <span *ngIf="bienATrasladar?.responsable_cedula" class="text-sm text-gray-700 font-medium">- {{ obtenerNombreEncargadoActual() }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
       <form (ngSubmit)="confirmarTraslado()" #trasladoForm="ngForm" class="space-y-5">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="text-sm font-bold text-gray-700">Ubicación Destino *</label>
+            <label class="text-sm font-bold text-gray-700">Nueva Ubicación Destino *</label>
             <select [(ngModel)]="datosTraslado.ubicacion_id" name="ubicacion_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
               <option value="" disabled selected>Seleccione ubicación</option>
               <option *ngFor="let u of cat_ubicaciones" [value]="u.id">{{u.nombre}}</option>
             </select>
           </div>
           <div>
-            <label class="text-sm font-bold text-gray-700">Área Destino *</label>
+            <label class="text-sm font-bold text-gray-700">Nueva Área Destino *</label>
             <select [(ngModel)]="datosTraslado.area_id" name="area_id" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
               <option value="" disabled selected>Seleccione área</option>
               <option *ngFor="let a of cat_areas" [value]="a.id">{{a.nombre}}</option>
             </select>
           </div>
-          <div>
+          <div class="md:col-span-2">
             <label class="text-sm font-bold text-gray-700">Cédula del Nuevo Encargado *</label>
-            <input type="text" [(ngModel)]="datosTraslado.responsable_cedula" name="responsable_cedula" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
+            <input type="text" [(ngModel)]="datosTraslado.responsable_cedula" name="responsable_cedula" placeholder="Ej. V-12345678" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
           </div>
         </div>
 
-        <div class="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-100">
-          <button type="button" (click)="cerrarModal()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
-          <button type="submit" [disabled]="!trasladoForm.valid || isSubmitting" class="px-5 py-2 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-50 hover:bg-purple-700 flex items-center transition-colors shadow-sm">
-             Generar Comprobante
-          </button>
+        <div class="mt-6 pt-4 border-t border-gray-100">
+          <p *ngIf="!esTrasladoValido" class="text-xs text-red-500 font-medium text-right mb-3">
+            * Para registrar un traslado, debe modificar el responsable, la ubicación o el área actual.
+          </p>
+          <div class="flex justify-end space-x-3">
+            <button type="button" (click)="cerrarModal()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
+            <button type="submit" [disabled]="!trasladoForm.valid || isSubmitting || !esTrasladoValido" class="px-5 py-2 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 flex items-center transition-colors shadow-sm">
+               Generar Comprobante
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -470,12 +519,31 @@
             <p class="text-sm font-medium text-gray-800">{{bienSeleccionado.categorias?.nombre || bienSeleccionado.categoria_id}}</p>
           </div>
         <div>
-          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Responsable Cédula</h3>
-          <p class="text-sm font-medium text-gray-800">{{bienSeleccionado.responsable_cedula}}</p>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Responsable / Encargado</h3>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-sm font-semibold text-gray-900">
+              {{ obtenerNombrePorCedula(bienSeleccionado.responsable_cedula) }}
+            </span>
+            <span class="text-xs text-gray-500 font-mono" *ngIf="bienSeleccionado.responsable_cedula">
+              C.I. {{ bienSeleccionado.responsable_cedula }}
+            </span>
+          </div>
         </div>
         <div>
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Fecha de Registro</h3>
           <p class="text-sm font-medium text-gray-800">{{bienSeleccionado.fecha_registro | date:'longDate'}}</p>
+        </div>
+        
+        <!-- Código QR -->
+        <div class="col-span-1 md:col-span-2 flex flex-col items-center mt-4 p-6 bg-gray-50 rounded-2xl border border-gray-100">
+          <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3">Etiqueta Inteligente QR</h3>
+          <div class="p-3 bg-white rounded-xl shadow-sm border border-gray-200">
+            <qrcode [qrdata]="generarUrlQR(bienSeleccionado.codigo_id)" [width]="180" [errorCorrectionLevel]="'M'"></qrcode>
+          </div>
+          <p class="text-xs text-gray-500 mt-2 text-center max-w-sm">Escanee este código para acceder a la vista rápida del bien desde un dispositivo móvil.</p>
+          <button (click)="$event.preventDefault()" class="mt-4 flex items-center px-5 py-2.5 bg-gray-800 text-white font-bold rounded-xl hover:bg-gray-700 transition-colors shadow-sm">
+            <span class="material-icons-outlined mr-2">print</span> Imprimir Etiqueta QR
+          </button>
         </div>
       </div>
     </div>
@@ -500,18 +568,26 @@
       </div>
 
       <form (ngSubmit)="enviarAMantenimiento()" #mantForm="ngForm" class="space-y-4">
+        <!-- Selector de Tipo de Mantenimiento -->
         <div>
-          <label class="text-sm font-bold text-gray-700">Motivo de Falla / Diagnóstico *</label>
-          <textarea [(ngModel)]="motivoFalla" name="motivo_falla" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-orange-500 focus:border-orange-500" rows="3" required></textarea>
+          <label class="text-sm font-bold text-gray-700">Tipo de Mantenimiento *</label>
+          <select [(ngModel)]="tipoMantenimiento" name="tipoMantenimiento" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-orange-500 focus:border-orange-500" required>
+            <option value="" disabled selected>Seleccione una opción</option>
+            <option value="Mantenimiento Preventivo">Mantenimiento Preventivo</option>
+            <option value="Mantenimiento Predictivo">Mantenimiento Predictivo</option>
+            <option value="Mantenimiento Correctivo">Mantenimiento Correctivo</option>
+          </select>
         </div>
-        <div>
-          <label class="text-sm font-bold text-gray-700">Fotografía de Ingreso (Opcional)</label>
-          <input type="file" (change)="onFileSelected($event)" accept="image/*" class="w-full mt-1 px-4 py-2 border rounded-xl text-sm">
+
+        <!-- Textarea Obligatorio de Falla -->
+        <div class="animate-fade-in">
+          <label class="text-sm font-bold text-gray-700">Describa el motivo o falla detallada (Obligatorio) *</label>
+          <textarea [(ngModel)]="motivoMantenimiento" name="motivoMantenimiento" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-orange-500 focus:border-orange-500 min-h-[100px]" rows="4" placeholder="Ingrese al menos 5 caracteres justificando el mantenimiento..." required minlength="5"></textarea>
         </div>
 
         <div class="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-100">
-          <button type="button" (click)="cerrarModal()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
-          <button type="submit" [disabled]="!mantForm.valid || isSubmitting" class="px-5 py-2 bg-orange-500 text-white font-bold rounded-xl disabled:opacity-50 hover:bg-orange-600 flex items-center">
+          <button type="button" (click)="cerrarModalMantenimiento()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
+          <button type="submit" [disabled]="!tipoMantenimiento || !motivoMantenimiento || motivoMantenimiento.trim().length < 5 || isSubmitting" class="px-5 py-2 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 flex items-center transition-all disabled:opacity-50 disabled:cursor-not-allowed">
              Confirmar Envío
           </button>
         </div>

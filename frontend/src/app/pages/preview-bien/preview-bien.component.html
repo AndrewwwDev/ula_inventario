@@ -1,0 +1,99 @@
+<div class="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
+  
+  <div class="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+    <!-- Header Institucional -->
+    <div class="bg-blue-900 px-6 py-4 flex items-center justify-center">
+      <span class="material-icons-outlined text-white text-3xl mr-3">school</span>
+      <h1 class="text-white font-bold text-lg tracking-wide">ULA Inventario</h1>
+    </div>
+
+    <!-- Estado de Carga -->
+    <div *ngIf="loading" class="p-12 flex flex-col items-center justify-center space-y-4">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="text-gray-500 font-medium">Buscando información del bien...</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="!loading && error" class="p-8 flex flex-col items-center text-center">
+      <span class="material-icons-outlined text-red-500 text-6xl mb-4">error_outline</span>
+      <h2 class="text-xl font-bold text-gray-800 mb-2">Error</h2>
+      <p class="text-gray-600 mb-6">{{ error }}</p>
+      <button (click)="irALogin()" class="px-6 py-2.5 bg-gray-800 text-white font-bold rounded-xl shadow-md hover:bg-gray-700 transition-colors">
+        Ir al Sistema
+      </button>
+    </div>
+
+    <!-- Datos del Bien (Mobile First) -->
+    <div *ngIf="!loading && !error && bien" class="flex flex-col">
+      <!-- Imagen principal -->
+      <div class="w-full h-64 bg-gray-100 relative">
+        <img *ngIf="bien.url_foto_principal" [src]="bien.url_foto_principal" alt="Foto del Bien" class="w-full h-full object-cover">
+        <div *ngIf="!bien.url_foto_principal" class="w-full h-full flex flex-col items-center justify-center text-gray-400">
+          <span class="material-icons-outlined text-6xl mb-2">inventory_2</span>
+          <span class="text-sm font-medium">Sin imagen</span>
+        </div>
+        
+        <!-- Badge de Estado flotante -->
+        <div class="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold shadow-md bg-white border border-gray-200 text-gray-800">
+          <span class="inline-block w-2 h-2 rounded-full mr-1"
+                [ngClass]="{
+                  'bg-green-500': bien.cat_estados?.nombre === 'Activo',
+                  'bg-red-500': bien.cat_estados?.nombre === 'Inactivo' || bien.cat_estados?.nombre === 'Desincorporado',
+                  'bg-yellow-500': bien.cat_estados?.nombre === 'Mantenimiento' || bien.cat_estados?.nombre === 'Faltante',
+                  'bg-gray-400': !['Activo','Inactivo','Desincorporado','Mantenimiento','Faltante'].includes(bien.cat_estados?.nombre)
+                }"></span>
+          {{ bien.cat_estados?.nombre || 'Estado desconocido' }}
+        </div>
+      </div>
+
+      <!-- Detalles -->
+      <div class="p-6 space-y-5">
+        <div>
+          <h2 class="text-2xl font-black text-gray-900 leading-tight">{{ bien.nombre }}</h2>
+          <p class="text-blue-600 font-mono font-bold mt-1 tracking-wide">ID: {{ bien.codigo_id }}</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Marca</p>
+            <p class="text-sm font-semibold text-gray-800">{{ bien.marca || 'N/A' }}</p>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Modelo</p>
+            <p class="text-sm font-semibold text-gray-800">{{ bien.modelo || 'N/A' }}</p>
+          </div>
+          <div class="col-span-2">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Serial</p>
+            <p class="text-sm font-mono text-gray-800 bg-gray-50 px-2 py-1 rounded inline-block">{{ bien.serial_fabricante || 'N/A' }}</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+          <div class="col-span-2">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Ubicación Actual</p>
+            <p class="text-sm font-medium text-gray-800 flex items-center">
+              <span class="material-icons-outlined text-gray-400 text-sm mr-1">place</span>
+              {{ bien.cat_ubicaciones?.nombre || 'N/A' }} <span class="mx-1 text-gray-300">|</span> {{ bien.cat_areas?.nombre || 'N/A' }}
+            </p>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Condición Física</p>
+            <p class="text-sm font-bold text-gray-800">{{ bien.condicion_fisica || 'N/A' }}</p>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Responsable</p>
+            <p class="text-sm font-medium text-gray-800">{{ bien.responsable_cedula || 'N/A' }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Call to Action -->
+      <div class="p-6 bg-gray-50 border-t border-gray-100">
+        <button (click)="irALogin()" class="w-full flex items-center justify-center px-6 py-4 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+          <span class="material-icons-outlined mr-2">login</span> Iniciar Sesión para Modificar
+        </button>
+        <p class="text-xs text-center text-gray-400 mt-3">Para realizar traslados o modificaciones, debe ser personal autorizado.</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -34,6 +34,12 @@ export class DesincorporacionComponent implements OnInit {
   // --- Detalles Modal ---
   isDetalleModalOpen = false;
   registroSeleccionado: any = null;
+  minDate: string = '';
+  maxDate: string = '';
+
+  // --- Reglas y Consentimiento Legal ---
+  isRulesModalOpen: boolean = false;
+  aceptaResponsabilidad: boolean = false;
 
   constructor(
     private inventarioService: InventarioService,
@@ -43,6 +49,14 @@ export class DesincorporacionComponent implements OnInit {
 
   ngOnInit() {
     this.loadDesincorporados();
+
+    // Configuración de límites de fechas de auditoría (Requerimiento 1)
+    const hoy = new Date();
+    this.maxDate = hoy.toISOString().split('T')[0];
+
+    const mesAnterior = new Date(hoy);
+    mesAnterior.setMonth(hoy.getMonth() - 1);
+    this.minDate = mesAnterior.toISOString().split('T')[0];
   }
 
   loadDesincorporados() {
@@ -62,12 +76,21 @@ export class DesincorporacionComponent implements OnInit {
     }
   }
 
+  abrirModalReglas() {
+    this.isRulesModalOpen = true;
+  }
+
+  cerrarModalReglas() {
+    this.isRulesModalOpen = false;
+  }
+
   openDesincorporarModal(id: string) {
     this.editingBienId = id;
     this.confirmarDesincorporacion = false;
     this.motivoDesincorporacion = '';
     this.fechaDesincorporacion = '';
     this.selectedFile = null;
+    this.aceptaResponsabilidad = false;
     this.showDesincorporarModal = true;
   }
 

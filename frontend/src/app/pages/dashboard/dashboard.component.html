@@ -34,10 +34,10 @@
         </a>
       </nav>
 
-      <div *ngIf="isSuperAdmin$ | async">
+      <div>
         <p class="text-xs font-bold text-gray-400 uppercase mb-4 px-2 tracking-wider mt-8">Configuración</p>
         <nav class="space-y-1">
-          <a routerLink="/dashboard/manual-usuario" routerLinkActive="bg-blue-50 text-blue-600 font-semibold shadow-sm" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors">
+          <a *ngIf="user?.rol === 'Super Administrador' || user?.rol === 'Administrador' || user?.rol === 'Usuario'" routerLink="/dashboard/manual-usuario" routerLinkActive="bg-blue-50 text-blue-600 font-semibold shadow-sm" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors">
             <span class="material-icons-outlined mr-3">menu_book</span> Manual de Usuario
           </a>
           <a *ngIf="isSuperAdmin$ | async" routerLink="/dashboard/usuarios" routerLinkActive="bg-blue-50 text-blue-600 font-semibold shadow-sm" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors">
@@ -68,8 +68,9 @@
         <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">
           <span class="material-icons-outlined">person</span>
         </div>
-        <div class="ml-3 flex-1 min-w-0">
-          <p class="text-sm font-bold text-gray-800 truncate">{{ userShortName }}</p>
+        <div class="ml-3 flex-1 min-w-0 flex flex-col justify-center">
+          <p class="text-xs text-gray-400 font-mono tracking-wider mb-0.5 truncate">{{ usuarioCedula ? 'V-' + usuarioCedula : '' }}</p>
+          <p class="text-sm font-semibold text-gray-800 truncate">{{ userShortName }}</p>
           <p class="text-xs text-gray-500 font-medium uppercase truncate">{{ user?.rol || 'Admin' }}</p>
         </div>
         <div class="text-gray-400">
@@ -93,9 +94,12 @@
       <div class="flex-1"></div>
       
       <div class="flex items-center space-x-6">
-        <button class="text-gray-500 hover:text-gray-700 focus:outline-none relative">
-          <span class="material-icons-outlined">notifications</span>
-          <span *ngIf="alertasMantenimiento.length > 0" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white">{{ alertasMantenimiento.length }}</span>
+        <button routerLink="/dashboard/mantenimiento" class="text-gray-500 hover:text-gray-700 focus:outline-none relative">
+          <span class="material-icons-outlined" [ngClass]="{'text-red-500': (notificacionesService.pendingCount$ | async)! > 0}">notifications</span>
+          <span *ngIf="(notificacionesService.pendingCount$ | async)! > 0" 
+                class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-[10px] w-4 h-4 flex items-center justify-center font-bold animate-pulse">
+            {{ notificacionesService.pendingCount$ | async }}
+          </span>
         </button>
         <button (click)="logout()" class="flex items-center text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium focus:outline-none">
           <span class="material-icons-outlined mr-1 text-[20px]">logout</span> Salir

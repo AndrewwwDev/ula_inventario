@@ -6,13 +6,16 @@ import { ToastService } from '../../services/toast.service';
 import { ActivatedRoute } from '@angular/router';
 import { debounceTime, distinctUntilChanged, switchMap, filter, tap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { QRCodeModule } from 'angularx-qrcode';
 import { ResponsableAutocompleteComponent } from '../../components/responsable-autocomplete/responsable-autocomplete.component';
 import { PdfExportService } from '../../services/pdf-export.service';
+import { SupabaseService } from '../../services/supabase.service';
+import { NotificacionesService } from '../../services/notificaciones.service';
 
 @Component({
   selector: 'app-inventario',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, ResponsableAutocompleteComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, ResponsableAutocompleteComponent, QRCodeModule],
   templateUrl: './inventario.component.html'
 })
 export class InventarioComponent implements OnInit {
@@ -30,6 +33,7 @@ export class InventarioComponent implements OnInit {
   cat_estados: any[] = [];
   cat_ubicaciones: any[] = [];
   cat_areas: any[] = [];
+  usuarios: any[] = [];
 
   // --- Search & Filters ---
   searchQuery = '';
@@ -49,16 +53,29 @@ export class InventarioComponent implements OnInit {
     private inventarioService: InventarioService,
     public toastService: ToastService,
     private route: ActivatedRoute,
-    private pdfExportService: PdfExportService
+    private pdfExportService: PdfExportService,
+    private supabaseService: SupabaseService,
+    public notificacionesService: NotificacionesService
   ) { }
 
   ngOnInit() {
     this.loadOptions();
+    this.loadInventory();
+    
+    // Check if we need to open a specific modal from another view
     this.route.queryParams.subscribe(params => {
       if (params['estado']) {
         this.filtroEstado = params['estado'];
       }
-      this.loadInventory();
+      if (params['action'] === 'mantenimiento' && params['id']) {
+        // Wait for inventory to load to find the item
+        setTimeout(() => {
+          const itemToMaintain = this.allInventory.find(i => i.codigo_id === params['id']);
+          if (itemToMaintain) {
+            this.openMantenimientoModal(itemToMaintain);
+          }
+        }, 800);
+      }
     });
   }
 
@@ -98,18 +115,32 @@ export class InventarioComponent implements OnInit {
         this.toastService.show('Error: No se pudieron cargar los datos del servidor. Verifica tus permisos', 'error');
       }
     });
-    this.inventarioService.getAreas().subscribe({
-      next: (res: any) => {
-        if (!res || res.length === 0) {
-          this.toastService.show('Error: No se pudieron cargar los datos del servidor. Verifica tus permisos', 'error');
-        }
-        this.cat_areas = res || [];
-      },
-      error: () => {
-        this.cat_areas = [];
-        this.toastService.show('Error: No se pudieron cargar los datos del servidor. Verifica tus permisos', 'error');
+    this.inventarioService.getAreas().subscribe((res: any) => {
+      this.cat_areas = res || [];
+    });
+
+    // Cargar usuarios para el mapeo de nombres en modales (Requerimiento 1)
+    this.supabaseService.supabase.from('usuarios').select('cedula, nombres, apellidos').then(({ data }) => {
+      if (data) {
+        this.usuarios = data;
       }
     });
+  }
+
+  // Phase 1: Mapeo Relacional de Encargado en Traslados
+  obtenerNombreEncargadoActual(): string {
+    if (!this.bienATrasladar || !this.bienATrasladar.responsable_cedula || !this.usuarios || this.usuarios.length === 0) {
+      return 'Sin Asignación';
+    }
+    const usuario = this.usuarios.find((u: any) => u.cedula === this.bienATrasladar.responsable_cedula);
+    return usuario ? `${usuario.nombres} ${usuario.apellidos}` : 'Sin Asignación';
+  }
+
+  obtenerNombrePorCedula(cedula: string): string {
+    if (!cedula) return 'Sin Asignación';
+    if (!this.usuarios || this.usuarios.length === 0) return 'Sin Asignación';
+    const usuario = this.usuarios.find(u => u.cedula === cedula);
+    return usuario ? `${usuario.nombres} ${usuario.apellidos}` : 'Usuario no registrado';
   }
 
   // --- Filtering & Infinite Scroll ---
@@ -262,6 +293,8 @@ export class InventarioComponent implements OnInit {
   showDesincorporarModal = false;
   showMantenimientoModal = false;
   showVistaPreviaModal = false;
+
+  aceptaResponsabilidad = false;
   isSubmitting = false;
 
   nuevoBien: any = { condicion_fisica: 'Buen estado' };
@@ -276,11 +309,12 @@ export class InventarioComponent implements OnInit {
   bienADesincorporar: any = null;
   bienSeleccionado: any = null;
   bienAMantenimiento: any = null;
-
+  tipoMantenimiento: string = '';
+  reportarFalla: boolean = false;
+  motivoMantenimiento: string = '';
   selectedFile: File | null = null;
   motivoDesincorporacion = '';
   fechaDesincorporacion = new Date().toISOString().split('T')[0];
-  motivoFalla = '';
 
   onFileSelected(event: any) {
     if (event.target.files && event.target.files.length > 0) {
@@ -372,12 +406,23 @@ export class InventarioComponent implements OnInit {
     this.bienATrasladar = item;
     this.datosTraslado = {
       tipoTraslado: 'Interno',
-      ubicacion_id: '',
-      area_id: '',
-      responsable_cedula: ''
+      ubicacion_id: item.ubicacion_id || '',
+      area_id: item.area_id || '',
+      responsable_cedula: item.responsable_cedula || ''
     };
     this.showTrasladoModal = true;
-    this.showVistaPreviaModal = false;
+  }
+
+  get esTrasladoValido(): boolean {
+    if (!this.bienATrasladar) return false;
+    const ubicacionSinCambio = this.datosTraslado.ubicacion_id === this.bienATrasladar.ubicacion_id;
+    const areaSinCambio = this.datosTraslado.area_id === this.bienATrasladar.area_id;
+    const responsableSinCambio = String(this.datosTraslado.responsable_cedula || '').trim() === String(this.bienATrasladar.responsable_cedula || '').trim();
+
+    // Es inválido si NADA cambió o si hay campos vacíos obligatorios
+    if (!this.datosTraslado.ubicacion_id || !this.datosTraslado.area_id) return false;
+
+    return !(ubicacionSinCambio && areaSinCambio && responsableSinCambio);
   }
 
   confirmarTraslado() {
@@ -419,9 +464,10 @@ export class InventarioComponent implements OnInit {
   }
 
   openMantenimientoModal(item: any) {
+    if (item.cat_estados?.nombre === 'Mantenimiento') { return; }
     this.bienAMantenimiento = item;
-    this.motivoFalla = '';
-    this.selectedFile = null;
+    this.tipoMantenimiento = '';
+    this.motivoMantenimiento = '';
     this.showMantenimientoModal = true;
     this.showVistaPreviaModal = false;
   }
@@ -434,6 +480,12 @@ export class InventarioComponent implements OnInit {
   cerrarVistaPrevia() {
     this.showVistaPreviaModal = false;
     this.bienSeleccionado = null;
+  }
+
+  cerrarModalMantenimiento() {
+    this.showMantenimientoModal = false;
+    this.tipoMantenimiento = '';
+    this.motivoMantenimiento = '';
   }
 
   desincorporar() {
@@ -460,20 +512,24 @@ export class InventarioComponent implements OnInit {
   }
 
   enviarAMantenimiento() {
-    if (!this.bienAMantenimiento || !this.motivoFalla) return;
+    if (!this.bienAMantenimiento || !this.tipoMantenimiento || !this.motivoMantenimiento || this.motivoMantenimiento.trim().length < 5) return;
 
     this.isSubmitting = true;
+    const fallaFinal = `${this.tipoMantenimiento} - Motivo: ${this.motivoMantenimiento}`;
     const payload = {
       codigo_id: this.bienAMantenimiento.codigo_id,
-      motivo_falla: this.motivoFalla
+      motivo_falla: fallaFinal
     };
 
-    this.inventarioService.enviarAMantenimiento(payload, this.selectedFile).subscribe({
+    this.inventarioService.enviarAMantenimiento(payload).subscribe({
       next: () => {
         this.isSubmitting = false;
         this.showMantenimientoModal = false;
         this.toastService.show('Bien enviado a mantenimiento exitosamente', 'success');
         this.loadInventory();
+        if (this.notificacionesService) {
+          this.notificacionesService.actualizarNotificaciones();
+        }
       },
       error: (err: any) => {
         this.isSubmitting = false;
@@ -491,5 +547,56 @@ export class InventarioComponent implements OnInit {
     this.showVistaPreviaModal = false;
     this.isSubmitting = false;
     this.selectedFile = null;
+    this.aceptaResponsabilidad = false;
+  }
+
+  generarUrlQR(codigoId: string): string {
+    return window.location.origin + '/preview/' + codigoId;
+  }
+
+  getEstadosPermitidos(responsableCedula: string | null | undefined, currentStateId?: string): any[] {
+    const isSinAsignar = !responsableCedula || responsableCedula.trim() === '';
+    
+    // Identificar el ID del estado 'Mantenimiento' si existe en cat_estados
+    const estadoMantenimiento = this.cat_estados.find(est => est.nombre === 'Mantenimiento');
+    const isCurrentlyMantenimiento = estadoMantenimiento && currentStateId === estadoMantenimiento.id;
+
+    if (isSinAsignar) {
+      return this.cat_estados.filter(est => est.nombre === 'Sin Asignación');
+    } else {
+      return this.cat_estados.filter(est => {
+        // Excluir permanentemente Desincorporado y Sin Asignación
+        if (est.nombre === 'Sin Asignación' || est.nombre === 'Desincorporado') return false;
+        
+        // Excluir Mantenimiento, A MENOS que sea el estado actual (para que el HTML pueda renderizarlo bloqueado)
+        if (est.nombre === 'Mantenimiento') {
+          return isCurrentlyMantenimiento;
+        }
+        
+        return true;
+      });
+    }
+  }
+
+  isMantenimiento(estadoId: string | undefined): boolean {
+    if (!estadoId) return false;
+    const estado = this.cat_estados.find(e => e.id === estadoId);
+    return estado ? estado.nombre === 'Mantenimiento' : false;
+  }
+
+  onResponsableChange(cedula: string | undefined, isEdit: boolean) {
+    const isSinAsignar = !cedula || cedula.trim() === '';
+    const targetObj = isEdit ? this.editingBien : this.nuevoBien;
+    
+    const estadoSinAsignacion = this.cat_estados.find(e => e.nombre === 'Sin Asignación');
+    const estadoActivo = this.cat_estados.find(e => e.nombre === 'Activo');
+
+    if (isSinAsignar && estadoSinAsignacion) {
+      targetObj.estado_id = estadoSinAsignacion.id;
+    } else if (!isSinAsignar && targetObj.estado_id === estadoSinAsignacion?.id && estadoActivo) {
+      targetObj.estado_id = estadoActivo.id;
+    }
   }
 }
+
+

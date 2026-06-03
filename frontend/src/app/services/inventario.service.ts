@@ -311,7 +311,8 @@ export class InventarioService {
           .select('*, categorias!inner(nombre), cat_estados!inner(nombre)')
           .eq('categorias.nombre', 'Computadoras')
           .lte('fecha_proximo_mantenimiento', today)
-          .neq('cat_estados.nombre', 'Desincorporado');
+          .neq('cat_estados.nombre', 'Desincorporado')
+          .neq('cat_estados.nombre', 'Mantenimiento');
         if (error) { console.warn('Error en getAlertasMantenimiento:', error); return []; }
         return (data || []).map((b: any) => ({ bien: b, proxima_fecha: b.fecha_proximo_mantenimiento }));
       } catch (err) { console.warn('Excepción en getAlertasMantenimiento:', err); return []; }
@@ -321,11 +322,19 @@ export class InventarioService {
   getEnReparacion() {
     return from((async () => {
       try {
-        const { data, error } = await this.supabase.from('bienes')
-          .select('*, categorias(nombre), cat_estados!inner(nombre)')
-          .eq('cat_estados.nombre', 'Mantenimiento');
+        const { data, error } = await this.supabase.from('mantenimientos')
+          .select('*, bienes(nombre, cat_ubicaciones(nombre), cat_areas(nombre))')
+          .eq('estado_reparacion', 'En Proceso');
         if (error) { console.warn('Error en getEnReparacion:', error); return []; }
-        return data || [];
+        
+        return (data || []).map((m: any) => ({
+          ...m,
+          codigo_id: m.codigo_bien,
+          nombre: m.bienes?.nombre,
+          ubicacion: m.bienes?.cat_ubicaciones?.nombre,
+          area: m.bienes?.cat_areas?.nombre,
+          motivo_falla: m.motivo_falla
+        }));
       } catch (err) { console.warn('Excepción en getEnReparacion:', err); return []; }
     })());
   }
@@ -333,20 +342,18 @@ export class InventarioService {
   getHistorialMantenimiento() {
     return from((async () => {
       try {
-        const { data, error } = await this.supabase.from('mantenimientos').select('*, bienes(nombre)');
+        const { data, error } = await this.supabase.from('mantenimientos')
+          .select('*, bienes(nombre, marca, modelo, responsable_cedula, cat_ubicaciones(nombre), cat_areas(nombre))');
         if (error) { console.warn('Error en getHistorialMantenimiento:', error); return []; }
         return data || [];
       } catch (err) { console.warn('Excepción en getHistorialMantenimiento:', err); return []; }
     })());
   }
 
-  enviarAMantenimiento(payload: any, file: File | null) {
+  enviarAMantenimiento(payload: any) {
     return from((async () => {
       const userRes = await this.supabase.auth.getUser();
       const user = userRes.data.user;
-
-      let foto_url = null;
-      if (file) foto_url = await this.uploadImage(file);
       
       const { data: estado } = await this.supabase.from('cat_estados').select('id').eq('nombre', 'Mantenimiento').single();
       const { data: userData } = await this.supabase.from('usuarios').select('cedula, nombres').eq('auth_id', user?.id).single();
@@ -355,8 +362,7 @@ export class InventarioService {
         codigo_bien: payload.codigo_id,
         cedula_tecnico: userData?.cedula || '00000000',
         estado_reparacion: 'En Proceso',
-        motivo_falla: payload.motivo_falla,
-        url_foto_ingreso: foto_url
+        motivo_falla: payload.motivo_falla
       };
 
       const { data: mantResult, error: mantError } = await this.supabase.from('mantenimientos').insert([mantPayload]).select().single();

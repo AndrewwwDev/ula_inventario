@@ -28,12 +28,18 @@
       <div *ngIf="mantenimientoTab === 'alertas'">
         <div *ngIf="alertasMantenimiento.length === 0" class="text-center py-12 text-gray-500">No hay alertas de mantenimiento actuales.</div>
         <table *ngIf="alertasMantenimiento.length > 0" class="w-full text-left">
-          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3">Bien</th><th class="py-3">Próxima Fecha</th><th class="py-3">Estado</th></tr></thead>
+          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3 px-2">Bien</th><th class="py-3 px-2">Ubicación</th><th class="py-3 px-2">Próxima Fecha</th><th class="py-3 px-2">Estado</th></tr></thead>
           <tbody class="divide-y divide-gray-100">
-            <tr *ngFor="let m of alertasMantenimiento">
-              <td class="py-3 text-sm">{{ m.bien?.nombre }} ({{ m.bien?.codigo_id }})</td>
-              <td class="py-3 text-sm text-red-500 font-bold">{{ m.proxima_fecha | date:'mediumDate' }}</td>
-              <td class="py-3"><span class="px-2.5 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-bold flex items-center w-max"><span class="material-icons-outlined text-[14px] mr-1">warning</span> Vencido</span></td>
+            <tr *ngFor="let m of alertasMantenimiento" (click)="abrirDetalleAlerta(m)" class="cursor-pointer hover:shadow-md hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
+              <td class="py-3 px-2 text-sm">
+                <div class="font-bold text-gray-800">{{ m.bien?.codigo_id }}</div>
+                <div class="truncate max-w-[200px] text-gray-600">{{ m.bien?.nombre }}</div>
+              </td>
+              <td class="py-3 px-2 text-sm text-gray-600">
+                <div class="truncate max-w-[150px]" title="{{ m.bien?.cat_ubicaciones?.nombre }}">{{ m.bien?.cat_ubicaciones?.nombre || 'N/A' }}</div>
+              </td>
+              <td class="py-3 px-2 text-sm text-red-500 font-bold">{{ m.proxima_fecha | date:'mediumDate' }}</td>
+              <td class="py-3 px-2"><span class="px-2.5 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-bold flex items-center w-max"><span class="material-icons-outlined text-[14px] mr-1">warning</span> Vencido</span></td>
             </tr>
           </tbody>
         </table>
@@ -43,18 +49,21 @@
       <div *ngIf="mantenimientoTab === 'reparacion'">
         <div *ngIf="enReparacion.length === 0" class="text-center py-12 text-gray-500">No hay equipos en reparación.</div>
         <table *ngIf="enReparacion.length > 0" class="w-full text-left">
-          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3">Código</th><th class="py-3">Nombre</th><th class="py-3">Ubicación</th><th class="py-3">Acciones</th></tr></thead>
+          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3 px-2">Código</th><th class="py-3 px-2">Nombre</th><th class="py-3 px-2">Ubicación</th><th class="py-3 px-2">Descripción de Falla</th><th class="py-3 px-2 text-right">Acciones</th></tr></thead>
           <tbody class="divide-y divide-gray-100">
-            <tr *ngFor="let item of enReparacion">
+            <tr *ngFor="let item of enReparacion" (click)="abrirModalEnReparacion(item)" class="cursor-pointer hover:bg-slate-50 transition-colors duration-150">
               <!-- UI de Mantenimiento: Mantener estrictamente el diseño del ícono de admiración rojo -->
-              <td class="py-3 text-sm font-bold text-gray-800 flex items-center">
+              <td class="py-3 px-2 text-sm font-bold text-gray-800 flex items-center">
                 <span class="material-icons-outlined text-red-500 mr-2 text-[20px]" title="En reparación">error</span>
                 {{ item.codigo_id }}
               </td>
-              <td class="py-3 text-sm">{{ item.nombre }}</td>
-              <td class="py-3 text-sm text-gray-500">{{ item.ubicacion }}</td>
-              <td class="py-3">
-                <button (click)="openFinalizarMantenimiento(item)" class="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary-hover transition-colors">Finalizar y Reincorporar</button>
+              <td class="py-3 px-2 text-sm">{{ item.nombre }}</td>
+              <td class="py-3 px-2 text-sm text-gray-500">{{ item.ubicacion || 'N/A' }}</td>
+              <td class="py-3 px-2 text-sm text-gray-600">
+                <div class="truncate max-w-xs" title="{{ item.motivo_falla }}">{{ item.motivo_falla || 'Sin detalle' }}</div>
+              </td>
+              <td class="py-3 px-2 text-right">
+                <button (click)="$event.stopPropagation(); openFinalizarMantenimiento(item)" class="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary-hover transition-colors shadow-sm">Finalizar y Reincorporar</button>
               </td>
             </tr>
           </tbody>
@@ -71,20 +80,22 @@
         </div>
         <div *ngIf="historialMantenimiento.length === 0" class="text-center py-12 text-gray-500">No hay historial de mantenimientos.</div>
         <table *ngIf="historialMantenimiento.length > 0" class="w-full text-left">
-          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3">Bien</th><th class="py-3">Motivo Falla</th><th class="py-3">Trabajo Realizado</th><th class="py-3">Fecha Salida</th><th class="py-3 text-center">Acciones</th></tr></thead>
+          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3 px-2">Bien</th><th class="py-3 px-2">Motivo Falla</th><th class="py-3 px-2">Trabajo Realizado</th><th class="py-3 px-2">Fecha Salida</th></tr></thead>
           <tbody class="divide-y divide-gray-100">
-            <tr *ngFor="let m of historialMantenimiento" class="hover:bg-gray-50 transition-colors">
-              <td class="py-3 text-sm font-bold">{{ m.bienes?.nombre || 'Bien ' + m.codigo_bien }} ({{ m.codigo_bien }})</td>
-              <td class="py-3 text-sm text-gray-600">{{ m.motivo_falla }}</td>
-              <td class="py-3 text-sm text-gray-600">{{ m.trabajo_realizado || 'N/A' }}</td>
-              <td class="py-3 text-sm">
+            <tr *ngFor="let m of historialMantenimiento" (click)="abrirModalDetalle(m)" class="cursor-pointer hover:bg-slate-50 active:bg-slate-100 transition-colors duration-150 select-none">
+              <td class="py-3 px-2 text-sm font-bold">
+                <div class="truncate max-w-[150px] md:max-w-xs">{{ m.bienes?.nombre || 'Bien ' + m.codigo_bien }}</div>
+                <div class="text-xs font-normal text-gray-500">{{ m.codigo_bien }}</div>
+              </td>
+              <td class="py-3 px-2">
+                <div class="text-sm text-gray-600 truncate max-w-[180px] md:max-w-xs block">{{ m.motivo_falla }}</div>
+              </td>
+              <td class="py-3 px-2">
+                <div class="text-sm text-gray-600 truncate max-w-[180px] md:max-w-xs block">{{ m.trabajo_realizado || 'N/A' }}</div>
+              </td>
+              <td class="py-3 px-2 text-sm">
                 <span *ngIf="m.fecha_salida">{{ m.fecha_salida | date:'mediumDate' }}</span>
                 <span *ngIf="!m.fecha_salida" class="text-yellow-600 font-bold">En Proceso</span>
-              </td>
-              <td class="py-3 text-center">
-                <button (click)="abrirDetalle(m)" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-blue-100 hover:text-blue-600 transition-colors mx-auto shadow-sm" title="Ver Detalles">
-                  <span class="material-icons-outlined text-[18px]">visibility</span>
-                </button>
               </td>
             </tr>
           </tbody>
@@ -158,60 +169,239 @@
   </div>
 </div>
 
-<!-- Modal Detalles de Mantenimiento -->
-<div *ngIf="isDetalleModalOpen && registroSeleccionado" class="fixed inset-0 z-50 flex justify-center items-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+<!-- Modal Detalles de Mantenimiento (Historial) -->
+<div *ngIf="isDetalleModalOpen && registroSeleccionado" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 flex flex-col">
+    <!-- Cabecera -->
+    <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+      <h2 class="text-xl font-bold text-gray-800 flex items-center">
+        <span class="material-icons-outlined mr-2 text-blue-600">assignment</span> Auditoría de Mantenimiento
+      </h2>
+      <button (click)="cerrarModalDetalle()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    
+    <!-- Cuerpo del Modal -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 break-words whitespace-normal">
+      
+      <!-- Sección Bien -->
+      <div class="col-span-1 md:col-span-2">
+        <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Sección Bien</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-xs text-gray-500 font-medium">Código ID</p>
+            <p class="text-sm font-bold text-gray-900">{{ registroSeleccionado.codigo_bien }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 font-medium">Nombre del Equipo</p>
+            <p class="text-sm font-bold text-gray-900">{{ registroSeleccionado.bienes?.nombre || 'N/A' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 font-medium">Marca</p>
+            <p class="text-sm font-medium text-gray-800">{{ registroSeleccionado.bienes?.marca || 'No registrada' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 font-medium">Modelo</p>
+            <p class="text-sm font-medium text-gray-800">{{ registroSeleccionado.bienes?.modelo || 'No registrado' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección Logística Completa -->
+      <div class="col-span-1 md:col-span-2">
+        <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Sección Logística</h3>
+        <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-blue-900 font-medium whitespace-normal">
+          <p><strong>Ubicación General:</strong> {{ registroSeleccionado.bienes?.cat_ubicaciones?.nombre || 'No asignada' }}</p>
+          <p class="mt-1"><strong>Área Específica:</strong> {{ registroSeleccionado.bienes?.cat_areas?.nombre || 'No asignada' }}</p>
+        </div>
+      </div>
+
+      <!-- Sección Personal -->
+      <div>
+        <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Responsable del Bien</h3>
+        <p class="text-sm font-bold text-gray-900">{{ obtenerNombrePorCedula(registroSeleccionado.bienes?.responsable_cedula) }}</p>
+        <p class="text-xs text-gray-500 font-mono" *ngIf="registroSeleccionado.bienes?.responsable_cedula">
+          C.I. {{ registroSeleccionado.bienes?.responsable_cedula }}
+        </p>
+      </div>
+
+      <!-- Sección Auditoría Técnica de Mantenimiento -->
+      <div>
+        <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Registro de Ingreso</h3>
+        <p class="text-sm text-gray-900 font-medium">{{ (registroSeleccionado.fecha_ingreso | date:'mediumDate') || 'N/A' }}</p>
+        <p class="text-xs font-bold mt-1" [ngClass]="{'text-green-600': registroSeleccionado.fecha_salida, 'text-yellow-600': !registroSeleccionado.fecha_salida}">
+          {{ registroSeleccionado.fecha_salida ? 'Completado el ' + (registroSeleccionado.fecha_salida | date:'mediumDate') : 'En Proceso' }}
+        </p>
+      </div>
+
+      <!-- Bloque Destacado: Motivo de la Falla -->
+      <div class="col-span-1 md:col-span-2 bg-amber-50 border border-amber-200 p-4 rounded-lg mt-2">
+        <h3 class="text-xs text-amber-800 font-bold uppercase tracking-wider mb-2 flex items-center">
+          <span class="material-icons-outlined text-[16px] mr-1">handyman</span> Motivo de la Falla / Reparación
+        </h3>
+        <p class="text-sm text-gray-700 whitespace-normal break-words leading-relaxed">
+          {{ registroSeleccionado.motivo_falla || 'Sin justificación técnica registrada.' }}
+        </p>
+      </div>
+
+      <div class="col-span-1 md:col-span-2 mt-2" *ngIf="registroSeleccionado.trabajo_realizado">
+        <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Trabajo Realizado (Técnico)</h3>
+        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm text-gray-800 leading-relaxed">
+          {{ registroSeleccionado.trabajo_realizado }}
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- Pie -->
+    <div class="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+      <button (click)="cerrarModalDetalle()" class="px-6 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalles de Alerta -->
+<div *ngIf="isDetalleAlertaOpen && alertaSeleccionada" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
     <!-- Cabecera -->
     <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
       <h2 class="text-xl font-bold text-gray-800 flex items-center">
-        <span class="material-icons-outlined mr-2 text-blue-500">info</span> Detalles del Mantenimiento
+        <span class="material-icons-outlined mr-2 text-red-500">warning</span> Detalle de Alerta Preventiva
       </h2>
-      <button (click)="cerrarDetalle()" class="text-gray-400 hover:text-gray-600 transition-colors">
+      <button (click)="cerrarDetalleAlerta()" class="text-gray-400 hover:text-gray-600 transition-colors">
         <span class="material-icons-outlined">close</span>
       </button>
     </div>
     
     <!-- Cuerpo del Modal -->
     <div class="p-6 overflow-y-auto">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 whitespace-normal break-words">
+        <!-- Datos del Activo -->
+        <div class="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Datos del Activo</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-xs text-gray-500 font-medium">Código ID</p>
+              <p class="text-sm font-bold text-gray-800">{{ alertaSeleccionada.bien?.codigo_id }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 font-medium">Nombre</p>
+              <p class="text-sm font-bold text-gray-800">{{ alertaSeleccionada.bien?.nombre }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 font-medium">Marca / Modelo</p>
+              <p class="text-sm font-medium text-gray-800">{{ alertaSeleccionada.bien?.marca || 'N/A' }} / {{ alertaSeleccionada.bien?.modelo || 'N/A' }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 font-medium">Categoría</p>
+              <p class="text-sm font-medium text-gray-800">{{ alertaSeleccionada.bien?.categorias?.nombre || 'N/A' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ubicación de Origen Completa -->
+        <div class="col-span-1 md:col-span-2">
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Ubicación de Origen</h3>
+          <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-blue-900 font-medium">
+            <p><strong>Sede/Edificio:</strong> {{ alertaSeleccionada.bien?.cat_ubicaciones?.nombre || 'No asignado' }}</p>
+            <p class="mt-1"><strong>Área Específica:</strong> {{ alertaSeleccionada.bien?.cat_areas?.nombre || 'No asignado' }}</p>
+          </div>
+        </div>
+
+        <!-- Ficha Técnica -->
         <div>
-          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Bien</h3>
-          <p class="text-sm text-gray-900 font-bold">{{ registroSeleccionado.bienes?.nombre || 'Bien ' + registroSeleccionado.codigo_bien }}</p>
-          <p class="text-xs text-gray-500 font-mono mt-0.5">ID: {{ registroSeleccionado.codigo_bien }}</p>
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Tipo de Alerta</h3>
+          <p class="text-sm text-gray-900 font-medium">Mantenimiento Preventivo (Vencimiento)</p>
         </div>
         <div>
-          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Fecha de Ingreso</h3>
-          <p class="text-sm text-gray-900 font-medium">{{ (registroSeleccionado.fecha_ingreso | date:'mediumDate') || 'N/A' }}</p>
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Fecha de Vencimiento</h3>
+          <p class="text-sm text-red-600 font-bold">{{ alertaSeleccionada.proxima_fecha | date:'fullDate' }}</p>
         </div>
-        <div>
-          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Estado de Reparación</h3>
-          <p class="text-sm font-bold" [ngClass]="{'text-green-600': registroSeleccionado.fecha_salida, 'text-yellow-600': !registroSeleccionado.fecha_salida}">
-            {{ registroSeleccionado.fecha_salida ? 'Completado' : 'En Proceso' }}
+
+        <div class="col-span-1 md:col-span-2 mt-2">
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Encargado Actual</h3>
+          <p class="text-sm text-gray-900 font-medium">Cédula: {{ alertaSeleccionada.bien?.responsable_cedula || 'Sin Asignación' }}</p>
+        </div>
+        
+        <!-- Sección de Avería Destacada (Si aplica, o motivo por defecto) -->
+        <div class="col-span-1 md:col-span-2 bg-red-50 border border-red-100 p-4 rounded-xl mt-2">
+          <h3 class="text-xs text-red-800 font-bold uppercase tracking-wider mb-1 flex items-center">
+            <span class="material-icons-outlined text-[16px] mr-1">report_problem</span> Motivo Principal
+          </h3>
+          <p class="text-sm text-red-900 font-medium mt-1">
+            El equipo ha alcanzado o superado la fecha programada para su revisión periódica obligatoria. Por favor, proceda a enviarlo al departamento técnico.
           </p>
-        </div>
-        <div>
-          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Fecha de Salida</h3>
-          <p class="text-sm text-gray-900 font-medium">{{ (registroSeleccionado.fecha_salida | date:'mediumDate') || 'N/A' }}</p>
-        </div>
-        <div class="col-span-1 md:col-span-2">
-          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Motivo de Falla / Diagnóstico</h3>
-          <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-800">
-            {{ registroSeleccionado.motivo_falla || 'Sin diagnóstico registrado' }}
-          </div>
-        </div>
-        <div class="col-span-1 md:col-span-2">
-          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Trabajo Realizado</h3>
-          <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-800">
-            {{ registroSeleccionado.trabajo_realizado || 'No se han registrado detalles del trabajo aún.' }}
-          </div>
         </div>
       </div>
     </div>
     
     <!-- Pie -->
-    <div class="px-6 py-4 border-t border-gray-100 flex justify-end bg-gray-50">
-      <button (click)="cerrarDetalle()" class="px-5 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-colors">
+    <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
+      <button (click)="cerrarDetalleAlerta()" class="px-6 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
         Cerrar
+      </button>
+      <button (click)="procesarMantenimiento(alertaSeleccionada)" class="px-6 py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center">
+        <span class="material-icons-outlined text-[18px] mr-1">build</span> Procesar Mantenimiento
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalle Profundo En Reparación -->
+<div *ngIf="isDetalleReparacionOpen && reparacionSeleccionada" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <!-- Cabecera -->
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+      <div>
+        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+          <span class="material-icons-outlined mr-2 text-primary">build_circle</span>
+          {{ reparacionSeleccionada.nombre }}
+        </h2>
+        <p class="text-sm font-mono text-gray-500 mt-1 ml-8">Cód: {{ reparacionSeleccionada.codigo_id }}</p>
+      </div>
+      <button (click)="cerrarModalEnReparacion()" class="text-gray-400 hover:text-gray-600 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-1 self-start">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    
+    <!-- Cuerpo del Modal -->
+    <div class="p-6 overflow-y-auto space-y-6">
+      
+      <!-- Sección de Ubicación -->
+      <div>
+        <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Ubicación Actual del Equipo</h3>
+        <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start">
+          <span class="material-icons-outlined text-blue-500 mr-3 mt-0.5">place</span>
+          <div>
+            <p class="text-base text-blue-900 font-bold leading-tight">{{ reparacionSeleccionada.ubicacion || 'Sin Ubicación' }}</p>
+            <p class="text-sm text-blue-700 font-medium mt-1">Área: {{ reparacionSeleccionada.area || 'Sin Área' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección de Falla -->
+      <div>
+        <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Descripción de la Falla</h3>
+        <div class="bg-red-50 border border-red-100 p-5 rounded-xl">
+          <div class="flex items-center mb-3">
+            <span class="material-icons-outlined text-red-500 mr-2 text-xl">report</span>
+            <span class="text-sm font-bold text-red-800">Motivo de Reparación</span>
+          </div>
+          <p class="text-sm text-gray-800 whitespace-normal break-words leading-relaxed pl-7">
+            {{ reparacionSeleccionada.motivo_falla || 'No se especificó motivo de falla.' }}
+          </p>
+        </div>
+      </div>
+
+    </div>
+    
+    <!-- Pie -->
+    <div class="px-6 py-4 border-t border-gray-100 flex justify-end bg-gray-50">
+      <button (click)="cerrarModalEnReparacion()" class="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
+        Cerrar Detalle
       </button>
     </div>
   </div>

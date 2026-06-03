@@ -65,16 +65,68 @@
       </div>
       <div>
         <label class="text-sm font-bold text-gray-700">Fecha de Desincorporación <span class="text-red-500">*</span></label>
-        <input type="date" [(ngModel)]="fechaDesincorporacion" class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none">
-      </div>
-      <div>
-        <label class="text-sm font-bold text-gray-700">Fotografía de Evidencia <span class="text-red-500">*</span></label>
-        <input type="file" (change)="onFileSelected($event)" accept="image/*" class="w-full mt-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 transition-colors">
+        <input type="date" [(ngModel)]="fechaDesincorporacion" [min]="minDate" [max]="maxDate" name="fecha" required #fechaInput="ngModel" class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none" [ngClass]="{'border-red-500': fechaInput.invalid && fechaInput.touched}">
+        <!-- Advertencia en caso de que el usuario evada la interfaz y typee manualmente (Requerimiento 2) -->
+        <p *ngIf="fechaInput.invalid && fechaInput.touched" class="text-xs text-red-500 mt-1 font-medium">
+          La fecha debe ser actual o no mayor a 30 días de antigüedad.
+        </p>
+        <div class="mt-4">
+          <p class="block text-sm font-medium text-gray-700 mb-2">Evidencia Fotográfica (Obligatorio)</p>
+          <label for="fotoDesincorporacion" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-lg bg-slate-50 hover:bg-slate-100 hover:border-blue-400 cursor-pointer transition-all duration-200 group">
+
+            <div class="flex flex-col items-center justify-center pt-5 pb-6" *ngIf="!selectedFile">
+              <svg class="w-8 h-8 mb-3 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              <p class="mb-1 text-sm text-slate-500 font-semibold">Haga clic para anexar fotografía</p>
+              <p class="text-xs text-slate-400">JPG o PNG (Máximo 5MB)</p>
+            </div>
+
+            <div class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-md w-11/12" *ngIf="selectedFile">
+              <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span class="text-sm font-medium text-emerald-800 truncate">{{ selectedFile.name }}</span>
+            </div>
+
+            <input id="fotoDesincorporacion" type="file" class="hidden" (change)="onFileSelected($event)" accept="image/png, image/jpeg" />
+          </label>
+        
+          <!-- Botón para remover si hay archivo -->
+          <div *ngIf="selectedFile" class="flex justify-end mt-2">
+            <button (click)="selectedFile = null; $event.preventDefault()" class="text-xs text-red-500 hover:text-red-700 font-bold flex items-center transition-colors">
+              <span class="material-icons-outlined text-[14px] mr-1">delete</span> Quitar archivo
+            </button>
+          </div>
+        </div>
+
+        <!-- Consentimiento Legal -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50 border border-slate-200 p-4 rounded-lg mt-4">
+          
+          <div class="flex items-center gap-3 flex-grow">
+            <input 
+              type="checkbox" 
+              id="checkResponsabilidadDefinitivo" 
+              [(ngModel)]="aceptaResponsabilidad" 
+              class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0">
+            
+            <label for="checkResponsabilidadDefinitivo" class="text-sm text-gray-700 cursor-pointer select-none m-0 font-medium">
+              Certifico que este activo cumple con las causales legales de desincorporación.
+            </label>
+          </div>
+
+          <div class="flex-shrink-0">
+            <button 
+              type="button" 
+              (click)="abrirModalReglas(); $event.stopPropagation();" 
+              class="bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold py-2 px-4 rounded-full transition-colors border border-blue-200 focus:outline-none shadow-sm text-xs w-full sm:w-auto">
+              Leer Normativa (SUDEBIP)
+            </button>
+          </div>
+
+        </div>
       </div>
     </div>
+
     <div class="px-6 py-4 border-t border-gray-100 flex justify-end space-x-3 bg-gray-50">
       <button (click)="showDesincorporarModal = false" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
-      <button (click)="desincorporar()" [disabled]="!motivoDesincorporacion || !fechaDesincorporacion || !selectedFile || isSubmitting" class="px-5 py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50">Confirmar</button>
+      <button (click)="desincorporar()" [disabled]="!motivoDesincorporacion || !fechaDesincorporacion || !selectedFile || !aceptaResponsabilidad || isSubmitting" class="px-5 py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Ejecutar Desincorporación</button>
     </div>
   </div>
 </div>
@@ -114,6 +166,57 @@
       <button (click)="isExportModalOpen = false" class="px-4 py-2 text-sm text-gray-600 font-bold hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
       <button (click)="exportarPDF()" class="px-4 py-2 text-sm bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center">
          Generar y Descargar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Secundario: Base Legal Venezolana (SUDEBIP) -->
+<div *ngIf="isRulesModalOpen" class="bg-slate-900/60 z-50 fixed inset-0 flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col p-6 animate-fade-in">
+    <!-- Cabecera Institucional -->
+    <div class="border-b border-gray-100 flex justify-between items-center pb-4 mb-4">
+      <h2 class="text-xl font-bold text-gray-800 flex items-center">
+        <span class="material-icons-outlined mr-2 text-blue-700">account_balance</span>
+        Términos, Condiciones y Responsabilidades en la Desincorporación de Bienes Nacionales (ULA)
+      </h2>
+      <button type="button" (click)="cerrarModalReglas()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    
+    <!-- Cuerpo del Modal Legal (Scroll) -->
+    <div class="overflow-y-auto pr-2 space-y-4 text-sm text-gray-600 leading-relaxed text-justify">
+      
+      <div>
+        <h3 class="text-gray-800 font-bold mb-1">Fundamento Jurídico</h3>
+        <p>
+          Este acto se rige bajo los parámetros del <strong>Decreto con Rango, Valor y Fuerza de Ley Orgánica de Bienes Públicos</strong> de la República Bolivariana de Venezuela y las providencias dictadas por la SUDEBIP.
+        </p>
+      </div>
+
+      <div>
+        <h3 class="text-gray-800 font-bold mb-1">Causales Válidas</h3>
+        <p>
+          La baja del activo tecnológico solo procederá por <strong>Obsolescencia Tecnológica certificada, Inutilidad Operativa Total, Daño Material Irreparable o Hurto</strong> debidamente denunciado.
+        </p>
+      </div>
+
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-800 mt-2">
+        <h3 class="font-bold mb-1 flex items-center text-blue-700">
+          <span class="material-icons-outlined text-[18px] mr-1">warning</span> Fe Pública y Evidencia
+        </h3>
+        <p>
+          La fotografía anexada constituye una declaración jurada del estado físico del bien. Suministrar información falsa o simular la destrucción de equipos públicos acarreará responsabilidad civil, administrativa y penal conforme a la <strong>Ley Contra la Corrupción</strong>.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Pie de Confirmación Legal -->
+    <div class="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+      <button type="button" (click)="cerrarModalReglas()" class="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-sm w-full sm:w-auto text-center">
+        He leído y acepto los términos
       </button>
     </div>
   </div>
@@ -174,3 +277,5 @@
     </div>
   </div>
 </div>
+
+

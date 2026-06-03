@@ -1,0 +1,73 @@
+<div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto p-8 bg-white shadow-xl rounded-2xl border-t-8 border-blue-800">
+    <!-- Header -->
+    <div class="border-b border-gray-200 pb-6 mb-8 text-center sm:text-left">
+      <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Términos, Condiciones y Reglas de Bienes Públicos</h1>
+      <p class="mt-2 text-sm text-gray-500 uppercase tracking-widest font-semibold">Universidad de Los Andes (ULA) - Dirección de Bienes</p>
+    </div>
+
+    <!-- Sección 1: Objeto y Ámbito -->
+    <div class="mb-10">
+      <h2 class="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2">
+        <span class="material-icons-outlined text-blue-600">gavel</span>
+        Sección 1: Objeto y Ámbito de Aplicación
+      </h2>
+      <div class="prose prose-blue text-gray-700 leading-relaxed max-w-none">
+        <p>Las presentes normas tienen por objeto establecer el procedimiento administrativo, legal y operativo para la desincorporación de bienes muebles adscritos a la Universidad de Los Andes (ULA). Aplica a todas las facultades, núcleos, dependencias centrales y entes descentralizados que posean bienes bajo su responsabilidad.</p>
+        <p class="mt-2">Ningún bien podrá ser retirado, donado, vendido o desechado físicamente sin antes haber completado el flujo de desincorporación electrónica y contar con la aprobación de la Dirección de Bienes.</p>
+      </div>
+    </div>
+
+    <!-- Sección 2: Causales Válidas -->
+    <div class="mb-10">
+      <h2 class="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2">
+        <span class="material-icons-outlined text-blue-600">fact_check</span>
+        Sección 2: Causales Válidas de Desincorporación
+      </h2>
+      <div class="bg-gray-50 p-6 rounded-xl border border-gray-200">
+        <p class="text-gray-700 mb-4">Solo se procederá con la desincorporación de un activo bajo las siguientes causales estrictamente documentadas:</p>
+        <ul class="space-y-3 text-gray-700">
+          <li class="flex items-start gap-3">
+            <span class="material-icons-outlined text-green-600 mt-0.5 text-lg">check_circle</span>
+            <div><strong>Obsolescencia Tecnológica:</strong> Equipos que, por el avance tecnológico, han perdido su utilidad y cuyo costo de actualización supera su valor residual.</div>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="material-icons-outlined text-green-600 mt-0.5 text-lg">check_circle</span>
+            <div><strong>Daño Irreparable o Deterioro Físico:</strong> Bienes cuyo estado físico impide su funcionamiento o reparación, respaldado por un informe técnico.</div>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="material-icons-outlined text-green-600 mt-0.5 text-lg">check_circle</span>
+            <div><strong>Pérdida, Hurto o Robo:</strong> Previa presentación de la denuncia formal ante las autoridades competentes (CICPC) y el acta levantada por seguridad institucional.</div>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="material-icons-outlined text-green-600 mt-0.5 text-lg">check_circle</span>
+            <div><strong>Desuso Prolongado:</strong> Bienes que no tienen uso previsto en el futuro y representan un gasto de almacenamiento u ocupan espacio vital.</div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Sección 3: Responsabilidades -->
+    <div class="mb-8">
+      <h2 class="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2">
+        <span class="material-icons-outlined text-blue-600">admin_panel_settings</span>
+        Sección 3: Responsabilidades del Funcionario Operador
+      </h2>
+      <div class="prose prose-blue text-gray-700 leading-relaxed max-w-none">
+        <p>Al hacer clic en "Desincorporar" y marcar el check de responsabilidad en el sistema, el funcionario u operador que ejecuta la acción declara bajo fe de juramento que:</p>
+        <ol class="list-decimal pl-5 mt-4 space-y-2 font-medium text-gray-800">
+          <li>La justificación o motivo proporcionado en el formulario es estrictamente apegado a la verdad.</li>
+          <li>La fotografía adjunta de evidencia corresponde exactamente al bien descrito en la solicitud de desincorporación, sin alteraciones ni ediciones engañosas.</li>
+          <li>Asume las responsabilidades administrativas o penales que se deriven de la falsedad de los datos suministrados al Estado Venezolano.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-10 pt-6 border-t border-gray-200 flex justify-center">
+      <button (click)="volverAtras()" class="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors flex items-center gap-2">
+        <span class="material-icons-outlined text-sm">arrow_back</span> Volver a Desincorporación
+      </button>
+    </div>
+  </div>
+</div>

@@ -6,6 +6,7 @@ import { AuthService } from '../../services/auth.service';
 import { InventarioService } from '../../services/inventario.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { IdleService } from '../../services/idle.service';
+import { NotificacionesService } from '../../services/notificaciones.service';
 import { Observable, Subscription } from 'rxjs';
 
 @Component({
@@ -32,7 +33,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     private inventarioService: InventarioService,
     private supabaseService: SupabaseService,
-    private idleService: IdleService
+    private idleService: IdleService,
+    public notificacionesService: NotificacionesService
   ) { }
 
   ngOnInit() {
@@ -82,6 +84,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const nombre = this.user.nombres ? this.user.nombres.split(' ')[0] : '';
     const apellido = this.user.apellidos ? this.user.apellidos.split(' ')[0] : '';
     return `${nombre} ${apellido}`.trim() || 'Usuario';
+  }
+
+  get usuarioCedula(): string {
+    if (!this.user || !this.user.cedula) return '';
+    return this.user.cedula;
   }
 
   toggleProfileMenu(event: Event) {

@@ -4,6 +4,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { InventarioService } from '../../services/inventario.service';
 import { ToastService } from '../../services/toast.service';
 import { PdfExportService } from '../../services/pdf-export.service';
+import { SupabaseService } from '../../services/supabase.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-mantenimiento',
@@ -17,6 +19,7 @@ export class MantenimientoComponent implements OnInit {
   alertasMantenimiento: any[] = [];
   enReparacion: any[] = [];
   historialMantenimiento: any[] = [];
+  usuarios: any[] = [];
 
   showFinalizarModal = false;
   trabajoRealizado = '';
@@ -33,21 +36,62 @@ export class MantenimientoComponent implements OnInit {
   // --- Detalles Modal ---
   isDetalleModalOpen = false;
   registroSeleccionado: any = null;
+  
+  // --- Detalles Alerta Modal ---
+  isDetalleAlertaOpen: boolean = false;
+  alertaSeleccionada: any = null;
+
+  // --- Detalles En Reparación Modal ---
+  isDetalleReparacionOpen: boolean = false;
+  reparacionSeleccionada: any = null;
+
+  abrirModalEnReparacion(item: any) {
+    this.reparacionSeleccionada = item;
+    this.isDetalleReparacionOpen = true;
+  }
+
+  cerrarModalEnReparacion() {
+    this.isDetalleReparacionOpen = false;
+    this.reparacionSeleccionada = null;
+  }
 
   constructor(
     private inventarioService: InventarioService,
-    private toastService: ToastService,
-    private pdfExportService: PdfExportService
-  ) {}
+    public toastService: ToastService,
+    private pdfExportService: PdfExportService,
+    private supabaseService: SupabaseService,
+    private router: Router
+  ) { }
 
   ngOnInit() {
     this.loadMantenimientoData();
+    this.supabaseService.supabase.from('usuarios').select('cedula, nombres, apellidos').then(({ data }) => {
+      if (data) {
+        this.usuarios = data;
+      }
+    });
+  }
+
+  procesarMantenimiento(alerta: any) {
+    if (alerta && alerta.bien) {
+      this.cerrarDetalleAlerta();
+      this.router.navigate(['/dashboard/inventario'], { 
+        queryParams: { action: 'mantenimiento', id: alerta.bien.codigo_id } 
+      });
+    }
   }
 
   loadMantenimientoData() {
     this.inventarioService.getAlertasMantenimiento().subscribe((data: any) => this.alertasMantenimiento = data);
     this.inventarioService.getEnReparacion().subscribe((data: any) => this.enReparacion = data);
     this.inventarioService.getHistorialMantenimiento().subscribe((data: any) => this.historialMantenimiento = data);
+  }
+
+  obtenerNombrePorCedula(cedula: string): string {
+    if (!cedula) return 'Sin Asignación';
+    if (!this.usuarios || this.usuarios.length === 0) return 'Sin Asignación';
+    const usuario = this.usuarios.find(u => u.cedula === cedula);
+    return usuario ? `${usuario.nombres} ${usuario.apellidos}` : 'Usuario no registrado';
   }
 
   switchMantenimientoTab(tab: 'alertas' | 'reparacion' | 'historial') {
@@ -151,13 +195,23 @@ export class MantenimientoComponent implements OnInit {
     this.ordenarPor = 'Mas recientes';
   }
 
-  abrirDetalle(registro: any) {
-    this.registroSeleccionado = registro;
+  abrirModalDetalle(item: any) {
+    this.registroSeleccionado = item;
     this.isDetalleModalOpen = true;
   }
 
-  cerrarDetalle() {
+  cerrarModalDetalle() {
     this.isDetalleModalOpen = false;
     this.registroSeleccionado = null;
+  }
+
+  abrirDetalleAlerta(alerta: any) {
+    this.alertaSeleccionada = alerta;
+    this.isDetalleAlertaOpen = true;
+  }
+
+  cerrarDetalleAlerta() {
+    this.isDetalleAlertaOpen = false;
+    this.alertaSeleccionada = null;
   }
 }

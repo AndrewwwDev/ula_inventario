@@ -80,7 +80,7 @@ export class AuthService {
       // Obtenemos los datos extendidos del usuario
       const { data: publicUser, error } = await this.supabase
         .from('usuarios')
-        .select('*')
+        .select('cedula, nombres, apellidos, rol, email')
         .eq('auth_id', authUser.id)
         .single();
 
