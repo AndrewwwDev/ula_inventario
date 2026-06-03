@@ -21,7 +21,7 @@ export class LoginComponent {
   recoveryEmail = '';
 
   constructor(
-    private router: Router, 
+    private router: Router,
     private supabaseService: SupabaseService,
     private toastService: ToastService
   ) { }
@@ -34,7 +34,7 @@ export class LoginComponent {
     if (this.id && this.password) {
       this.isLoading = true;
       this.errorMessage = '';
-      
+
       try {
         console.log('[Login] Intentando Iniciar Sesión con Supabase...');
         const client = await this.supabaseService.getClient();
@@ -44,7 +44,7 @@ export class LoginComponent {
         });
 
         if (error) throw error;
-        
+
         console.log('[Login] ¡Éxito! Redirigiendo a dashboard...');
         this.router.navigate(['/dashboard/inicio'], { replaceUrl: true });
       } catch (err: any) {
@@ -64,18 +64,18 @@ export class LoginComponent {
       this.errorMessage = 'Por favor, ingrese un correo válido.';
       return;
     }
-    
+
     this.isLoading = true;
     this.errorMessage = '';
-    
+
     try {
       const client = await this.supabaseService.getClient();
       const { error } = await client.auth.resetPasswordForEmail(this.recoveryEmail, {
-        redirectTo: 'http://localhost:4200/restablecer-password'
+        redirectTo: `${window.location.origin}/restablecer-password`
       });
-      
+
       if (error) throw error;
-      
+
       this.toastService.show('Si el correo existe, recibirás un enlace de recuperación', 'success');
       this.isRecoveryMode = false;
       this.recoveryEmail = '';
