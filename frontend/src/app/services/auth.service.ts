@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { from, Observable, BehaviorSubject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
@@ -19,25 +19,38 @@ export class AuthService {
     map(user => user && user.rol === 'Super Administrador')
   );
 
-  constructor(private supabase: SupabaseService, private router: Router) {
+  constructor(private supabase: SupabaseService, private router: Router, private ngZone: NgZone) {
     // Inicializar llamando a un método asíncrono que carga el estado inicial
     this.initializeAuthState();
 
-    // 1. Suscripción nativa a los cambios de Supabase (Misma pestaña)
-    this.supabase.auth.onAuthStateChange(async (event: any, session: any) => {
-      if (event === 'SIGNED_IN') {
-        await this.loadUserProfile(session?.user);
-        // Despachamos evento a otras pestañas
-        localStorage.setItem('auth_sync', Date.now().toString() + '_login');
-      } else if (event === 'SIGNED_OUT') {
-        this.currentUserSubject.next(null);
-        // Despachamos evento a otras pestañas
-        localStorage.setItem('auth_sync', Date.now().toString() + '_logout');
-      }
+    // 1. Suscripción nativa a los cambios de Supabase (Misma pestaña y Cross-Tab nativo)
+    this.supabase.auth.onAuthStateChange((event: any, session: any) => {
+      this.ngZone.run(async () => {
+        if (event === 'SIGNED_IN') {
+          await this.loadUserProfile(session?.user);
+          
+          // Redirigir si estamos en la vista de login
+          if (this.router.url.includes('/login')) {
+            this.router.navigate(['/dashboard/inicio']);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          this.currentUserSubject.next(null);
+          
+          // Limpieza profunda agresiva
+          localStorage.clear();
+          sessionStorage.clear();
+          this.router.navigate(['/login']).catch(() => {
+            window.location.href = '/login';
+          });
+        } else if (event === 'TOKEN_REFRESHED') {
+          // El token se refrescó, actualizar el usuario actual
+          await this.loadUserProfile(session?.user);
+        } else if (event === 'PASSWORD_RECOVERY') {
+          // Capturado por Supabase Auth a partir del Magic Link
+          this.router.navigate(['/restablecer-password']);
+        }
+      });
     });
-
-    // 2. Cross-Tab Communication (Comunicación entre pestañas)
-    this.setupStorageListener();
   }
 
   private async initializeAuthState() {
@@ -111,29 +124,4 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  // Listener nativo para eventos de LocalStorage (Multi-Pestaña)
-  private setupStorageListener() {
-    window.addEventListener('storage', (event: StorageEvent) => {
-      if (event.key === 'auth_sync') {
-        const newValue = event.newValue;
-        
-        if (newValue && newValue.includes('_logout')) {
-          // Sesión cerrada en otra pestaña
-          this.currentUserSubject.next(null);
-          alert('Sesión cerrada en otra pestaña'); // O usa un ToastService si está inyectado
-          this.router.navigate(['/login']);
-          
-        } else if (newValue && newValue.includes('_login')) {
-          // Inicio de sesión en otra pestaña
-          this.supabase.auth.getSession().then(({ data }: any) => {
-            if (data.session) {
-              this.loadUserProfile(data.session.user).then(() => {
-                this.router.navigate(['/dashboard']);
-              });
-            }
-          });
-        }
-      }
-    });
-  }
 }

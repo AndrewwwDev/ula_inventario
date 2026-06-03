@@ -1,11 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { InventarioService } from '../../services/inventario.service';
 import { SupabaseService } from '../../services/supabase.service';
-import { Observable } from 'rxjs';
+import { IdleService } from '../../services/idle.service';
+import { Observable, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -13,18 +14,25 @@ import { Observable } from 'rxjs';
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './dashboard.component.html',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
 
   user: any = null;
   isSidebarOpen = false;
   alertasMantenimiento: any[] = []; // Se mantiene por la campanita del nav
   isSuperAdmin$!: Observable<boolean>;
 
+  showIdleWarning = false;
+  idleCountdown = 30;
+  private subscriptions = new Subscription();
+  
+  showProfileMenu = false;
+
   constructor(
     private authService: AuthService,
     private router: Router,
     private inventarioService: InventarioService,
-    private supabaseService: SupabaseService
+    private supabaseService: SupabaseService,
+    private idleService: IdleService
   ) { }
 
   ngOnInit() {
@@ -39,32 +47,59 @@ export class DashboardComponent implements OnInit {
     this.inventarioService.getAlertasMantenimiento().subscribe((data: any) => {
       this.alertasMantenimiento = data;
     });
+
+    // Iniciar monitoreo de inactividad
+    this.idleService.startMonitoring();
+    
+    this.subscriptions.add(
+      this.idleService.showWarning$.subscribe(show => {
+        this.showIdleWarning = show;
+      })
+    );
+
+    this.subscriptions.add(
+      this.idleService.countdown$.subscribe(count => {
+        this.idleCountdown = count;
+      })
+    );
+  }
+
+  ngOnDestroy() {
+    this.idleService.stopMonitoring();
+    this.subscriptions.unsubscribe();
+  }
+
+  extendSession() {
+    this.idleService.resetTimer();
   }
 
   toggleSidebar() {
     this.isSidebarOpen = !this.isSidebarOpen;
   }
 
+  get userShortName(): string {
+    if (!this.user) return 'Usuario';
+    const nombre = this.user.nombres ? this.user.nombres.split(' ')[0] : '';
+    const apellido = this.user.apellidos ? this.user.apellidos.split(' ')[0] : '';
+    return `${nombre} ${apellido}`.trim() || 'Usuario';
+  }
+
+  toggleProfileMenu(event: Event) {
+    event.stopPropagation();
+    this.showProfileMenu = !this.showProfileMenu;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    this.showProfileMenu = false;
+  }
+
   async logout() {
+    console.log('[Dashboard] Iniciando proceso de salida (Delegado a AuthService)...');
     try {
-      console.log('[Dashboard] Iniciando proceso de salida blindado...');
-      const client = await this.supabaseService.getClient();
-      await client.auth.signOut();
-      
-      // Limpieza de tokens y memorias residuales
-      localStorage.clear();
-      sessionStorage.clear();
-      console.log('[Dashboard] Almacenamiento local limpiado. Recargando app...');
-      
-      // Hard redirect profesional para matar ciclos de memoria de Angular
-      window.location.href = '/login';
+      await this.authService.logout();
     } catch (error) {
-      console.error('[Dashboard] Error en el logout:', error);
-      
-      // Contingencia
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.href = '/login';
+      console.error('[Dashboard] Fallo al cerrar sesión:', error);
     }
   }
 }

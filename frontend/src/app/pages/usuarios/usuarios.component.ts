@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { NgForm } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
 import { BitacoraService } from '../../services/bitacora.service';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 import { createClient } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
 
@@ -20,6 +22,8 @@ export class UsuariosComponent implements OnInit {
   
   showCreateModal = false;
   creatingUser = false;
+  @ViewChild('userForm') userForm!: NgForm;
+  
   newUser = {
     cedula: '',
     email: '',
@@ -33,7 +37,8 @@ export class UsuariosComponent implements OnInit {
   constructor(
     private supabase: SupabaseService,
     private bitacoraService: BitacoraService,
-    private authService: AuthService
+    private authService: AuthService,
+    private toastService: ToastService
   ) {}
 
   async ngOnInit() {
@@ -77,71 +82,83 @@ export class UsuariosComponent implements OnInit {
 
   closeCreateModal() {
     this.showCreateModal = false;
+    if (this.userForm) {
+      this.userForm.resetForm({
+        cedula: '',
+        email: '',
+        password: '',
+        nombres: '',
+        apellidos: '',
+        cargo: '',
+        rol: 'Usuario'
+      });
+    }
   }
 
   async createUser() {
     if (!this.newUser.cedula || !this.newUser.email || !this.newUser.password || !this.newUser.nombres || !this.newUser.apellidos || !this.newUser.cargo) {
-      alert('Por favor, complete todos los campos obligatorios.');
+      this.toastService.show('Por favor, complete todos los campos obligatorios.', 'warning');
       return;
     }
 
     this.creatingUser = true;
 
     try {
-      // 1. Verificar si la cédula ya existe localmente para evitar errores extraños
+      // 1. Verificar si la cédula ya existe localmente
       const { data: existingCedula } = await this.supabase
         .from('usuarios')
         .select('cedula')
         .eq('cedula', this.newUser.cedula)
-        .single();
+        .maybeSingle();
         
       if (existingCedula) {
-        alert('Ya existe un usuario registrado con esta cédula.');
+        this.toastService.show('Ya existe un usuario registrado con esta cédula.', 'warning');
         this.creatingUser = false;
         return;
       }
 
-      // 2. Crear cliente temporal para no sobreescribir la sesión del Super Admin en localStorage
+      // 2. Crear cliente temporal para Auth sin afectar la sesión actual
       const tempClient = createClient(environment.supabaseUrl, environment.supabaseKey, {
         auth: {
           persistSession: false,
           autoRefreshToken: false,
-          detectSessionInUrl: false
+          detectSessionInUrl: false,
+          storageKey: 'temp-auth-' + Date.now(),
+          lock: (name: string, acquireTimeout: number, acquire: () => Promise<any>) => acquire()
         }
       });
 
-      // 3. Registrar en Supabase Auth
+      // 3. Paso 1 (Autenticación): Registrar credenciales en Auth (auth.users)
       const { data: authData, error: authError } = await tempClient.auth.signUp({
         email: this.newUser.email,
         password: this.newUser.password,
       });
 
       if (authError) {
-        throw new Error('Error al crear credenciales: ' + authError.message);
+        throw new Error('Error al registrar correo de autenticación: ' + authError.message);
       }
 
       if (!authData.user) {
-        throw new Error('No se pudo obtener el usuario creado.');
+        throw new Error('No se pudo obtener el usuario de autenticación creado.');
       }
 
-      // 4. Insertar en tabla public.usuarios usando el cliente principal (tiene los permisos del Super Admin)
+      // 4. Paso 2 (Inserción en Base de Datos): Crear registro en el Public Schema
       const { error: dbError } = await this.supabase
         .from('usuarios')
         .insert([{
+          auth_id: authData.user.id,
           cedula: this.newUser.cedula,
           email: this.newUser.email,
           nombres: this.newUser.nombres,
           apellidos: this.newUser.apellidos,
-          rol: this.newUser.rol,
           cargo: this.newUser.cargo,
-          estado_cuenta: 'Activo',
-          auth_id: authData.user.id
+          rol: this.newUser.rol,
+          estado_cuenta: 'Activo'
         }]);
 
       if (dbError) {
-        // Fallback: si falla en DB habría que borrarlo de Auth idealmente, 
-        // pero requiere API de admin. Lo dejamos como registro huérfano.
-        throw new Error('Error al guardar datos del perfil: ' + dbError.message);
+        console.error('Error insertando en public.usuarios:', dbError);
+        throw new Error('El usuario fue creado, pero falló el registro público: ' + dbError.message);
       }
 
       // 5. Registrar en bitácora
@@ -150,13 +167,14 @@ export class UsuariosComponent implements OnInit {
         rol_asignado: this.newUser.rol
       });
 
-      alert('Usuario creado exitosamente.');
+      // Flujo de éxito
+      this.toastService.show('Usuario creado y registrado correctamente.', 'success');
       this.closeCreateModal();
       await this.loadUsuarios();
 
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'Ocurrió un error al crear el usuario.');
+      this.toastService.show(err.message || 'Ocurrió un error al crear el usuario.', 'error');
     } finally {
       this.creatingUser = false;
     }
@@ -220,6 +238,31 @@ export class UsuariosComponent implements OnInit {
         nuevoEstado === 'Activo' ? 'CUENTA_ACTIVADA' : 'CUENTA_INHABILITADA', 
         { cedula_afectada: usuario.cedula, motivo: motivo }
       );
+    }
+  }
+
+  async forzarRecuperacion(usuario: any) {
+    if (!usuario.email) {
+      this.toastService.show('El usuario no tiene un correo electrónico válido.', 'error');
+      return;
+    }
+
+    try {
+      const client = await this.supabase.getClient();
+      const { error } = await client.auth.resetPasswordForEmail(usuario.email);
+      
+      if (error) {
+        throw error;
+      }
+
+      await this.bitacoraService.logAction('RECUPERACION_FORZADA', {
+        descripcion: 'El Super Administrador forzó el envío de un correo de recuperación de contraseña para el usuario ' + usuario.email
+      });
+
+      this.toastService.show(`Correo de recuperación enviado exitosamente a ${usuario.email}`, 'success');
+    } catch (err: any) {
+      console.error('Error forzando recuperación:', err);
+      this.toastService.show('Error al forzar recuperación: ' + err.message, 'error');
     }
   }
 }

@@ -1,59 +1,73 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy, NgZone } from '@angular/core';
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
+
+let supabaseInstance: SupabaseClient | null = null;
 
 @Injectable({
   providedIn: 'root'
 })
-export class SupabaseService {
+export class SupabaseService implements OnDestroy {
   public supabase!: SupabaseClient;
   private currentUser = new BehaviorSubject<User | null>(null);
+  private authSubscription: Subscription | any;
 
-  constructor() {
+  constructor(private ngZone: NgZone) {
     console.log('[SupabaseService] Constructor Inicializando...');
-    console.log('[SupabaseService] URL:', environment.supabaseUrl ? 'OK (Configurada)' : 'ERROR: URL VACÍA');
-    console.log('[SupabaseService] KEY:', environment.supabaseKey ? 'OK (Configurada)' : 'ERROR: KEY VACÍA');
     
-    const supabaseOptions = {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false
-      }
-    };
+    if (supabaseInstance) {
+      this.supabase = supabaseInstance;
+      console.log('[SupabaseService] Reutilizando instancia existente de SupabaseClient');
+    } else {
+      console.log('[SupabaseService] URL:', environment.supabaseUrl ? 'OK (Configurada)' : 'ERROR: URL VACÍA');
+      console.log('[SupabaseService] KEY:', environment.supabaseKey ? 'OK (Configurada)' : 'ERROR: KEY VACÍA');
+      
+      const supabaseOptions = {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: false,
+          storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+          // Bypass total del LockManager conflictivo de Zone.js
+          lock: (name: string, acquireTimeout: number, acquire: () => Promise<any>) => {
+            return acquire();
+          }
+        }
+      };
 
-    this.supabase = createClient(
-      environment.supabaseUrl,
-      environment.supabaseKey,
-      supabaseOptions
-    );
-    console.log('[SupabaseService] createClient() ejecutado con éxito');
+      this.ngZone.runOutsideAngular(() => {
+        this.supabase = createClient(
+          environment.supabaseUrl,
+          environment.supabaseKey,
+          supabaseOptions
+        );
+        supabaseInstance = this.supabase;
+      });
+      console.log('[SupabaseService] createClient() ejecutado con éxito');
+    }
 
     // Configurar listener para cambios de sesión (login, logout)
-    this.supabase.auth.onAuthStateChange((event: any, session: any) => {
-      this.currentUser.next(session?.user ?? null);
+    this.ngZone.runOutsideAngular(() => {
+      const { data } = this.supabase.auth.onAuthStateChange((event: any, session: any) => {
+        this.ngZone.run(() => {
+          this.currentUser.next(session?.user ?? null);
+        });
+      });
+      this.authSubscription = data?.subscription;
     });
+  }
+
+  ngOnDestroy() {
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+    }
   }
 
   // ==== ASYNC GET CLIENT ====
   async getClient(): Promise<SupabaseClient> {
-    if (this.supabase) {
-      return this.supabase;
-    }
-    
-    console.log('[SupabaseService] getClient() - Inicializando cliente bajo demanda...');
-    const supabaseOptions = {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false
-      }
-    };
-    this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey, supabaseOptions);
-    
     if (!this.supabase) {
-      throw new Error('No se pudo inicializar el cliente de Supabase. Revisa environment.');
+      throw new Error('Supabase client no ha sido inicializado');
     }
     return this.supabase;
   }

@@ -59,13 +59,22 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button 
-                (click)="toggleEstado(u)"
-                [disabled]="u.cedula === currentUserCedula"
-                class="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="{{ u.estado_cuenta === 'Activo' ? 'Inhabilitar cuenta' : 'Activar cuenta' }}">
-                {{ u.estado_cuenta === 'Activo' ? 'Inhabilitar' : 'Activar' }}
-              </button>
+              <div class="flex flex-col items-end space-y-2">
+                <button 
+                  (click)="toggleEstado(u)"
+                  [disabled]="u.cedula === currentUserCedula"
+                  class="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                  title="{{ u.estado_cuenta === 'Activo' ? 'Inhabilitar cuenta' : 'Activar cuenta' }}">
+                  {{ u.estado_cuenta === 'Activo' ? 'Inhabilitar' : 'Activar' }}
+                </button>
+                <button 
+                  (click)="forzarRecuperacion(u)"
+                  class="text-amber-600 hover:text-amber-800 flex items-center text-xs font-semibold"
+                  title="Enviar correo de recuperación de contraseña">
+                  <span class="material-icons-outlined text-[16px] mr-1">lock_reset</span>
+                  Forzar Recuperación
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>

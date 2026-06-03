@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { InventarioService } from '../../services/inventario.service';
 import { ToastService } from '../../services/toast.service';
+import { PdfExportService } from '../../services/pdf-export.service';
 
 @Component({
   selector: 'app-mantenimiento',
@@ -23,9 +24,20 @@ export class MantenimientoComponent implements OnInit {
   finalizandoBienId: string | null = null;
   isSubmitting = false;
 
+  // --- Export & Modal ---
+  isExportModalOpen = false;
+  fechaInicio = '';
+  fechaFin = '';
+  ordenarPor = 'Mas recientes';
+
+  // --- Detalles Modal ---
+  isDetalleModalOpen = false;
+  registroSeleccionado: any = null;
+
   constructor(
     private inventarioService: InventarioService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private pdfExportService: PdfExportService
   ) {}
 
   ngOnInit() {
@@ -68,5 +80,84 @@ export class MantenimientoComponent implements OnInit {
         this.toastService.show('Fallo en la operación: ' + (err.error?.message || err.message), 'error');
       }
     });
+  }
+
+  obtenerDatosFiltrados() {
+    let result = [...this.historialMantenimiento];
+
+    if (this.fechaInicio) {
+      const inicio = new Date(this.fechaInicio).getTime();
+      result = result.filter(item => new Date(item.fecha_salida || item.fecha_ingreso).getTime() >= inicio);
+    }
+    
+    if (this.fechaFin) {
+      const fin = new Date(this.fechaFin);
+      fin.setHours(23, 59, 59, 999);
+      result = result.filter(item => new Date(item.fecha_salida || item.fecha_ingreso).getTime() <= fin.getTime());
+    }
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.fecha_salida || a.fecha_ingreso).getTime();
+      const dateB = new Date(b.fecha_salida || b.fecha_ingreso).getTime();
+      
+      if (this.ordenarPor === 'Mas antiguos') {
+        return dateA - dateB;
+      } else if (this.ordenarPor === 'Por Nombre/Codigo') {
+        const nameA = (a.bienes?.nombre || a.codigo_bien || '').toLowerCase();
+        const nameB = (b.bienes?.nombre || b.codigo_bien || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      } else {
+        return dateB - dateA;
+      }
+    });
+
+    return result;
+  }
+
+  exportarPDF() {
+    const datos = this.obtenerDatosFiltrados();
+
+    if (datos.length === 0) {
+      this.toastService.show('No hay datos para exportar con los filtros actuales.', 'warning');
+      return;
+    }
+
+    const columnas = ['Código Bien', 'Nombre Bien', 'Motivo Falla', 'Trabajo Realizado', 'Fecha Salida'];
+    const dataFilas = datos.map(item => [
+      item.codigo_bien || 'N/A',
+      item.bienes?.nombre || 'N/A',
+      item.motivo_falla || 'N/A',
+      item.trabajo_realizado || 'N/A',
+      item.fecha_salida ? new Date(item.fecha_salida).toLocaleDateString() : 'En Proceso'
+    ]);
+
+    let periodo = '';
+    if (this.fechaInicio && this.fechaFin) {
+      periodo = `Desde: ${this.fechaInicio} - Hasta: ${this.fechaFin}`;
+    } else if (this.fechaInicio) {
+      periodo = `Desde: ${this.fechaInicio}`;
+    } else if (this.fechaFin) {
+      periodo = `Hasta: ${this.fechaFin}`;
+    } else {
+      periodo = 'Histórico completo';
+    }
+
+    this.pdfExportService.generarReporte('Historial de Mantenimiento', columnas, dataFilas, periodo);
+    
+    // Cerrar modal y limpiar
+    this.isExportModalOpen = false;
+    this.fechaInicio = '';
+    this.fechaFin = '';
+    this.ordenarPor = 'Mas recientes';
+  }
+
+  abrirDetalle(registro: any) {
+    this.registroSeleccionado = registro;
+    this.isDetalleModalOpen = true;
+  }
+
+  cerrarDetalle() {
+    this.isDetalleModalOpen = false;
+    this.registroSeleccionado = null;
   }
 }

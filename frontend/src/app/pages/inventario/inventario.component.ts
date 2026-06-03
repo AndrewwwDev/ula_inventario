@@ -7,6 +7,7 @@ import { ActivatedRoute } from '@angular/router';
 import { debounceTime, distinctUntilChanged, switchMap, filter, tap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { ResponsableAutocompleteComponent } from '../../components/responsable-autocomplete/responsable-autocomplete.component';
+import { PdfExportService } from '../../services/pdf-export.service';
 
 @Component({
   selector: 'app-inventario',
@@ -38,10 +39,17 @@ export class InventarioComponent implements OnInit {
   filtroCondicion = '';
   scannerActive = false;
 
+  // --- Export & Additional Filters ---
+  isExportModalOpen = false;
+  fechaInicio = '';
+  fechaFin = '';
+  ordenarPor = 'Mas recientes'; // 'Mas recientes', 'Mas antiguos', 'Por Nombre/Codigo'
+
   constructor(
     private inventarioService: InventarioService,
     public toastService: ToastService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private pdfExportService: PdfExportService
   ) { }
 
   ngOnInit() {
@@ -133,9 +141,78 @@ export class InventarioComponent implements OnInit {
       );
     }
 
+    // Filtro por fecha
+    if (this.fechaInicio) {
+      const inicio = new Date(this.fechaInicio).getTime();
+      result = result.filter(item => new Date(item.created_at || item.fecha_adquisicion).getTime() >= inicio);
+    }
+    
+    if (this.fechaFin) {
+      const fin = new Date(this.fechaFin);
+      fin.setHours(23, 59, 59, 999);
+      result = result.filter(item => new Date(item.created_at || item.fecha_adquisicion).getTime() <= fin.getTime());
+    }
+
+    // Ordenamiento
+    result.sort((a, b) => {
+      if (this.ordenarPor === 'Mas antiguos') {
+        return new Date(a.created_at || a.fecha_adquisicion).getTime() - new Date(b.created_at || b.fecha_adquisicion).getTime();
+      } else if (this.ordenarPor === 'Por Nombre/Codigo') {
+        const nameA = (a.nombre || a.codigo_id || '').toLowerCase();
+        const nameB = (b.nombre || b.codigo_id || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      } else {
+        // Por defecto 'Mas recientes'
+        return new Date(b.created_at || b.fecha_adquisicion).getTime() - new Date(a.created_at || a.fecha_adquisicion).getTime();
+      }
+    });
+
     this.filteredInventory = result;
     this.currentPage = 1;
     this.displayedInventory = this.filteredInventory.slice(0, this.pageSize);
+  }
+
+  obtenerDatosFiltrados() {
+    return this.filteredInventory;
+  }
+
+  exportarPDF() {
+    const datos = this.obtenerDatosFiltrados();
+
+    if (datos.length === 0) {
+      this.toastService.show('No hay datos para exportar con los filtros actuales.', 'warning');
+      return;
+    }
+
+    const columnas = ['Código', 'Nombre', 'Categoría', 'Ubicación', 'Condición', 'Fecha'];
+    const dataFilas = datos.map(item => [
+      item.codigo_id || 'N/A',
+      item.nombre || 'N/A',
+      item.categorias?.nombre || item.categoria_id || 'N/A',
+      item.cat_ubicaciones?.nombre || item.ubicacion_id || 'N/A',
+      item.condicion_fisica || 'N/A',
+      item.created_at || item.fecha_adquisicion ? new Date(item.created_at || item.fecha_adquisicion).toLocaleDateString() : 'N/A'
+    ]);
+
+    let periodo = '';
+    if (this.fechaInicio && this.fechaFin) {
+      periodo = `Desde: ${this.fechaInicio} - Hasta: ${this.fechaFin}`;
+    } else if (this.fechaInicio) {
+      periodo = `Desde: ${this.fechaInicio}`;
+    } else if (this.fechaFin) {
+      periodo = `Hasta: ${this.fechaFin}`;
+    } else {
+      periodo = 'Histórico completo';
+    }
+
+    this.pdfExportService.generarReporte('Reporte de Inventario de Bienes', columnas, dataFilas, periodo);
+
+    // Cerrar modal y limpiar
+    this.isExportModalOpen = false;
+    this.fechaInicio = '';
+    this.fechaFin = '';
+    this.ordenarPor = 'Mas recientes';
+    this.applyFilters();
   }
 
   onSearchInput() {

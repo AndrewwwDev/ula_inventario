@@ -9,6 +9,8 @@ import { DesincorporacionComponent } from './pages/desincorporacion/desincorpora
 import { BitacoraComponent } from './pages/bitacora/bitacora.component';
 import { UsuariosComponent } from './pages/usuarios/usuarios.component';
 import { ManualUsuarioComponent } from './pages/manual-usuario/manual-usuario.component';
+import { CambiarPasswordComponent } from './pages/cambiar-password/cambiar-password.component';
+import { RestablecerPasswordComponent } from './pages/restablecer-password/restablecer-password.component';
 import { authGuard } from './guards/auth.guard';
 import { publicGuard } from './guards/public.guard';
 import { roleGuard } from './guards/role.guard';
@@ -16,6 +18,7 @@ import { roleGuard } from './guards/role.guard';
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent, canActivate: [publicGuard] },
+  { path: 'restablecer-password', component: RestablecerPasswordComponent },
   { path: 'review-goods', component: ReviewGoodsComponent },
   { 
     path: 'dashboard', 
@@ -29,7 +32,8 @@ export const routes: Routes = [
       { path: 'desincorporacion', component: DesincorporacionComponent },
       { path: 'bitacora', component: BitacoraComponent },
       { path: 'usuarios', component: UsuariosComponent, canActivate: [roleGuard] },
-      { path: 'manual-usuario', component: ManualUsuarioComponent }
+      { path: 'manual-usuario', component: ManualUsuarioComponent },
+      { path: 'cambiar-password', component: CambiarPasswordComponent }
     ]
   },
   { path: '**', redirectTo: '/login' } // Wildcard fallback

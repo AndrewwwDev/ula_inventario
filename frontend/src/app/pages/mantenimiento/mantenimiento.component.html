@@ -63,17 +63,28 @@
 
       <!-- Tab: Historial -->
       <div *ngIf="mantenimientoTab === 'historial'">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-gray-700">Registros Históricos</h3>
+          <button (click)="isExportModalOpen = true" class="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors shadow-sm">
+            <span class="material-icons-outlined mr-2 text-[18px]">file_download</span> Exportar
+          </button>
+        </div>
         <div *ngIf="historialMantenimiento.length === 0" class="text-center py-12 text-gray-500">No hay historial de mantenimientos.</div>
         <table *ngIf="historialMantenimiento.length > 0" class="w-full text-left">
-          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3">Bien</th><th class="py-3">Motivo Falla</th><th class="py-3">Trabajo Realizado</th><th class="py-3">Fecha Salida</th></tr></thead>
+          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3">Bien</th><th class="py-3">Motivo Falla</th><th class="py-3">Trabajo Realizado</th><th class="py-3">Fecha Salida</th><th class="py-3 text-center">Acciones</th></tr></thead>
           <tbody class="divide-y divide-gray-100">
-            <tr *ngFor="let m of historialMantenimiento">
+            <tr *ngFor="let m of historialMantenimiento" class="hover:bg-gray-50 transition-colors">
               <td class="py-3 text-sm font-bold">{{ m.bienes?.nombre || 'Bien ' + m.codigo_bien }} ({{ m.codigo_bien }})</td>
               <td class="py-3 text-sm text-gray-600">{{ m.motivo_falla }}</td>
               <td class="py-3 text-sm text-gray-600">{{ m.trabajo_realizado || 'N/A' }}</td>
               <td class="py-3 text-sm">
                 <span *ngIf="m.fecha_salida">{{ m.fecha_salida | date:'mediumDate' }}</span>
                 <span *ngIf="!m.fecha_salida" class="text-yellow-600 font-bold">En Proceso</span>
+              </td>
+              <td class="py-3 text-center">
+                <button (click)="abrirDetalle(m)" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-blue-100 hover:text-blue-600 transition-colors mx-auto shadow-sm" title="Ver Detalles">
+                  <span class="material-icons-outlined text-[18px]">visibility</span>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -103,6 +114,105 @@
     <div class="px-6 py-4 border-t border-gray-100 flex justify-end space-x-3 bg-gray-50">
       <button (click)="showFinalizarModal = false" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
       <button (click)="finalizarMantenimiento()" [disabled]="!trabajoRealizado || !proximaFechaMantenimiento || isSubmitting" class="px-5 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50">Guardar y Reincorporar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Exportar PDF -->
+<div *ngIf="isExportModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
+      <h2 class="text-lg font-bold text-gray-800 flex items-center">
+        <span class="material-icons-outlined mr-2 text-red-500">picture_as_pdf</span> Configurar Reporte PDF
+      </h2>
+      <button (click)="isExportModalOpen = false" class="text-gray-400 hover:text-gray-600 transition-colors"><span class="material-icons-outlined">close</span></button>
+    </div>
+    
+    <div class="p-6 space-y-4">
+      <div class="flex flex-col">
+        <label class="text-xs font-bold text-gray-600 uppercase mb-1">Desde</label>
+        <input type="date" [(ngModel)]="fechaInicio" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-sm shadow-sm w-full">
+      </div>
+      
+      <div class="flex flex-col">
+        <label class="text-xs font-bold text-gray-600 uppercase mb-1">Hasta</label>
+        <input type="date" [(ngModel)]="fechaFin" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-sm shadow-sm w-full">
+      </div>
+
+      <div class="flex flex-col">
+        <label class="text-xs font-bold text-gray-600 uppercase mb-1">Ordenar por</label>
+        <select [(ngModel)]="ordenarPor" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-sm shadow-sm bg-white w-full">
+          <option value="Mas recientes">Más recientes</option>
+          <option value="Mas antiguos">Más antiguos</option>
+          <option value="Por Nombre/Codigo">Por Nombre/Código</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="px-6 py-4 border-t border-gray-100 flex justify-end space-x-3 bg-gray-50">
+      <button (click)="isExportModalOpen = false" class="px-4 py-2 text-sm text-gray-600 font-bold hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
+      <button (click)="exportarPDF()" class="px-4 py-2 text-sm bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center">
+         Generar y Descargar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalles de Mantenimiento -->
+<div *ngIf="isDetalleModalOpen && registroSeleccionado" class="fixed inset-0 z-50 flex justify-center items-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <!-- Cabecera -->
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+      <h2 class="text-xl font-bold text-gray-800 flex items-center">
+        <span class="material-icons-outlined mr-2 text-blue-500">info</span> Detalles del Mantenimiento
+      </h2>
+      <button (click)="cerrarDetalle()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    
+    <!-- Cuerpo del Modal -->
+    <div class="p-6 overflow-y-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Bien</h3>
+          <p class="text-sm text-gray-900 font-bold">{{ registroSeleccionado.bienes?.nombre || 'Bien ' + registroSeleccionado.codigo_bien }}</p>
+          <p class="text-xs text-gray-500 font-mono mt-0.5">ID: {{ registroSeleccionado.codigo_bien }}</p>
+        </div>
+        <div>
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Fecha de Ingreso</h3>
+          <p class="text-sm text-gray-900 font-medium">{{ (registroSeleccionado.fecha_ingreso | date:'mediumDate') || 'N/A' }}</p>
+        </div>
+        <div>
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Estado de Reparación</h3>
+          <p class="text-sm font-bold" [ngClass]="{'text-green-600': registroSeleccionado.fecha_salida, 'text-yellow-600': !registroSeleccionado.fecha_salida}">
+            {{ registroSeleccionado.fecha_salida ? 'Completado' : 'En Proceso' }}
+          </p>
+        </div>
+        <div>
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Fecha de Salida</h3>
+          <p class="text-sm text-gray-900 font-medium">{{ (registroSeleccionado.fecha_salida | date:'mediumDate') || 'N/A' }}</p>
+        </div>
+        <div class="col-span-1 md:col-span-2">
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Motivo de Falla / Diagnóstico</h3>
+          <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-800">
+            {{ registroSeleccionado.motivo_falla || 'Sin diagnóstico registrado' }}
+          </div>
+        </div>
+        <div class="col-span-1 md:col-span-2">
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Trabajo Realizado</h3>
+          <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-800">
+            {{ registroSeleccionado.trabajo_realizado || 'No se han registrado detalles del trabajo aún.' }}
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Pie -->
+    <div class="px-6 py-4 border-t border-gray-100 flex justify-end bg-gray-50">
+      <button (click)="cerrarDetalle()" class="px-5 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-colors">
+        Cerrar
+      </button>
     </div>
   </div>
 </div>
