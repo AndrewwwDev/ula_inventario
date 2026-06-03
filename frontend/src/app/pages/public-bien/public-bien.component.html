@@ -1,83 +1,129 @@
-<div class="min-h-screen bg-gray-100 flex justify-center items-start pt-10 px-4 pb-10">
-  
+<div class="min-h-screen bg-gray-50 flex items-start justify-center p-4 py-8">
+
   <!-- Estado: Cargando -->
   <div *ngIf="loading" class="flex flex-col items-center mt-20">
     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-    <p class="text-gray-500 font-bold">Cargando expediente...</p>
+    <p class="text-gray-500 font-bold">Cargando Ficha Técnica...</p>
   </div>
 
   <!-- Estado: Error o no encontrado -->
-  <div *ngIf="error && !loading" class="bg-white p-8 rounded-3xl shadow-sm border border-gray-200 max-w-md w-full text-center mt-10">
-    <span class="material-icons-outlined text-5xl text-red-400 mb-4">error_outline</span>
-    <h2 class="text-xl font-bold text-gray-800 mb-2">Expediente no encontrado</h2>
-    <p class="text-gray-500 mb-6">El código de este bien no existe o ha sido desincorporado permanentemente de la plataforma.</p>
+  <div *ngIf="error && !loading" class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 max-w-md w-full text-center mt-10">
+    <span class="material-icons-outlined text-5xl text-red-500 mb-4">error_outline</span>
+    <h2 class="text-xl font-bold text-gray-800 mb-2">Activo no encontrado</h2>
+    <p class="text-gray-500 mb-6">El código escaneado no existe o el activo ha sido desincorporado permanentemente de la plataforma.</p>
   </div>
 
-  <!-- Estado: Exito (Ficha Técnica Pública) -->
-  <div *ngIf="bien && !loading" class="bg-white rounded-3xl shadow-xl border border-gray-100 max-w-xl w-full overflow-hidden animate-fade-in">
+  <!-- Estado: Ficha Técnica Pública -->
+  <div *ngIf="bien && !loading" class="max-w-2xl w-full mx-auto bg-white shadow-xl rounded-2xl overflow-hidden mt-2 animate-fade-in">
     
-    <!-- Hero / Imagen Principal -->
-    <div class="h-64 sm:h-80 bg-gray-50 relative">
+    <!-- Cabecera Fotográfica -->
+    <div class="h-64 sm:h-80 bg-gray-100 relative">
       <img *ngIf="bien.url_foto_principal" [src]="bien.url_foto_principal" class="w-full h-full object-cover">
-      <div *ngIf="!bien.url_foto_principal" class="w-full h-full flex items-center justify-center bg-blue-50/50">
-        <span class="material-icons-outlined text-6xl text-blue-200">inventory_2</span>
-      </div>
-      
-      <!-- Degradado de superposición para contraste de texto -->
-      <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-gray-900/80 to-transparent p-6">
-        <span class="px-3 py-1 bg-blue-500 text-white text-[10px] uppercase tracking-wider font-bold rounded-md mb-2 inline-block">
-          {{ bien.categorias?.nombre || 'General' }}
-        </span>
-        <h1 class="text-2xl sm:text-3xl font-black text-white leading-tight drop-shadow-md">{{ bien.nombre }}</h1>
-        <p class="text-gray-300 font-mono font-bold mt-1">ID: {{ bien.codigo_id }}</p>
+      <div *ngIf="!bien.url_foto_principal" class="w-full h-full flex flex-col items-center justify-center bg-gray-200">
+        <span class="material-icons-outlined text-6xl text-gray-400 mb-2">image_not_supported</span>
+        <p class="text-gray-500 font-medium">Imagen no disponible</p>
       </div>
     </div>
 
-    <!-- Cuerpo de Detalles -->
-    <div class="p-6 sm:p-8 space-y-6">
-      <!-- Grid de Metadatos -->
-      <div class="grid grid-cols-2 gap-4">
-        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Estado</p>
-          <p class="font-bold text-gray-800 text-sm">{{ bien.cat_estados?.nombre || 'N/A' }}</p>
+    <!-- Identidad del Activo -->
+    <div class="p-6 border-b border-gray-100 bg-white">
+      <div class="flex justify-between items-start mb-2">
+        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg uppercase tracking-wide">
+          {{ bien.categorias?.nombre || 'General' }}
+        </span>
+        <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-mono font-bold rounded-lg border border-gray-200 shadow-sm">
+          ID: {{ bien.codigo_id }}
+        </span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-black text-gray-900 leading-tight mt-2">{{ bien.nombre }}</h1>
+      <p class="text-gray-500 font-medium mt-1">
+        <span *ngIf="bien.marca" class="mr-2">Marca: <span class="font-bold text-gray-700">{{ bien.marca }}</span></span>
+        <span *ngIf="bien.modelo">Modelo: <span class="font-bold text-gray-700">{{ bien.modelo }}</span></span>
+        <span *ngIf="!bien.marca && !bien.modelo">Sin marca/modelo especificado</span>
+      </p>
+    </div>
+
+    <!-- Sección de Estados (Badges) y Grid -->
+    <div class="p-6 space-y-6 bg-gray-50">
+      
+      <!-- Badges de Estado -->
+      <div class="flex flex-wrap gap-3">
+        <div class="flex-1 min-w-[140px] bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Estado Operativo</span>
+          <span class="text-sm font-bold text-gray-800">{{ bien.cat_estados?.nombre || 'N/A' }}</span>
         </div>
-        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Condición</p>
-          <p class="font-bold text-sm" [ngClass]="{
-            'text-teal-600': bien.condicion_fisica === 'Buen estado',
-            'text-amber-500': bien.condicion_fisica === 'Regular',
-            'text-red-500': bien.condicion_fisica === 'Mal estado'
-          }">{{ bien.condicion_fisica }}</p>
+        
+        <div class="flex-1 min-w-[140px] bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Condición Física</span>
+          <span class="text-sm font-bold flex items-center" [ngClass]="{
+            'text-green-600': bien.condicion_fisica === 'Buen estado',
+            'text-yellow-600': bien.condicion_fisica === 'Regular',
+            'text-red-600': bien.condicion_fisica === 'Mal estado'
+          }">
+            <span class="w-2 h-2 rounded-full mr-2" [ngClass]="{
+              'bg-green-500': bien.condicion_fisica === 'Buen estado',
+              'bg-yellow-500': bien.condicion_fisica === 'Regular',
+              'bg-red-500': bien.condicion_fisica === 'Mal estado'
+            }"></span>
+            {{ bien.condicion_fisica || 'N/A' }}
+          </span>
         </div>
-        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 col-span-2 sm:col-span-1">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Ubicación Actual</p>
-          <p class="font-bold text-gray-800 text-sm">{{ bien.cat_ubicaciones?.nombre || 'No asignada' }}</p>
+      </div>
+
+      <!-- Grid de Datos Institucionales -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Serial de Fabricante</p>
+          <p class="font-mono text-gray-800 font-semibold">{{ bien.serial_fabricante || 'N/A' }}</p>
         </div>
-        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 col-span-2 sm:col-span-1">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Área Específica</p>
-          <p class="font-bold text-gray-800 text-sm">{{ bien.cat_areas?.nombre || 'No asignada' }}</p>
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Fecha de Registro</p>
+          <p class="font-medium text-gray-800">{{ (bien.fecha_registro | date:'longDate') || 'N/A' }}</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm col-span-1 sm:col-span-2">
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Ubicación y Área</p>
+          <p class="font-medium text-gray-800">
+            {{ bien.cat_ubicaciones?.nombre || 'Sin ubicación' }} 
+            <span class="text-gray-400 mx-2">/</span> 
+            {{ bien.cat_areas?.nombre || 'Sin área' }}
+          </p>
         </div>
       </div>
 
       <!-- Descripción (Opcional) -->
-      <div *ngIf="bien.descripcion" class="border-t border-gray-100 pt-4">
-        <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">Especificaciones Técnicas</h3>
+      <div *ngIf="bien.descripcion" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+        <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">Detalles Adicionales</h3>
         <p class="text-gray-600 leading-relaxed text-sm">
           {{ bien.descripcion }}
         </p>
       </div>
 
-      <!-- Auth Wall / Botón Editar -->
-      <div class="pt-6 mt-4">
-        <button (click)="intentarEditar()" class="w-full flex justify-center items-center py-4 bg-gray-900 text-white rounded-2xl font-bold text-lg hover:bg-blue-600 transition-all duration-300 shadow-xl hover:shadow-blue-500/30 group">
-          <span class="material-icons-outlined mr-2 group-hover:rotate-12 transition-transform">admin_panel_settings</span> 
-          Gestionar / Editar Bien
-        </button>
-        <p class="text-center text-xs text-gray-400 font-bold mt-4 flex items-center justify-center">
-          <span class="material-icons-outlined text-[14px] mr-1">lock</span>
-          Acceso administrativo requerido
+      <!-- Responsable Legal (Tarjeta Interna) -->
+      <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-xl shadow-sm">
+        <p class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1 flex items-center">
+          <span class="material-icons-outlined text-[16px] mr-1">person_pin</span> Funcionario Responsable
         </p>
+        <div *ngIf="bien.usuarios || bien.responsable_cedula; else sinResponsable">
+          <p class="font-bold text-lg text-blue-900 mt-1">
+            <span *ngIf="bien.usuarios">{{ bien.usuarios.nombres }} {{ bien.usuarios.apellidos }}</span>
+            <span *ngIf="!bien.usuarios">Usuario C.I. {{ bien.responsable_cedula }}</span>
+          </p>
+          <p class="text-sm font-mono text-blue-700 mt-0.5">C.I: {{ bien.usuarios?.cedula || bien.responsable_cedula }}</p>
+        </div>
+        <ng-template #sinResponsable>
+          <p class="font-bold text-blue-900 mt-1">No asignado</p>
+        </ng-template>
       </div>
+
     </div>
+
+    <!-- Botón de Seguridad (Auth-Wall) -->
+    <div class="p-6 bg-white border-t border-gray-100">
+      <button (click)="intentarEditar()" class="w-full flex justify-center items-center py-4 bg-gray-900 text-white rounded-xl font-bold text-lg hover:bg-blue-600 transition-all duration-300 shadow-md hover:shadow-lg group">
+        <span class="material-icons-outlined mr-2 group-hover:scale-110 transition-transform">admin_panel_settings</span> 
+        Acceder al Sistema / Editar Activo
+      </button>
+    </div>
+
   </div>
 </div>

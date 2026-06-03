@@ -32,13 +32,28 @@ export class PublicBienComponent implements OnInit {
 
   async cargarDetalles(id: string) {
     try {
+      // CRÍTICO: Consulta Relacional Completa
       const { data, error } = await this.supabaseService.supabase
         .from('bienes')
-        .select('*, categorias(nombre), cat_estados(nombre), cat_ubicaciones(nombre), cat_areas(nombre)')
+        .select('*, categorias(nombre), cat_estados(nombre), cat_ubicaciones(nombre), cat_areas(nombre), usuarios!bienes_responsable_cedula_fkey(nombres, apellidos, cedula)')
         .eq('codigo_id', id)
         .single();
 
-      if (error || !data) {
+      // Fallback if the explicit foreign key name fails due to being different
+      if (error && error.message && error.message.includes('foreign key')) {
+         console.warn('Fallback to standard relational select for usuarios');
+         const fallbackRes = await this.supabaseService.supabase
+           .from('bienes')
+           .select('*, categorias(nombre), cat_estados(nombre), cat_ubicaciones(nombre), cat_areas(nombre), usuarios(nombres, apellidos, cedula)')
+           .eq('codigo_id', id)
+           .single();
+           
+         if (fallbackRes.error || !fallbackRes.data) {
+           this.error = true;
+         } else {
+           this.bien = fallbackRes.data;
+         }
+      } else if (error || !data) {
         this.error = true;
       } else {
         this.bien = data;
@@ -55,10 +70,10 @@ export class PublicBienComponent implements OnInit {
     const { data: { session } } = await this.supabaseService.supabase.auth.getSession();
     
     if (session) {
-      // Si está logueado, redirigimos al inventario con un query param para abrir el modal si así lo diseñas después
-      this.router.navigate(['/dashboard/inventario'], { queryParams: { search: this.bien.codigo_id } });
+      // Si hay sesión activa (usuario logueado en su teléfono), redirige a /dashboard/bienes/editar/:id o la ruta equivalente
+      this.router.navigate(['/dashboard/inventario'], { queryParams: { search: this.bien.codigo_id, editId: this.bien.codigo_id } });
     } else {
-      // Si no hay sesión activa, bloqueamos y lo enviamos al login
+      // Si NO hay sesión activa (visitante), redirige a /login.
       this.router.navigate(['/login']);
     }
   }
