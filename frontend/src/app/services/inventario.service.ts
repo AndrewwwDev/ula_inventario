@@ -186,7 +186,8 @@ export class InventarioService {
           codigo_id: d.codigo_bien,
           nombre: bienesMap.get(d.codigo_bien) || 'Bien Desconocido',
           fecha_desincorporacion: d.fecha,
-          motivo_desincorporacion: d.motivo_desincorporacion
+          motivo_desincorporacion: d.motivo_desincorporacion,
+          url_foto_evidencia: d.url_foto_evidencia
         }));
       } catch (err) { console.warn('Excepción en getBienesDesincorporados:', err); return []; }
     })());
@@ -219,7 +220,10 @@ export class InventarioService {
       const { data: result, error } = await this.supabase.from('bienes').update({ estado_id: estadoDes!.id }).eq('codigo_id', id).select().single();
       if (error) throw error;
 
-      await this.logBitacora('DESINCORPORACION', 'bienes', id, `Bien desincorporado por ${userData?.nombres || 'Sistema'}. Motivo: ${motivo}`);
+      await this.logBitacora('DESINCORPORACION', 'bienes', id, {
+        mensaje: `Bien desincorporado por ${userData?.nombres || 'Sistema'}. Motivo: ${motivo}`,
+        url_foto_evidencia: foto_url
+      });
       return result;
     })());
   }

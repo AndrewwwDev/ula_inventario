@@ -171,6 +171,18 @@
              <p class="text-sm text-gray-700 mb-2" *ngIf="selectedLog.detalles.estado_anterior"><strong>Estado Anterior:</strong> {{selectedLog.detalles.estado_anterior}}</p>
              <p class="text-sm text-gray-700 mb-2" *ngIf="selectedLog.detalles.estado_nuevo"><strong>Nuevo Estado:</strong> {{selectedLog.detalles.estado_nuevo}}</p>
              <p class="text-sm text-gray-700" *ngIf="selectedLog.detalles.justificacion"><strong>Justificación:</strong> {{selectedLog.detalles.justificacion}}</p>
+             
+             <!-- Evidencia Fotográfica de Desincorporación -->
+             <div *ngIf="selectedLog.detalles.url_foto_evidencia" class="mt-4 pt-4 border-t border-blue-200/60">
+               <h5 class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 flex items-center">
+                 <span class="material-icons-outlined text-[16px] mr-1 text-gray-400">image</span> Evidencia Fotográfica
+               </h5>
+               <a [href]="selectedLog.detalles.url_foto_evidencia" target="_blank" title="Haga clic para ver imagen completa"
+                  class="block rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all bg-white p-1">
+                 <img [src]="selectedLog.detalles.url_foto_evidencia" alt="Evidencia de auditoría" 
+                      class="w-full h-auto max-h-48 object-contain bg-gray-50 rounded">
+               </a>
+             </div>
           </div>
         </div>
 

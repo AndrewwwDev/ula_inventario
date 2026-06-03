@@ -251,14 +251,18 @@
           <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Responsable</h3>
           <p class="text-sm text-gray-900 font-medium">{{ registroSeleccionado.responsable_cedula || 'N/A' }}</p>
         </div>
-        <div>
-          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">URL de Evidencia</h3>
-          <p class="text-sm text-blue-600 font-medium">
-             <a *ngIf="registroSeleccionado.url_acta_respaldo" [href]="registroSeleccionado.url_acta_respaldo" target="_blank" class="hover:underline flex items-center">
-               <span class="material-icons-outlined text-[16px] mr-1">link</span> Ver Evidencia
+        <div class="col-span-1 md:col-span-2">
+          <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Evidencia Fotográfica</h3>
+          <div *ngIf="registroSeleccionado.url_foto_evidencia" class="bg-gray-50 p-2 rounded-xl border border-gray-200 text-center">
+             <a [href]="registroSeleccionado.url_foto_evidencia" target="_blank" title="Ver tamaño completo" class="inline-block rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+               <img [src]="registroSeleccionado.url_foto_evidencia" alt="Evidencia de Desincorporación" class="max-w-full h-auto max-h-56 object-contain rounded-lg">
              </a>
-             <span *ngIf="!registroSeleccionado.url_acta_respaldo" class="text-gray-500">No hay archivo</span>
-          </p>
+             <div class="mt-2 text-xs text-gray-500">Haz clic en la imagen para ampliarla</div>
+          </div>
+          <div *ngIf="!registroSeleccionado.url_foto_evidencia" class="bg-gray-50 p-4 rounded-xl border border-gray-200 border-dashed text-center">
+             <span class="material-icons-outlined text-3xl text-gray-300 mb-1">image_not_supported</span>
+             <p class="text-sm text-gray-500">No hay evidencia fotográfica disponible para este registro.</p>
+          </div>
         </div>
         <div class="col-span-1 md:col-span-2">
           <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Motivo Principal / Observaciones</h3>

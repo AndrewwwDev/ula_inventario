@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { InventarioService } from '../../services/inventario.service';
 import { ToastService } from '../../services/toast.service';
 import { ActivatedRoute } from '@angular/router';
@@ -15,7 +16,7 @@ import { NotificacionesService } from '../../services/notificaciones.service';
 @Component({
   selector: 'app-inventario',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, ResponsableAutocompleteComponent, QRCodeModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, ResponsableAutocompleteComponent, QRCodeModule, RouterLink],
   templateUrl: './inventario.component.html'
 })
 export class InventarioComponent implements OnInit {
@@ -551,7 +552,11 @@ export class InventarioComponent implements OnInit {
   }
 
   generarUrlQR(codigoId: string): string {
-    return window.location.origin + '/preview/' + codigoId;
+    return 'https://ula-inventario.vercel.app/bien/' + codigoId;
+  }
+
+  imprimirQR(): void {
+    window.print();
   }
 
   getEstadosPermitidos(responsableCedula: string | null | undefined, currentStateId?: string): any[] {

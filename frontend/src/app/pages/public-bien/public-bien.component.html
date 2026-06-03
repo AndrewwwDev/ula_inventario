@@ -1,0 +1,83 @@
+<div class="min-h-screen bg-gray-100 flex justify-center items-start pt-10 px-4 pb-10">
+  
+  <!-- Estado: Cargando -->
+  <div *ngIf="loading" class="flex flex-col items-center mt-20">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+    <p class="text-gray-500 font-bold">Cargando expediente...</p>
+  </div>
+
+  <!-- Estado: Error o no encontrado -->
+  <div *ngIf="error && !loading" class="bg-white p-8 rounded-3xl shadow-sm border border-gray-200 max-w-md w-full text-center mt-10">
+    <span class="material-icons-outlined text-5xl text-red-400 mb-4">error_outline</span>
+    <h2 class="text-xl font-bold text-gray-800 mb-2">Expediente no encontrado</h2>
+    <p class="text-gray-500 mb-6">El código de este bien no existe o ha sido desincorporado permanentemente de la plataforma.</p>
+  </div>
+
+  <!-- Estado: Exito (Ficha Técnica Pública) -->
+  <div *ngIf="bien && !loading" class="bg-white rounded-3xl shadow-xl border border-gray-100 max-w-xl w-full overflow-hidden animate-fade-in">
+    
+    <!-- Hero / Imagen Principal -->
+    <div class="h-64 sm:h-80 bg-gray-50 relative">
+      <img *ngIf="bien.url_foto_principal" [src]="bien.url_foto_principal" class="w-full h-full object-cover">
+      <div *ngIf="!bien.url_foto_principal" class="w-full h-full flex items-center justify-center bg-blue-50/50">
+        <span class="material-icons-outlined text-6xl text-blue-200">inventory_2</span>
+      </div>
+      
+      <!-- Degradado de superposición para contraste de texto -->
+      <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-gray-900/80 to-transparent p-6">
+        <span class="px-3 py-1 bg-blue-500 text-white text-[10px] uppercase tracking-wider font-bold rounded-md mb-2 inline-block">
+          {{ bien.categorias?.nombre || 'General' }}
+        </span>
+        <h1 class="text-2xl sm:text-3xl font-black text-white leading-tight drop-shadow-md">{{ bien.nombre }}</h1>
+        <p class="text-gray-300 font-mono font-bold mt-1">ID: {{ bien.codigo_id }}</p>
+      </div>
+    </div>
+
+    <!-- Cuerpo de Detalles -->
+    <div class="p-6 sm:p-8 space-y-6">
+      <!-- Grid de Metadatos -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Estado</p>
+          <p class="font-bold text-gray-800 text-sm">{{ bien.cat_estados?.nombre || 'N/A' }}</p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Condición</p>
+          <p class="font-bold text-sm" [ngClass]="{
+            'text-teal-600': bien.condicion_fisica === 'Buen estado',
+            'text-amber-500': bien.condicion_fisica === 'Regular',
+            'text-red-500': bien.condicion_fisica === 'Mal estado'
+          }">{{ bien.condicion_fisica }}</p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 col-span-2 sm:col-span-1">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Ubicación Actual</p>
+          <p class="font-bold text-gray-800 text-sm">{{ bien.cat_ubicaciones?.nombre || 'No asignada' }}</p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 col-span-2 sm:col-span-1">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Área Específica</p>
+          <p class="font-bold text-gray-800 text-sm">{{ bien.cat_areas?.nombre || 'No asignada' }}</p>
+        </div>
+      </div>
+
+      <!-- Descripción (Opcional) -->
+      <div *ngIf="bien.descripcion" class="border-t border-gray-100 pt-4">
+        <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">Especificaciones Técnicas</h3>
+        <p class="text-gray-600 leading-relaxed text-sm">
+          {{ bien.descripcion }}
+        </p>
+      </div>
+
+      <!-- Auth Wall / Botón Editar -->
+      <div class="pt-6 mt-4">
+        <button (click)="intentarEditar()" class="w-full flex justify-center items-center py-4 bg-gray-900 text-white rounded-2xl font-bold text-lg hover:bg-blue-600 transition-all duration-300 shadow-xl hover:shadow-blue-500/30 group">
+          <span class="material-icons-outlined mr-2 group-hover:rotate-12 transition-transform">admin_panel_settings</span> 
+          Gestionar / Editar Bien
+        </button>
+        <p class="text-center text-xs text-gray-400 font-bold mt-4 flex items-center justify-center">
+          <span class="material-icons-outlined text-[14px] mr-1">lock</span>
+          Acceso administrativo requerido
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

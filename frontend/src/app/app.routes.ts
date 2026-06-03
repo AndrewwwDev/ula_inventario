@@ -15,13 +15,16 @@ import { ReglasDesincorporacionComponent } from './pages/reglas-desincorporacion
 import { authGuard } from './guards/auth.guard';
 import { publicGuard } from './guards/public.guard';
 import { roleGuard } from './guards/role.guard';
+import { PublicBienComponent } from './pages/public-bien/public-bien.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent, canActivate: [publicGuard] },
   { path: 'restablecer-password', component: RestablecerPasswordComponent },
   { path: 'review-goods', component: ReviewGoodsComponent },
-  { 
+  { path: 'bien/:id', component: PublicBienComponent },
+  { path: 'preview/:id', component: PublicBienComponent },
+  {
     path: 'dashboard', 
     component: DashboardComponent, 
     canActivate: [authGuard],
