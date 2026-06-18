@@ -195,6 +195,8 @@
             <label class="text-sm font-bold text-gray-700">Código ID *</label>
             <input type="text" [(ngModel)]="nuevoBien.codigo_id" name="codigo_id"
               class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500"
+              placeholder="Ej: BIEN-2026, ACT-001"
+              title="Ingrese el código institucional alfanumérico (ej: BIEN-2026). No use números correlativos simples."
               required>
           </div>
           <div>
@@ -313,6 +315,8 @@
             <label class="text-sm font-bold text-gray-700">Código ID *</label>
             <input type="text" [(ngModel)]="editingBien.codigo_id" name="codigo_id"
               class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500"
+              placeholder="Ej: BIEN-2026, ACT-001"
+              title="El código de bien es un valor alfanumérico estandarizado."
               required disabled>
           </div>
           <div>
@@ -339,27 +343,7 @@
               <option *ngFor="let cat of categorias" [value]="cat.id">{{cat.nombre}}</option>
             </select>
           </div>
-          <div>
-            <label class="text-sm font-bold text-gray-700">Ubicación *</label>
-            <select [(ngModel)]="editingBien.ubicacion_id" name="ubicacion_id"
-              class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500"
-              required>
-              <option value="" disabled selected>Seleccione ubicación</option>
-              <option *ngFor="let u of cat_ubicaciones" [value]="u.id">{{u.nombre}}</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-sm font-bold text-gray-700">Área *</label>
-            <select [(ngModel)]="editingBien.area_id" name="area_id"
-              class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500"
-              required>
-              <option value="" disabled selected>Seleccione área</option>
-              <option *ngFor="let a of cat_areas" [value]="a.id">{{a.nombre}}</option>
-            </select>
-          </div>
-          <app-responsable-autocomplete [ngModel]="editingBien.responsable_cedula"
-            (ngModelChange)="editingBien.responsable_cedula = $event; onResponsableChange($event, true)"
-            name="responsable_cedula"></app-responsable-autocomplete>
+
           <div>
             <label class="text-sm font-bold text-gray-700">Estado *</label>
             <select [(ngModel)]="editingBien.estado_id" name="estado_id"
@@ -536,9 +520,12 @@
             </select>
           </div>
           <div class="md:col-span-2">
-            <label class="text-sm font-bold text-gray-700">Cédula del Nuevo Encargado *</label>
-            <input type="text" [(ngModel)]="datosTraslado.responsable_cedula" name="responsable_cedula"
-              placeholder="Ej. V-12345678" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl" required>
+            <app-responsable-autocomplete 
+              [ngModel]="datosTraslado.responsable_cedula"
+              (ngModelChange)="datosTraslado.responsable_cedula = $event"
+              name="responsable_cedula"
+              label="Cédula o Nombre del Nuevo Encargado *">
+            </app-responsable-autocomplete>
           </div>
         </div>
 

@@ -5,6 +5,7 @@ import { InventarioService } from '../../services/inventario.service';
 import { ToastService } from '../../services/toast.service';
 import { PdfExportService } from '../../services/pdf-export.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -26,6 +27,7 @@ export class MantenimientoComponent implements OnInit {
   proximaFechaMantenimiento = '';
   finalizandoBienId: string | null = null;
   isSubmitting = false;
+  currentUser: any = null;
 
   // --- Export & Modal ---
   isExportModalOpen = false;
@@ -45,9 +47,31 @@ export class MantenimientoComponent implements OnInit {
   isDetalleReparacionOpen: boolean = false;
   reparacionSeleccionada: any = null;
 
-  abrirModalEnReparacion(item: any) {
-    this.reparacionSeleccionada = item;
+  async abrirModalEnReparacion(item: any) {
+    this.reparacionSeleccionada = { ...item };
     this.isDetalleReparacionOpen = true;
+    
+    // Buscar la auditoría de envío a mantenimiento en la bitácora
+    const { data } = await this.supabaseService.supabase
+      .from('bitacora')
+      .select('cedula_usuario')
+      .eq('codigo_bien', item.codigo_id)
+      .eq('accion', 'Envío a Mantenimiento')
+      .order('fecha_hora', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (data && data.cedula_usuario) {
+      const { data: userData } = await this.supabaseService.supabase
+        .from('usuarios')
+        .select('nombres, apellidos, cedula')
+        .eq('cedula', data.cedula_usuario)
+        .single();
+        
+      if (userData) {
+        this.reparacionSeleccionada.solicitante = userData;
+      }
+    }
   }
 
   cerrarModalEnReparacion() {
@@ -60,10 +84,14 @@ export class MantenimientoComponent implements OnInit {
     public toastService: ToastService,
     private pdfExportService: PdfExportService,
     private supabaseService: SupabaseService,
+    private authService: AuthService,
     private router: Router
   ) { }
 
   ngOnInit() {
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
     this.loadMantenimientoData();
     this.supabaseService.supabase.from('usuarios').select('cedula, nombres, apellidos').then(({ data }) => {
       if (data) {
@@ -82,9 +110,19 @@ export class MantenimientoComponent implements OnInit {
   }
 
   loadMantenimientoData() {
-    this.inventarioService.getAlertasMantenimiento().subscribe((data: any) => this.alertasMantenimiento = data);
-    this.inventarioService.getEnReparacion().subscribe((data: any) => this.enReparacion = data);
-    this.inventarioService.getHistorialMantenimiento().subscribe((data: any) => this.historialMantenimiento = data);
+    this.inventarioService.getAlertasMantenimiento(this.fechaInicio, this.fechaFin).subscribe((data: any) => this.alertasMantenimiento = data);
+    this.inventarioService.getEnReparacion(this.fechaInicio, this.fechaFin).subscribe((data: any) => this.enReparacion = data);
+    this.inventarioService.getHistorialMantenimiento(this.fechaInicio, this.fechaFin).subscribe((data: any) => this.historialMantenimiento = data);
+  }
+
+  aplicarFiltroFecha() {
+    this.loadMantenimientoData();
+  }
+
+  limpiarFiltroFecha() {
+    this.fechaInicio = '';
+    this.fechaFin = '';
+    this.loadMantenimientoData();
   }
 
   obtenerNombrePorCedula(cedula: string): string {
@@ -112,7 +150,17 @@ export class MantenimientoComponent implements OnInit {
     }
 
     this.isSubmitting = true;
-    this.inventarioService.finalizarMantenimiento(this.finalizandoBienId, this.trabajoRealizado, this.proximaFechaMantenimiento).subscribe({
+    
+    const cedulaTecnico = this.currentUser?.cedula || '00000000';
+    const nombreTecnico = this.currentUser ? `${this.currentUser.nombres} ${this.currentUser.apellidos}` : 'Desconocido';
+
+    this.inventarioService.finalizarMantenimiento(
+      this.finalizandoBienId, 
+      this.trabajoRealizado, 
+      this.proximaFechaMantenimiento,
+      cedulaTecnico,
+      nombreTecnico
+    ).subscribe({
       next: () => {
         this.isSubmitting = false;
         this.showFinalizarModal = false;
@@ -195,9 +243,31 @@ export class MantenimientoComponent implements OnInit {
     this.ordenarPor = 'Mas recientes';
   }
 
-  abrirModalDetalle(item: any) {
-    this.registroSeleccionado = item;
+  async abrirModalDetalle(item: any) {
+    this.registroSeleccionado = { ...item };
     this.isDetalleModalOpen = true;
+    
+    // Buscar la auditoría de envío a mantenimiento en la bitácora
+    const { data } = await this.supabaseService.supabase
+      .from('bitacora')
+      .select('cedula_usuario')
+      .eq('codigo_bien', item.codigo_bien)
+      .eq('accion', 'Envío a Mantenimiento')
+      .order('fecha_hora', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (data && data.cedula_usuario) {
+      const { data: userData } = await this.supabaseService.supabase
+        .from('usuarios')
+        .select('nombres, apellidos, cedula')
+        .eq('cedula', data.cedula_usuario)
+        .single();
+        
+      if (userData) {
+        this.registroSeleccionado.solicitante = userData;
+      }
+    }
   }
 
   cerrarModalDetalle() {

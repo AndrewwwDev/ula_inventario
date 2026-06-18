@@ -27,6 +27,5 @@
   </ul>
 
   <!-- Mensajes de Error -->
-  <p *ngIf="internalControl.hasError('pattern') && (internalControl.dirty || internalControl.touched)" class="text-xs text-red-500 mt-1 font-semibold">Solo se admiten números.</p>
-  <p *ngIf="internalControl.hasError('notFound')" class="text-xs text-red-500 mt-1 font-semibold">Cédula no registrada en el sistema.</p>
+  <p *ngIf="internalControl.hasError('notFound')" class="text-xs text-red-500 mt-1 font-semibold">Usuario no registrado en el sistema.</p>
 </div>

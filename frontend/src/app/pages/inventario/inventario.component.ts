@@ -11,6 +11,7 @@ import { QRCodeModule } from 'angularx-qrcode';
 import { ResponsableAutocompleteComponent } from '../../components/responsable-autocomplete/responsable-autocomplete.component';
 import { PdfExportService } from '../../services/pdf-export.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { AuthService } from '../../services/auth.service';
 import { NotificacionesService } from '../../services/notificaciones.service';
 
 @Component({
@@ -56,10 +57,16 @@ export class InventarioComponent implements OnInit {
     private route: ActivatedRoute,
     private pdfExportService: PdfExportService,
     private supabaseService: SupabaseService,
+    private authService: AuthService,
     public notificacionesService: NotificacionesService
   ) { }
 
+  currentUser: any = null;
+
   ngOnInit() {
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
     this.loadOptions();
     this.loadInventory();
     
@@ -517,9 +524,15 @@ export class InventarioComponent implements OnInit {
 
     this.isSubmitting = true;
     const fallaFinal = `${this.tipoMantenimiento} - Motivo: ${this.motivoMantenimiento}`;
+    
+    const cedulaSolicitante = this.currentUser?.cedula || '00000000';
+    const nombreSolicitante = this.currentUser ? `${this.currentUser.nombres} ${this.currentUser.apellidos}` : 'Desconocido';
+
     const payload = {
       codigo_id: this.bienAMantenimiento.codigo_id,
-      motivo_falla: fallaFinal
+      motivo_falla: fallaFinal,
+      cedula_solicitante: cedulaSolicitante,
+      nombre_solicitante: nombreSolicitante
     };
 
     this.inventarioService.enviarAMantenimiento(payload).subscribe({

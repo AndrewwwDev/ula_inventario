@@ -9,13 +9,19 @@ export class InventarioService {
 
   constructor(private supabase: SupabaseService) {}
 
-  getBienes() {
+  getBienes(fechaInicio?: string, fechaFin?: string) {
     return from((async () => {
       try {
-        const { data, error } = await this.supabase.from('bienes')
+        let query = this.supabase.from('bienes')
           .select('*, categorias(nombre), cat_estados!inner(nombre), cat_ubicaciones(nombre), cat_areas(nombre), usuarios(nombres, apellidos)')
           .neq('cat_estados.nombre', 'Desincorporado');
+
+        if (fechaInicio) query = query.gte('fecha_registro', `${fechaInicio}T00:00:00.000Z`);
+        if (fechaFin) query = query.lte('fecha_registro', `${fechaFin}T23:59:59.999Z`);
+        query = query.order('fecha_registro', { ascending: false });
           
+        const { data, error } = await query;
+        
         if (error) {
           console.error('[InventarioService] Error consultando bienes. Revisa políticas RLS o conexión:', error.message || error);
           return [];
@@ -98,9 +104,6 @@ export class InventarioService {
         descripcion: data.descripcion,
         categoria_id: data.categoria_id,
         condicion_fisica: data.condicion_fisica,
-        ubicacion_id: data.ubicacion_id,
-        area_id: data.area_id,
-        responsable_cedula: data.responsable_cedula,
         estado_id: data.estado_id,
         marca: data.marca,
         modelo: data.modelo,
@@ -137,9 +140,6 @@ export class InventarioService {
         descripcion: payload.descripcion,
         categoria_id: payload.categoria_id,
         condicion_fisica: payload.condicion_fisica,
-        ubicacion_id: payload.ubicacion_id,
-        area_id: payload.area_id,
-        responsable_cedula: payload.responsable_cedula,
         estado_id: payload.estado_id,
         marca: payload.marca,
         modelo: payload.modelo,
@@ -155,6 +155,29 @@ export class InventarioService {
     })());
   }
 
+  registrarTraslado(id: string, payload: any, accion: string, mensajeAuditoria: string) {
+    return from((async () => {
+      // 1. UPDATE estricto en la tabla bienes para los campos logísticos
+      const { data: result, error } = await this.supabase.from('bienes').update({
+        ubicacion_id: payload.ubicacion_id,
+        area_id: payload.area_id,
+        responsable_cedula: payload.responsable_cedula
+      }).eq('codigo_id', id).select().single();
+      
+      if (error) throw error;
+
+      // 2. INSERT obligatorio en la tabla bitacora
+      await this.logBitacora(accion, 'bienes', id, {
+        mensaje: mensajeAuditoria,
+        nueva_ubicacion: payload.ubicacion_id,
+        nueva_area: payload.area_id,
+        nuevo_responsable: payload.responsable_cedula
+      });
+
+      return result;
+    })());
+  }
+
   eliminarBien(id: string) {
     return from((async () => {
       const { data: result, error } = await this.supabase.from('bienes').delete().eq('codigo_id', id).select().single();
@@ -166,10 +189,15 @@ export class InventarioService {
 
   // Métodos que deben adaptarse si existen estados de mantenimiento/desincorporado en la nueva DB. 
   // Por ahora lo simplificamos para que no fallen las peticiones.
-  getBienesDesincorporados() {
+  getBienesDesincorporados(fechaInicio?: string, fechaFin?: string) {
     return from((async () => {
       try {
-        const { data: desincData, error: desincError } = await this.supabase.from('desincorporaciones').select('*');
+        let query = this.supabase.from('desincorporaciones').select('*');
+        if (fechaInicio) query = query.gte('fecha', `${fechaInicio}T00:00:00.000Z`);
+        if (fechaFin) query = query.lte('fecha', `${fechaFin}T23:59:59.999Z`);
+        query = query.order('fecha', { ascending: false });
+
+        const { data: desincData, error: desincError } = await query;
         if (desincError) { console.warn('Error en getBienesDesincorporados:', desincError); return []; }
         
         if (!desincData || desincData.length === 0) return [];
@@ -280,16 +308,16 @@ export class InventarioService {
     })());
   }
 
-  buscarUsuariosPorCedula(termino: string) {
+  buscarUsuariosPredictivo(termino: string) {
     return from((async () => {
       try {
         const { data, error } = await this.supabase.from('usuarios')
           .select('cedula, nombres, apellidos')
-          .ilike('cedula', `${termino}%`)
+          .or(`cedula.ilike.%${termino}%,nombres.ilike.%${termino}%,apellidos.ilike.%${termino}%`)
           .limit(10);
-        if (error) { console.warn('Error en buscarUsuariosPorCedula:', error); return []; }
+        if (error) { console.warn('Error en buscarUsuariosPredictivo:', error); return []; }
         return data || [];
-      } catch (err) { console.warn('Excepción en buscarUsuariosPorCedula:', err); return []; }
+      } catch (err) { console.warn('Excepción en buscarUsuariosPredictivo:', err); return []; }
     })());
   }
 
@@ -306,29 +334,54 @@ export class InventarioService {
     })());
   }
 
+  // --- NOTIFICACIONES ---
+  getNotificacionesCampana() {
+    return from((async () => {
+      try {
+        const { data, error } = await this.supabase.from('mantenimientos')
+          .select('id')
+          .eq('estado_reparacion', 'En Proceso');
+        if (error) { console.warn('Error en getNotificacionesCampana:', error); return []; }
+        return data || [];
+      } catch (err) { console.warn('Excepción en getNotificacionesCampana:', err); return []; }
+    })());
+  }
+
   // --- MANTENIMIENTO ---
-  getAlertasMantenimiento() {
+  getAlertasMantenimiento(fechaInicio?: string, fechaFin?: string) {
     return from((async () => {
       try {
         const today = new Date().toISOString().split('T')[0];
-        const { data, error } = await this.supabase.from('bienes')
-          .select('*, categorias!inner(nombre), cat_estados!inner(nombre)')
+        let query = this.supabase.from('bienes')
+          .select('*, categorias!inner(nombre), cat_estados!inner(nombre), usuarios(nombres, apellidos)')
           .eq('categorias.nombre', 'Computadoras')
           .lte('fecha_proximo_mantenimiento', today)
           .neq('cat_estados.nombre', 'Desincorporado')
           .neq('cat_estados.nombre', 'Mantenimiento');
+
+        if (fechaInicio) query = query.gte('fecha_registro', `${fechaInicio}T00:00:00.000Z`);
+        if (fechaFin) query = query.lte('fecha_registro', `${fechaFin}T23:59:59.999Z`);
+        query = query.order('fecha_registro', { ascending: false });
+
+        const { data, error } = await query;
         if (error) { console.warn('Error en getAlertasMantenimiento:', error); return []; }
         return (data || []).map((b: any) => ({ bien: b, proxima_fecha: b.fecha_proximo_mantenimiento }));
       } catch (err) { console.warn('Excepción en getAlertasMantenimiento:', err); return []; }
     })());
   }
 
-  getEnReparacion() {
+  getEnReparacion(fechaInicio?: string, fechaFin?: string) {
     return from((async () => {
       try {
-        const { data, error } = await this.supabase.from('mantenimientos')
-          .select('*, bienes(nombre, cat_ubicaciones(nombre), cat_areas(nombre))')
+        let query = this.supabase.from('mantenimientos')
+          .select('*, usuarios(nombres, apellidos, cedula), bienes(nombre, cat_ubicaciones(nombre), cat_areas(nombre))')
           .eq('estado_reparacion', 'En Proceso');
+
+        if (fechaInicio) query = query.gte('fecha_ingreso', `${fechaInicio}T00:00:00.000Z`);
+        if (fechaFin) query = query.lte('fecha_ingreso', `${fechaFin}T23:59:59.999Z`);
+        query = query.order('fecha_ingreso', { ascending: false });
+
+        const { data, error } = await query;
         if (error) { console.warn('Error en getEnReparacion:', error); return []; }
         
         return (data || []).map((m: any) => ({
@@ -343,11 +396,17 @@ export class InventarioService {
     })());
   }
 
-  getHistorialMantenimiento() {
+  getHistorialMantenimiento(fechaInicio?: string, fechaFin?: string) {
     return from((async () => {
       try {
-        const { data, error } = await this.supabase.from('mantenimientos')
-          .select('*, bienes(nombre, marca, modelo, responsable_cedula, cat_ubicaciones(nombre), cat_areas(nombre))');
+        let query = this.supabase.from('mantenimientos')
+          .select('*, usuarios(nombres, apellidos, cedula), bienes(nombre, marca, modelo, responsable_cedula, cat_ubicaciones(nombre), cat_areas(nombre))');
+
+        if (fechaInicio) query = query.gte('fecha_ingreso', `${fechaInicio}T00:00:00.000Z`);
+        if (fechaFin) query = query.lte('fecha_ingreso', `${fechaFin}T23:59:59.999Z`);
+        query = query.order('fecha_ingreso', { ascending: false });
+
+        const { data, error } = await query;
         if (error) { console.warn('Error en getHistorialMantenimiento:', error); return []; }
         return data || [];
       } catch (err) { console.warn('Excepción en getHistorialMantenimiento:', err); return []; }
@@ -356,41 +415,58 @@ export class InventarioService {
 
   enviarAMantenimiento(payload: any) {
     return from((async () => {
-      const userRes = await this.supabase.auth.getUser();
-      const user = userRes.data.user;
-      
-      const { data: estado } = await this.supabase.from('cat_estados').select('id').eq('nombre', 'Mantenimiento').single();
-      const { data: userData } = await this.supabase.from('usuarios').select('cedula, nombres').eq('auth_id', user?.id).single();
+      try {
+        if (!payload.codigo_id) throw new Error('Validación: codigo_bien no puede ser nulo.');
 
-      const mantPayload = {
-        codigo_bien: payload.codigo_id,
-        cedula_tecnico: userData?.cedula || '00000000',
-        estado_reparacion: 'En Proceso',
-        motivo_falla: payload.motivo_falla
-      };
+        const { data: estado } = await this.supabase.from('cat_estados').select('id').eq('nombre', 'Mantenimiento').single();
 
-      const { data: mantResult, error: mantError } = await this.supabase.from('mantenimientos').insert([mantPayload]).select().single();
-      if (mantError) throw mantError;
+        const mantPayload = {
+          codigo_bien: payload.codigo_id,
+          cedula_tecnico: payload.cedula_solicitante || '00000000',
+          estado_reparacion: 'En Proceso', // Exact match
+          motivo_falla: payload.motivo_falla
+        };
 
-      const { error: bienError } = await this.supabase.from('bienes').update({ estado_id: estado!.id }).eq('codigo_id', payload.codigo_id);
-      if (bienError) throw bienError;
+        const { data: mantResult, error: mantError } = await this.supabase.from('mantenimientos').insert([mantPayload]).select().single();
+        if (mantError) {
+          console.error('Detalle Supabase (mantenimientos):', mantError.message, mantError.hint, mantError.details);
+          throw mantError;
+        }
 
-      await this.logBitacora('ENVIO_MANTENIMIENTO', 'mantenimientos', mantResult.id, `Bien enviado a mantenimiento. Técnico: ${userData?.nombres}`);
-      return mantResult;
+        const { error: bienError } = await this.supabase.from('bienes').update({ estado_id: estado!.id }).eq('codigo_id', payload.codigo_id);
+        if (bienError) throw bienError;
+
+        // Auditoría directa requerida por Bitácora
+        await this.supabase.from('bitacora').insert([{
+          accion: 'Envío a Mantenimiento',
+          codigo_bien: payload.codigo_id,
+          cedula_usuario: payload.cedula_solicitante || '00000000',
+          detalles: {
+            motivo_falla: payload.motivo_falla,
+            usuario_nombre: payload.nombre_solicitante || 'Usuario Autorizado'
+          }
+        }]);
+
+        return mantResult;
+      } catch (err: any) {
+        console.error('Error general en enviarAMantenimiento:', err);
+        throw err;
+      }
     })());
   }
 
-  finalizarMantenimiento(id: string, trabajo: string, proximaFecha: string) {
+  finalizarMantenimiento(id: string, trabajo: string, proximaFecha: string, cedulaTecnico: string, nombreTecnico: string) {
     return from((async () => {
-      const userRes = await this.supabase.auth.getUser();
-      const user = userRes.data.user;
-      const { data: userData } = await this.supabase.from('usuarios').select('cedula, nombres').eq('auth_id', user?.id).single();
-
       const { data: mantData } = await this.supabase.from('mantenimientos').select('*').eq('codigo_bien', id).eq('estado_reparacion', 'En Proceso').single();
       
       if (mantData) {
         const { error: updateMantError } = await this.supabase.from('mantenimientos')
-          .update({ estado_reparacion: 'Finalizado', trabajo_realizado: trabajo, fecha_salida: new Date().toISOString() })
+          .update({ 
+            estado_reparacion: 'Finalizado', 
+            trabajo_realizado: trabajo, 
+            fecha_salida: new Date().toISOString(),
+            cedula_tecnico: cedulaTecnico 
+          })
           .eq('id', mantData.id);
         if (updateMantError) throw updateMantError;
       }
@@ -402,16 +478,21 @@ export class InventarioService {
         .eq('codigo_id', id);
       if (updateError) throw updateError;
       
-      await this.logBitacora('MANTENIMIENTO_FIN', 'bienes', id, `Mantenimiento finalizado por ${userData?.nombres || 'Sistema'}. Trabajo: ${trabajo}`);
+      await this.logBitacora('MANTENIMIENTO_FIN', 'bienes', id, `Mantenimiento finalizado por ${nombreTecnico}. Trabajo: ${trabajo}`);
       return { success: true };
     })());
   }
 
   // --- BITACORA ---
-  getBitacora() {
+  getBitacora(fechaInicio?: string, fechaFin?: string) {
     return from((async () => {
       try {
-        const { data, error } = await this.supabase.from('bitacora').select('*').order('fecha_hora', { ascending: false });
+        let query = this.supabase.from('bitacora').select('*');
+        if (fechaInicio) query = query.gte('fecha_hora', `${fechaInicio}T00:00:00.000Z`);
+        if (fechaFin) query = query.lte('fecha_hora', `${fechaFin}T23:59:59.999Z`);
+        query = query.order('fecha_hora', { ascending: false });
+
+        const { data, error } = await query;
         if (error) { console.warn('Error en getBitacora:', error); return []; }
         return data || [];
       } catch (err) { console.warn('Excepción en getBitacora:', err); return []; }
@@ -457,37 +538,22 @@ export class InventarioService {
     })());
   }
 
-  registrarTraslado(bienId: string, payloadUpdate: any, accion: string, mensajeAuditoria: string) {
-    return from((async () => {
-      const dbPayload: any = {
-        ubicacion_id: payloadUpdate.ubicacion_id,
-        area_id: payloadUpdate.area_id,
-        responsable_cedula: payloadUpdate.responsable_cedula
-      };
-      
-      const { data: result, error } = await this.supabase.from('bienes')
-        .update(dbPayload)
-        .eq('codigo_id', bienId)
-        .select().single();
-        
-      if (error) throw error;
 
-      await this.logBitacora(accion, 'bienes', bienId, {
-        mensaje: mensajeAuditoria,
-      });
-
-      return result;
-    })());
-  }
 
   // --- PUBLIC ---
-  getBienesByEncargado(cedula: string) {
+  getBienesByEncargado(cedula: string, fechaInicio?: string, fechaFin?: string) {
     return from((async () => {
       try {
-        const { data, error } = await this.supabase.from('bienes')
+        let query = this.supabase.from('bienes')
           .select('*, categorias(nombre), cat_estados!inner(nombre)')
           .eq('responsable_cedula', cedula)
           .neq('cat_estados.nombre', 'Desincorporado');
+
+        if (fechaInicio) query = query.gte('fecha_registro', `${fechaInicio}T00:00:00.000Z`);
+        if (fechaFin) query = query.lte('fecha_registro', `${fechaFin}T23:59:59.999Z`);
+        query = query.order('fecha_registro', { ascending: false });
+
+        const { data, error } = await query;
         if (error) { console.warn('Error en getBienesByEncargado:', error); return []; }
         return data || [];
       } catch (err) { console.warn('Excepción en getBienesByEncargado:', err); return []; }

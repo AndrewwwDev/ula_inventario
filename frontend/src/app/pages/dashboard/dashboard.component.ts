@@ -27,6 +27,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private subscriptions = new Subscription();
   
   showProfileMenu = false;
+  notificacionesCount: number = 0;
 
   constructor(
     private authService: AuthService,
@@ -45,10 +46,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.user = user;
       }
     });
-    // Cargar alertas de mantenimiento para el badge
-    this.inventarioService.getAlertasMantenimiento().subscribe((data: any) => {
-      this.alertasMantenimiento = data;
-    });
+
+    // Conectar la campana al servicio reactivo de notificaciones
+    this.subscriptions.add(
+      this.notificacionesService.pendingCount$.subscribe(count => {
+        this.notificacionesCount = count;
+      })
+    );
 
     // Iniciar monitoreo de inactividad
     this.idleService.startMonitoring();

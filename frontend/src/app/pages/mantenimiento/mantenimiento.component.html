@@ -1,6 +1,6 @@
 <div class="w-full">
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    
+
     <!-- Header -->
     <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
       <div>
@@ -9,37 +9,85 @@
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="flex border-b border-gray-100">
-      <button (click)="switchMantenimientoTab('alertas')" [ngClass]="{'border-primary text-primary font-bold': mantenimientoTab === 'alertas', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'alertas'}" class="px-6 py-4 border-b-2 transition-colors relative">
-        Alertas
-        <span *ngIf="alertasMantenimiento.length > 0" class="ml-2 bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-xs font-bold">{{ alertasMantenimiento.length }}</span>
-      </button>
-      <button (click)="switchMantenimientoTab('reparacion')" [ngClass]="{'border-primary text-primary font-bold': mantenimientoTab === 'reparacion', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'reparacion'}" class="px-6 py-4 border-b-2 transition-colors">
-        En Reparación
-      </button>
-      <button (click)="switchMantenimientoTab('historial')" [ngClass]="{'border-primary text-primary font-bold': mantenimientoTab === 'historial', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'historial'}" class="px-6 py-4 border-b-2 transition-colors">
-        Historial
-      </button>
+    <!-- Tabs y Filtros -->
+    <div class="flex justify-between items-end border-b border-gray-100 bg-gray-50/50">
+      <div class="flex">
+        <button (click)="switchMantenimientoTab('alertas')"
+          [ngClass]="{'border-primary text-primary font-bold bg-white': mantenimientoTab === 'alertas', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'alertas'}"
+          class="px-6 py-4 border-b-2 transition-colors relative">
+          Alertas
+          <span *ngIf="alertasMantenimiento.length > 0"
+            class="ml-2 bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-xs font-bold">{{ alertasMantenimiento.length
+            }}</span>
+        </button>
+        <button (click)="switchMantenimientoTab('reparacion')"
+          [ngClass]="{'border-primary text-primary font-bold bg-white': mantenimientoTab === 'reparacion', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'reparacion'}"
+          class="px-6 py-4 border-b-2 transition-colors">
+          En Reparación
+        </button>
+        <button (click)="switchMantenimientoTab('historial')"
+          [ngClass]="{'border-primary text-primary font-bold bg-white': mantenimientoTab === 'historial', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'historial'}"
+          class="px-6 py-4 border-b-2 transition-colors">
+          Historial
+        </button>
+      </div>
+
+      <!-- Filtro por Fecha -->
+      <div class="px-6 py-2 flex items-center space-x-3 mb-1">
+        <label class="text-sm text-gray-500 font-medium mr-1">Rango:</label>
+        
+        <div class="flex items-center space-x-2">
+          <span class="text-xs text-gray-400">Desde</span>
+          <input type="date" [(ngModel)]="fechaInicio" 
+            class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <span class="text-xs text-gray-400">Hasta</span>
+          <input type="date" [(ngModel)]="fechaFin" 
+            class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
+        </div>
+
+        <div class="flex items-center space-x-2 ml-2">
+          <button (click)="aplicarFiltroFecha()" class="bg-primary hover:bg-primary-hover text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm transition-colors">
+            Buscar
+          </button>
+          <button *ngIf="fechaInicio || fechaFin" (click)="limpiarFiltroFecha()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">
+            Limpiar
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="p-6">
       <!-- Tab: Alertas -->
       <div *ngIf="mantenimientoTab === 'alertas'">
-        <div *ngIf="alertasMantenimiento.length === 0" class="text-center py-12 text-gray-500">No hay alertas de mantenimiento actuales.</div>
+        <div *ngIf="alertasMantenimiento.length === 0" class="text-center py-12 text-gray-500">No hay alertas de
+          mantenimiento actuales.</div>
         <table *ngIf="alertasMantenimiento.length > 0" class="w-full text-left">
-          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3 px-2">Bien</th><th class="py-3 px-2">Ubicación</th><th class="py-3 px-2">Próxima Fecha</th><th class="py-3 px-2">Estado</th></tr></thead>
+          <thead>
+            <tr class="text-xs font-bold text-gray-500 uppercase">
+              <th class="py-3 px-2">Bien</th>
+              <th class="py-3 px-2">Ubicación</th>
+              <th class="py-3 px-2">Próxima Fecha</th>
+              <th class="py-3 px-2">Estado</th>
+            </tr>
+          </thead>
           <tbody class="divide-y divide-gray-100">
-            <tr *ngFor="let m of alertasMantenimiento" (click)="abrirDetalleAlerta(m)" class="cursor-pointer hover:shadow-md hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
+            <tr *ngFor="let m of alertasMantenimiento" (click)="abrirDetalleAlerta(m)"
+              class="cursor-pointer hover:shadow-md hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
               <td class="py-3 px-2 text-sm">
                 <div class="font-bold text-gray-800">{{ m.bien?.codigo_id }}</div>
                 <div class="truncate max-w-[200px] text-gray-600">{{ m.bien?.nombre }}</div>
               </td>
               <td class="py-3 px-2 text-sm text-gray-600">
-                <div class="truncate max-w-[150px]" title="{{ m.bien?.cat_ubicaciones?.nombre }}">{{ m.bien?.cat_ubicaciones?.nombre || 'N/A' }}</div>
+                <div class="truncate max-w-[150px]" title="{{ m.bien?.cat_ubicaciones?.nombre }}">{{
+                  m.bien?.cat_ubicaciones?.nombre || 'N/A' }}</div>
               </td>
               <td class="py-3 px-2 text-sm text-red-500 font-bold">{{ m.proxima_fecha | date:'mediumDate' }}</td>
-              <td class="py-3 px-2"><span class="px-2.5 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-bold flex items-center w-max"><span class="material-icons-outlined text-[14px] mr-1">warning</span> Vencido</span></td>
+              <td class="py-3 px-2"><span
+                  class="px-2.5 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-bold flex items-center w-max"><span
+                    class="material-icons-outlined text-[14px] mr-1">warning</span> Vencido</span></td>
             </tr>
           </tbody>
         </table>
@@ -47,11 +95,21 @@
 
       <!-- Tab: En Reparación -->
       <div *ngIf="mantenimientoTab === 'reparacion'">
-        <div *ngIf="enReparacion.length === 0" class="text-center py-12 text-gray-500">No hay equipos en reparación.</div>
+        <div *ngIf="enReparacion.length === 0" class="text-center py-12 text-gray-500">No hay equipos en reparación.
+        </div>
         <table *ngIf="enReparacion.length > 0" class="w-full text-left">
-          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3 px-2">Código</th><th class="py-3 px-2">Nombre</th><th class="py-3 px-2">Ubicación</th><th class="py-3 px-2">Descripción de Falla</th><th class="py-3 px-2 text-right">Acciones</th></tr></thead>
+          <thead>
+            <tr class="text-xs font-bold text-gray-500 uppercase">
+              <th class="py-3 px-2">Código</th>
+              <th class="py-3 px-2">Nombre</th>
+              <th class="py-3 px-2">Ubicación</th>
+              <th class="py-3 px-2">Descripción de Falla</th>
+              <th class="py-3 px-2 text-right">Acciones</th>
+            </tr>
+          </thead>
           <tbody class="divide-y divide-gray-100">
-            <tr *ngFor="let item of enReparacion" (click)="abrirModalEnReparacion(item)" class="cursor-pointer hover:bg-slate-50 transition-colors duration-150">
+            <tr *ngFor="let item of enReparacion" (click)="abrirModalEnReparacion(item)"
+              class="cursor-pointer hover:bg-slate-50 transition-colors duration-150">
               <!-- UI de Mantenimiento: Mantener estrictamente el diseño del ícono de admiración rojo -->
               <td class="py-3 px-2 text-sm font-bold text-gray-800 flex items-center">
                 <span class="material-icons-outlined text-red-500 mr-2 text-[20px]" title="En reparación">error</span>
@@ -60,10 +118,13 @@
               <td class="py-3 px-2 text-sm">{{ item.nombre }}</td>
               <td class="py-3 px-2 text-sm text-gray-500">{{ item.ubicacion || 'N/A' }}</td>
               <td class="py-3 px-2 text-sm text-gray-600">
-                <div class="truncate max-w-xs" title="{{ item.motivo_falla }}">{{ item.motivo_falla || 'Sin detalle' }}</div>
+                <div class="truncate max-w-xs" title="{{ item.motivo_falla }}">{{ item.motivo_falla || 'Sin detalle' }}
+                </div>
               </td>
               <td class="py-3 px-2 text-right">
-                <button (click)="$event.stopPropagation(); openFinalizarMantenimiento(item)" class="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary-hover transition-colors shadow-sm">Finalizar y Reincorporar</button>
+                <button (click)="$event.stopPropagation(); openFinalizarMantenimiento(item)"
+                  class="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary-hover transition-colors shadow-sm">Finalizar
+                  y Reincorporar</button>
               </td>
             </tr>
           </tbody>
@@ -74,15 +135,25 @@
       <div *ngIf="mantenimientoTab === 'historial'">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-bold text-gray-700">Registros Históricos</h3>
-          <button (click)="isExportModalOpen = true" class="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors shadow-sm">
+          <button (click)="isExportModalOpen = true"
+            class="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors shadow-sm">
             <span class="material-icons-outlined mr-2 text-[18px]">file_download</span> Exportar
           </button>
         </div>
-        <div *ngIf="historialMantenimiento.length === 0" class="text-center py-12 text-gray-500">No hay historial de mantenimientos.</div>
+        <div *ngIf="historialMantenimiento.length === 0" class="text-center py-12 text-gray-500">No hay historial de
+          mantenimientos.</div>
         <table *ngIf="historialMantenimiento.length > 0" class="w-full text-left">
-          <thead><tr class="text-xs font-bold text-gray-500 uppercase"><th class="py-3 px-2">Bien</th><th class="py-3 px-2">Motivo Falla</th><th class="py-3 px-2">Trabajo Realizado</th><th class="py-3 px-2">Fecha Salida</th></tr></thead>
+          <thead>
+            <tr class="text-xs font-bold text-gray-500 uppercase">
+              <th class="py-3 px-2">Bien</th>
+              <th class="py-3 px-2">Motivo Falla</th>
+              <th class="py-3 px-2">Trabajo Realizado</th>
+              <th class="py-3 px-2">Fecha Salida</th>
+            </tr>
+          </thead>
           <tbody class="divide-y divide-gray-100">
-            <tr *ngFor="let m of historialMantenimiento" (click)="abrirModalDetalle(m)" class="cursor-pointer hover:bg-slate-50 active:bg-slate-100 transition-colors duration-150 select-none">
+            <tr *ngFor="let m of historialMantenimiento" (click)="abrirModalDetalle(m)"
+              class="cursor-pointer hover:bg-slate-50 active:bg-slate-100 transition-colors duration-150 select-none">
               <td class="py-3 px-2 text-sm font-bold">
                 <div class="truncate max-w-[150px] md:max-w-xs">{{ m.bienes?.nombre || 'Bien ' + m.codigo_bien }}</div>
                 <div class="text-xs font-normal text-gray-500">{{ m.codigo_bien }}</div>
@@ -91,7 +162,8 @@
                 <div class="text-sm text-gray-600 truncate max-w-[180px] md:max-w-xs block">{{ m.motivo_falla }}</div>
               </td>
               <td class="py-3 px-2">
-                <div class="text-sm text-gray-600 truncate max-w-[180px] md:max-w-xs block">{{ m.trabajo_realizado || 'N/A' }}</div>
+                <div class="text-sm text-gray-600 truncate max-w-[180px] md:max-w-xs block">{{ m.trabajo_realizado ||
+                  'N/A' }}</div>
               </td>
               <td class="py-3 px-2 text-sm">
                 <span *ngIf="m.fecha_salida">{{ m.fecha_salida | date:'mediumDate' }}</span>
@@ -106,53 +178,77 @@
 </div>
 
 <!-- Modal Finalizar Mantenimiento -->
-<div *ngIf="showFinalizarModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
+<div *ngIf="showFinalizarModal"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
   <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
     <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
       <h2 class="text-xl font-bold text-gray-800">Finalizar Mantenimiento</h2>
-      <button (click)="showFinalizarModal = false" class="text-gray-400 hover:text-gray-600 transition-colors"><span class="material-icons-outlined">close</span></button>
+      <button (click)="showFinalizarModal = false" class="text-gray-400 hover:text-gray-600 transition-colors"><span
+          class="material-icons-outlined">close</span></button>
     </div>
+
+    <!-- Feedback Visual -->
+    <div *ngIf="currentUser" class="px-6 py-3 bg-blue-50 border-b border-blue-100 flex items-center">
+      <span class="material-icons-outlined text-blue-600 mr-2 text-[20px]">badge</span>
+      <span class="text-sm text-blue-900">
+        Técnico Responsable: <span class="font-bold">{{ currentUser.nombres }} {{ currentUser.apellidos }} (C.I. {{
+          currentUser.cedula }})</span>
+      </span>
+    </div>
+
     <div class="p-6 space-y-4">
       <div>
         <label class="text-sm font-bold text-gray-700">Trabajo Realizado <span class="text-red-500">*</span></label>
-        <textarea [(ngModel)]="trabajoRealizado" rows="3" placeholder="Detalles de la reparación o mantenimiento..." class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
+        <textarea [(ngModel)]="trabajoRealizado" rows="3" placeholder="Detalles de la reparación o mantenimiento..."
+          class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
       </div>
       <div>
-        <label class="text-sm font-bold text-gray-700">Próxima Fecha de Mantenimiento <span class="text-red-500">*</span></label>
-        <input type="date" [(ngModel)]="proximaFechaMantenimiento" class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none">
+        <label class="text-sm font-bold text-gray-700">Próxima Fecha de Mantenimiento <span
+            class="text-red-500">*</span></label>
+        <input type="date" [(ngModel)]="proximaFechaMantenimiento"
+          class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none">
       </div>
     </div>
     <div class="px-6 py-4 border-t border-gray-100 flex justify-end space-x-3 bg-gray-50">
-      <button (click)="showFinalizarModal = false" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
-      <button (click)="finalizarMantenimiento()" [disabled]="!trabajoRealizado || !proximaFechaMantenimiento || isSubmitting" class="px-5 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50">Guardar y Reincorporar</button>
+      <button (click)="showFinalizarModal = false"
+        class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
+      <button (click)="finalizarMantenimiento()"
+        [disabled]="!trabajoRealizado || !proximaFechaMantenimiento || isSubmitting"
+        class="px-5 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50">Guardar
+        y Reincorporar</button>
     </div>
   </div>
 </div>
 
 <!-- Modal Exportar PDF -->
-<div *ngIf="isExportModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+<div *ngIf="isExportModalOpen"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
   <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col">
     <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
       <h2 class="text-lg font-bold text-gray-800 flex items-center">
         <span class="material-icons-outlined mr-2 text-red-500">picture_as_pdf</span> Configurar Reporte PDF
       </h2>
-      <button (click)="isExportModalOpen = false" class="text-gray-400 hover:text-gray-600 transition-colors"><span class="material-icons-outlined">close</span></button>
+      <button (click)="isExportModalOpen = false" class="text-gray-400 hover:text-gray-600 transition-colors"><span
+          class="material-icons-outlined">close</span></button>
     </div>
-    
+
     <div class="p-6 space-y-4">
       <div class="flex flex-col">
         <label class="text-xs font-bold text-gray-600 uppercase mb-1">Desde</label>
-        <input type="date" [(ngModel)]="fechaInicio" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-sm shadow-sm w-full">
+        <input type="date" [(ngModel)]="fechaInicio"
+          class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-sm shadow-sm w-full">
       </div>
-      
+
       <div class="flex flex-col">
         <label class="text-xs font-bold text-gray-600 uppercase mb-1">Hasta</label>
-        <input type="date" [(ngModel)]="fechaFin" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-sm shadow-sm w-full">
+        <input type="date" [(ngModel)]="fechaFin"
+          class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-sm shadow-sm w-full">
       </div>
 
       <div class="flex flex-col">
         <label class="text-xs font-bold text-gray-600 uppercase mb-1">Ordenar por</label>
-        <select [(ngModel)]="ordenarPor" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-sm shadow-sm bg-white w-full">
+        <select [(ngModel)]="ordenarPor"
+          class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-sm shadow-sm bg-white w-full">
           <option value="Mas recientes">Más recientes</option>
           <option value="Mas antiguos">Más antiguos</option>
           <option value="Por Nombre/Codigo">Por Nombre/Código</option>
@@ -161,16 +257,19 @@
     </div>
 
     <div class="px-6 py-4 border-t border-gray-100 flex justify-end space-x-3 bg-gray-50">
-      <button (click)="isExportModalOpen = false" class="px-4 py-2 text-sm text-gray-600 font-bold hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
-      <button (click)="exportarPDF()" class="px-4 py-2 text-sm bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center">
-         Generar y Descargar
+      <button (click)="isExportModalOpen = false"
+        class="px-4 py-2 text-sm text-gray-600 font-bold hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
+      <button (click)="exportarPDF()"
+        class="px-4 py-2 text-sm bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center">
+        Generar y Descargar
       </button>
     </div>
   </div>
 </div>
 
 <!-- Modal Detalles de Mantenimiento (Historial) -->
-<div *ngIf="isDetalleModalOpen && registroSeleccionado" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+<div *ngIf="isDetalleModalOpen && registroSeleccionado"
+  class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
   <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 flex flex-col">
     <!-- Cabecera -->
     <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
@@ -181,10 +280,10 @@
         <span class="material-icons-outlined">close</span>
       </button>
     </div>
-    
+
     <!-- Cuerpo del Modal -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 break-words whitespace-normal">
-      
+
       <!-- Sección Bien -->
       <div class="col-span-1 md:col-span-2">
         <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Sección Bien</h3>
@@ -203,7 +302,8 @@
           </div>
           <div>
             <p class="text-xs text-gray-500 font-medium">Modelo</p>
-            <p class="text-sm font-medium text-gray-800">{{ registroSeleccionado.bienes?.modelo || 'No registrado' }}</p>
+            <p class="text-sm font-medium text-gray-800">{{ registroSeleccionado.bienes?.modelo || 'No registrado' }}
+            </p>
           </div>
         </div>
       </div>
@@ -211,16 +311,20 @@
       <!-- Sección Logística Completa -->
       <div class="col-span-1 md:col-span-2">
         <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Sección Logística</h3>
-        <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-blue-900 font-medium whitespace-normal">
-          <p><strong>Ubicación General:</strong> {{ registroSeleccionado.bienes?.cat_ubicaciones?.nombre || 'No asignada' }}</p>
-          <p class="mt-1"><strong>Área Específica:</strong> {{ registroSeleccionado.bienes?.cat_areas?.nombre || 'No asignada' }}</p>
+        <div
+          class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-blue-900 font-medium whitespace-normal">
+          <p><strong>Ubicación General:</strong> {{ registroSeleccionado.bienes?.cat_ubicaciones?.nombre || 'No
+            asignada' }}</p>
+          <p class="mt-1"><strong>Área Específica:</strong> {{ registroSeleccionado.bienes?.cat_areas?.nombre || 'No
+            asignada' }}</p>
         </div>
       </div>
 
       <!-- Sección Personal -->
       <div>
         <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Responsable del Bien</h3>
-        <p class="text-sm font-bold text-gray-900">{{ obtenerNombrePorCedula(registroSeleccionado.bienes?.responsable_cedula) }}</p>
+        <p class="text-sm font-bold text-gray-900">{{
+          obtenerNombrePorCedula(registroSeleccionado.bienes?.responsable_cedula) }}</p>
         <p class="text-xs text-gray-500 font-mono" *ngIf="registroSeleccionado.bienes?.responsable_cedula">
           C.I. {{ registroSeleccionado.bienes?.responsable_cedula }}
         </p>
@@ -229,9 +333,12 @@
       <!-- Sección Auditoría Técnica de Mantenimiento -->
       <div>
         <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Registro de Ingreso</h3>
-        <p class="text-sm text-gray-900 font-medium">{{ (registroSeleccionado.fecha_ingreso | date:'mediumDate') || 'N/A' }}</p>
-        <p class="text-xs font-bold mt-1" [ngClass]="{'text-green-600': registroSeleccionado.fecha_salida, 'text-yellow-600': !registroSeleccionado.fecha_salida}">
-          {{ registroSeleccionado.fecha_salida ? 'Completado el ' + (registroSeleccionado.fecha_salida | date:'mediumDate') : 'En Proceso' }}
+        <p class="text-sm text-gray-900 font-medium">{{ (registroSeleccionado.fecha_ingreso | date:'mediumDate') ||
+          'N/A' }}</p>
+        <p class="text-xs font-bold mt-1"
+          [ngClass]="{'text-green-600': registroSeleccionado.fecha_salida, 'text-yellow-600': !registroSeleccionado.fecha_salida}">
+          {{ registroSeleccionado.fecha_salida ? 'Completado el ' + (registroSeleccionado.fecha_salida |
+          date:'mediumDate') : 'En Proceso' }}
         </p>
       </div>
 
@@ -243,6 +350,12 @@
         <p class="text-sm text-gray-700 whitespace-normal break-words leading-relaxed">
           {{ registroSeleccionado.motivo_falla || 'Sin justificación técnica registrada.' }}
         </p>
+        <p class="text-sm text-gray-600 mt-3">
+          Enviado por: <span class="font-semibold text-gray-800">{{ registroSeleccionado.solicitante?.nombres ||
+            'Usuario Autorizado' }} {{ registroSeleccionado.solicitante?.apellidos || '' }} (C.I. {{
+            registroSeleccionado.solicitante?.cedula || 'N/A' }})</span> - {{ registroSeleccionado.fecha_ingreso |
+          date:'mediumDate' }}
+        </p>
       </div>
 
       <div class="col-span-1 md:col-span-2 mt-2" *ngIf="registroSeleccionado.trabajo_realizado">
@@ -250,13 +363,22 @@
         <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm text-gray-800 leading-relaxed">
           {{ registroSeleccionado.trabajo_realizado }}
         </div>
+        <p class="text-xs text-gray-500 font-medium mt-2 flex items-center">
+          <span class="material-icons-outlined text-[14px] mr-1">engineering</span>
+          Técnico Responsable: <span class="font-bold text-gray-700 ml-1">{{ registroSeleccionado.usuarios?.nombres ?
+            (registroSeleccionado.usuarios.nombres + ' ' + registroSeleccionado.usuarios.apellidos) :
+            obtenerNombrePorCedula(registroSeleccionado.cedula_tecnico) }}</span>
+          <span class="mx-2">-</span>
+          <span>{{ registroSeleccionado.fecha_salida | date:'mediumDate' }}</span>
+        </p>
       </div>
-      
+
     </div>
-    
+
     <!-- Pie -->
     <div class="mt-6 pt-4 border-t border-gray-100 flex justify-end">
-      <button (click)="cerrarModalDetalle()" class="px-6 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">
+      <button (click)="cerrarModalDetalle()"
+        class="px-6 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">
         Cerrar
       </button>
     </div>
@@ -264,7 +386,8 @@
 </div>
 
 <!-- Modal Detalles de Alerta -->
-<div *ngIf="isDetalleAlertaOpen && alertaSeleccionada" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+<div *ngIf="isDetalleAlertaOpen && alertaSeleccionada"
+  class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
     <!-- Cabecera -->
     <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
@@ -275,7 +398,7 @@
         <span class="material-icons-outlined">close</span>
       </button>
     </div>
-    
+
     <!-- Cuerpo del Modal -->
     <div class="p-6 overflow-y-auto">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 whitespace-normal break-words">
@@ -293,11 +416,13 @@
             </div>
             <div>
               <p class="text-xs text-gray-500 font-medium">Marca / Modelo</p>
-              <p class="text-sm font-medium text-gray-800">{{ alertaSeleccionada.bien?.marca || 'N/A' }} / {{ alertaSeleccionada.bien?.modelo || 'N/A' }}</p>
+              <p class="text-sm font-medium text-gray-800">{{ alertaSeleccionada.bien?.marca || 'N/A' }} / {{
+                alertaSeleccionada.bien?.modelo || 'N/A' }}</p>
             </div>
             <div>
               <p class="text-xs text-gray-500 font-medium">Categoría</p>
-              <p class="text-sm font-medium text-gray-800">{{ alertaSeleccionada.bien?.categorias?.nombre || 'N/A' }}</p>
+              <p class="text-sm font-medium text-gray-800">{{ alertaSeleccionada.bien?.categorias?.nombre || 'N/A' }}
+              </p>
             </div>
           </div>
         </div>
@@ -306,8 +431,10 @@
         <div class="col-span-1 md:col-span-2">
           <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Ubicación de Origen</h3>
           <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-blue-900 font-medium">
-            <p><strong>Sede/Edificio:</strong> {{ alertaSeleccionada.bien?.cat_ubicaciones?.nombre || 'No asignado' }}</p>
-            <p class="mt-1"><strong>Área Específica:</strong> {{ alertaSeleccionada.bien?.cat_areas?.nombre || 'No asignado' }}</p>
+            <p><strong>Sede/Edificio:</strong> {{ alertaSeleccionada.bien?.cat_ubicaciones?.nombre || 'No asignado' }}
+            </p>
+            <p class="mt-1"><strong>Área Específica:</strong> {{ alertaSeleccionada.bien?.cat_areas?.nombre || 'No
+              asignado' }}</p>
           </div>
         </div>
 
@@ -323,27 +450,36 @@
 
         <div class="col-span-1 md:col-span-2 mt-2">
           <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Encargado Actual</h3>
-          <p class="text-sm text-gray-900 font-medium">Cédula: {{ alertaSeleccionada.bien?.responsable_cedula || 'Sin Asignación' }}</p>
+          <p class="text-sm text-gray-900 font-medium">
+            <span *ngIf="alertaSeleccionada.bien?.responsable_cedula">
+              {{ alertaSeleccionada.bien?.usuarios?.nombres }} {{ alertaSeleccionada.bien?.usuarios?.apellidos }} (C.I:
+              {{ alertaSeleccionada.bien?.responsable_cedula }})
+            </span>
+            <span *ngIf="!alertaSeleccionada.bien?.responsable_cedula">Sin Asignación</span>
+          </p>
         </div>
-        
+
         <!-- Sección de Avería Destacada (Si aplica, o motivo por defecto) -->
         <div class="col-span-1 md:col-span-2 bg-red-50 border border-red-100 p-4 rounded-xl mt-2">
           <h3 class="text-xs text-red-800 font-bold uppercase tracking-wider mb-1 flex items-center">
             <span class="material-icons-outlined text-[16px] mr-1">report_problem</span> Motivo Principal
           </h3>
           <p class="text-sm text-red-900 font-medium mt-1">
-            El equipo ha alcanzado o superado la fecha programada para su revisión periódica obligatoria. Por favor, proceda a enviarlo al departamento técnico.
+            El equipo ha alcanzado o superado la fecha programada para su revisión periódica obligatoria. Por favor,
+            proceda a enviarlo al departamento técnico.
           </p>
         </div>
       </div>
     </div>
-    
+
     <!-- Pie -->
     <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
-      <button (click)="cerrarDetalleAlerta()" class="px-6 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
+      <button (click)="cerrarDetalleAlerta()"
+        class="px-6 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
         Cerrar
       </button>
-      <button (click)="procesarMantenimiento(alertaSeleccionada)" class="px-6 py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center">
+      <button (click)="procesarMantenimiento(alertaSeleccionada)"
+        class="px-6 py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center">
         <span class="material-icons-outlined text-[18px] mr-1">build</span> Procesar Mantenimiento
       </button>
     </div>
@@ -351,7 +487,8 @@
 </div>
 
 <!-- Modal Detalle Profundo En Reparación -->
-<div *ngIf="isDetalleReparacionOpen && reparacionSeleccionada" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+<div *ngIf="isDetalleReparacionOpen && reparacionSeleccionada"
+  class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
     <!-- Cabecera -->
     <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
@@ -362,21 +499,23 @@
         </h2>
         <p class="text-sm font-mono text-gray-500 mt-1 ml-8">Cód: {{ reparacionSeleccionada.codigo_id }}</p>
       </div>
-      <button (click)="cerrarModalEnReparacion()" class="text-gray-400 hover:text-gray-600 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-1 self-start">
+      <button (click)="cerrarModalEnReparacion()"
+        class="text-gray-400 hover:text-gray-600 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-1 self-start">
         <span class="material-icons-outlined">close</span>
       </button>
     </div>
-    
+
     <!-- Cuerpo del Modal -->
     <div class="p-6 overflow-y-auto space-y-6">
-      
+
       <!-- Sección de Ubicación -->
       <div>
         <h3 class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Ubicación Actual del Equipo</h3>
         <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start">
           <span class="material-icons-outlined text-blue-500 mr-3 mt-0.5">place</span>
           <div>
-            <p class="text-base text-blue-900 font-bold leading-tight">{{ reparacionSeleccionada.ubicacion || 'Sin Ubicación' }}</p>
+            <p class="text-base text-blue-900 font-bold leading-tight">{{ reparacionSeleccionada.ubicacion || 'Sin
+              Ubicación' }}</p>
             <p class="text-sm text-blue-700 font-medium mt-1">Área: {{ reparacionSeleccionada.area || 'Sin Área' }}</p>
           </div>
         </div>
@@ -393,14 +532,21 @@
           <p class="text-sm text-gray-800 whitespace-normal break-words leading-relaxed pl-7">
             {{ reparacionSeleccionada.motivo_falla || 'No se especificó motivo de falla.' }}
           </p>
+          <p class="text-sm text-gray-600 mt-3 pl-7">
+            Enviado por: <span class="font-semibold text-gray-800">{{ reparacionSeleccionada.solicitante?.nombres ||
+              'Usuario Autorizado' }} {{ reparacionSeleccionada.solicitante?.apellidos || '' }} (C.I. {{
+              reparacionSeleccionada.solicitante?.cedula || 'N/A' }})</span> - {{ reparacionSeleccionada.fecha_ingreso |
+            date:'mediumDate' }}
+          </p>
         </div>
       </div>
 
     </div>
-    
+
     <!-- Pie -->
     <div class="px-6 py-4 border-t border-gray-100 flex justify-end bg-gray-50">
-      <button (click)="cerrarModalEnReparacion()" class="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
+      <button (click)="cerrarModalEnReparacion()"
+        class="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
         Cerrar Detalle
       </button>
     </div>

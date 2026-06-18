@@ -25,15 +25,17 @@ import { InventarioService } from '../../services/inventario.service';
 })
 export class ResponsableAutocompleteComponent implements OnInit, OnDestroy, ControlValueAccessor, Validator {
   
-  @Input() placeholder = 'Ej: 12345678';
-  @Input() label = 'Responsable Cédula *';
+  @Input() placeholder = 'Buscar por nombre o cédula...';
+  @Input() label = 'Responsable *';
   
-  internalControl = new FormControl('', [Validators.required, Validators.pattern('^[0-9]*$')]);
+  internalControl = new FormControl('', [Validators.required]);
   usuariosSugeridos: any[] = [];
   buscandoUsuarios = false;
   
   // Visual Information for UX
   nombreResponsable: string = '';
+  cedulaSeleccionada: string | null = null;
+  isSelectingFromList = false;
 
   onChange: any = () => {};
   onTouched: any = () => {};
@@ -46,25 +48,31 @@ export class ResponsableAutocompleteComponent implements OnInit, OnDestroy, Cont
     this.sub = this.internalControl.valueChanges.pipe(
       filter(val => val !== null),
       tap((val) => {
+        if (this.isSelectingFromList) {
+           return;
+        }
         if (this.internalControl.hasError('notFound')) {
           this.internalControl.setErrors(null);
         }
         this.usuariosSugeridos = [];
-        this.nombreResponsable = ''; // Limpiar nombre si el usuario empieza a editar
-        this.onChange(val); // Notificar al padre
+        this.nombreResponsable = ''; 
+        this.cedulaSeleccionada = null;
+        this.onChange(null); // Invalidar en el padre
       }),
-      filter(val => val!.length >= 2 && this.internalControl.valid),
+      filter(val => val!.length >= 2 && !this.isSelectingFromList),
       debounceTime(300),
       distinctUntilChanged(),
       tap(() => this.buscandoUsuarios = true),
       switchMap(termino => 
-        this.inventarioService.buscarUsuariosPorCedula(termino!).pipe(
+        this.inventarioService.buscarUsuariosPredictivo(termino!).pipe(
           catchError(() => of([]))
         )
       ),
       tap(() => this.buscandoUsuarios = false)
     ).subscribe((usuarios: any[]) => {
-      this.usuariosSugeridos = usuarios;
+      if (!this.isSelectingFromList) {
+        this.usuariosSugeridos = usuarios;
+      }
     });
   }
 
@@ -74,17 +82,28 @@ export class ResponsableAutocompleteComponent implements OnInit, OnDestroy, Cont
 
   // --- CVA Implementation ---
   writeValue(value: any): void {
-    if (value !== this.internalControl.value) {
-      this.internalControl.setValue(value, { emitEvent: false });
+    if (value !== this.cedulaSeleccionada) {
+      this.cedulaSeleccionada = value;
       
-      // Si recibimos una cédula válida al inicializar (ej. Modal Editar), precargamos el nombre
       if (value && value.length >= 6) {
-        this.inventarioService.buscarUsuariosPorCedula(value).subscribe(res => {
+        this.inventarioService.buscarUsuariosPredictivo(value).subscribe(res => {
             const match = res.find((u:any) => u.cedula === value);
             if (match) {
+              this.isSelectingFromList = true;
               this.nombreResponsable = `${match.nombres} ${match.apellidos}`;
+              this.internalControl.setValue(`${match.cedula} - ${match.nombres} ${match.apellidos}`, { emitEvent: false });
+              setTimeout(() => this.isSelectingFromList = false, 50);
+            } else {
+              this.isSelectingFromList = true;
+              this.internalControl.setValue(value, { emitEvent: false });
+              setTimeout(() => this.isSelectingFromList = false, 50);
             }
         });
+      } else {
+         this.isSelectingFromList = true;
+         this.internalControl.setValue('', { emitEvent: false });
+         this.nombreResponsable = '';
+         setTimeout(() => this.isSelectingFromList = false, 50);
       }
     }
   }
@@ -107,11 +126,9 @@ export class ResponsableAutocompleteComponent implements OnInit, OnDestroy, Cont
 
   // --- Validator Implementation ---
   validate(control: AbstractControl): ValidationErrors | null {
-    if (this.internalControl.invalid) {
+    if (!this.cedulaSeleccionada || this.internalControl.invalid) {
       return { 
-        invalidCedula: true,
-        pattern: this.internalControl.hasError('pattern'),
-        notFound: this.internalControl.hasError('notFound'),
+        notFound: !this.cedulaSeleccionada && this.internalControl.value,
         required: this.internalControl.hasError('required')
       };
     }
@@ -120,38 +137,44 @@ export class ResponsableAutocompleteComponent implements OnInit, OnDestroy, Cont
 
   // --- UI Logic ---
   seleccionarUsuario(usuario: any) {
-    const newVal = usuario.cedula;
+    this.isSelectingFromList = true;
+    this.cedulaSeleccionada = usuario.cedula;
     this.nombreResponsable = `${usuario.nombres} ${usuario.apellidos}`;
-    this.internalControl.setValue(newVal, { emitEvent: false });
+    this.internalControl.setValue(`${usuario.cedula} - ${usuario.nombres} ${usuario.apellidos}`, { emitEvent: false });
     this.usuariosSugeridos = [];
     this.internalControl.setErrors(null);
-    this.onChange(newVal);
+    this.onChange(this.cedulaSeleccionada);
+    
+    setTimeout(() => {
+      this.isSelectingFromList = false;
+    }, 50);
   }
 
   validarCedulaOnBlur() {
     this.onTouched();
     setTimeout(() => {
-      const cedula = this.internalControl.value;
-      if (!cedula) return;
-      if (this.internalControl.invalid && !this.internalControl.hasError('notFound')) return;
-      
-      this.inventarioService.verificarCedulaExistente(cedula).subscribe((existe: boolean) => {
-        if (!existe) {
-          this.internalControl.setErrors({ notFound: true });
-          this.nombreResponsable = '';
-          this.onChange(null); // Invalidamos al padre
-        } else {
-          this.internalControl.setErrors(null);
-          // Si existe, y no tenemos nombre (escritura manual exacta), lo buscamos para la UX
-          if (!this.nombreResponsable) {
-            this.inventarioService.buscarUsuariosPorCedula(cedula).subscribe(res => {
-              const match = res.find((u:any) => u.cedula === cedula);
-              if (match) this.nombreResponsable = `${match.nombres} ${match.apellidos}`;
-            });
-          }
-          this.onChange(cedula);
-        }
-      });
+      // Si el usuario clickea fuera y no hay cedula seleccionada pero hay texto
+      if (!this.cedulaSeleccionada && this.internalControl.value) {
+         // Intentar buscar match exacto por cédula (si tipeó la cédula manual y se fue)
+         const typedValue = this.internalControl.value.trim();
+         
+         this.inventarioService.verificarCedulaExistente(typedValue).subscribe((existe: boolean) => {
+            if (existe) {
+               // Auto-seleccionar
+               this.inventarioService.buscarUsuariosPredictivo(typedValue).subscribe(res => {
+                  const match = res.find((u:any) => u.cedula === typedValue);
+                  if (match) {
+                     this.seleccionarUsuario(match);
+                  }
+               });
+            } else {
+               this.internalControl.setErrors({ notFound: true });
+               this.onChange(null);
+            }
+         });
+      } else if (!this.internalControl.value) {
+         this.onChange(null);
+      }
     }, 200);
   }
 }

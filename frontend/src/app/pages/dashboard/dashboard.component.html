@@ -95,10 +95,10 @@
       
       <div class="flex items-center space-x-6">
         <button routerLink="/dashboard/mantenimiento" class="text-gray-500 hover:text-gray-700 focus:outline-none relative">
-          <span class="material-icons-outlined" [ngClass]="{'text-red-500': (notificacionesService.pendingCount$ | async)! > 0}">notifications</span>
-          <span *ngIf="(notificacionesService.pendingCount$ | async)! > 0" 
+          <span class="material-icons-outlined" [ngClass]="{'text-red-500': notificacionesCount > 0}">notifications</span>
+          <span *ngIf="notificacionesCount > 0" 
                 class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-[10px] w-4 h-4 flex items-center justify-center font-bold animate-pulse">
-            {{ notificacionesService.pendingCount$ | async }}
+            {{ notificacionesCount }}
           </span>
         </button>
         <button (click)="logout()" class="flex items-center text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium focus:outline-none">
