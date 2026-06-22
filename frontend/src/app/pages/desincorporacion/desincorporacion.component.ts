@@ -60,9 +60,19 @@ export class DesincorporacionComponent implements OnInit {
   }
 
   loadDesincorporados() {
-    this.inventarioService.getBienesDesincorporados().subscribe((data: any) => {
+    this.inventarioService.getBienesDesincorporados(this.fechaInicio, this.fechaFin).subscribe((data: any) => {
       this.desincorporados = data;
     });
+  }
+
+  aplicarFiltroFecha() {
+    this.loadDesincorporados();
+  }
+
+  limpiarFiltroFecha() {
+    this.fechaInicio = '';
+    this.fechaFin = '';
+    this.loadDesincorporados();
   }
 
   openDetailsModal(item: any) {

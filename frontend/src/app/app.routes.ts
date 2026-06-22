@@ -12,6 +12,7 @@ import { ManualUsuarioComponent } from './pages/manual-usuario/manual-usuario.co
 import { CambiarPasswordComponent } from './pages/cambiar-password/cambiar-password.component';
 import { RestablecerPasswordComponent } from './pages/restablecer-password/restablecer-password.component';
 import { ReglasDesincorporacionComponent } from './pages/reglas-desincorporacion/reglas-desincorporacion.component';
+import { ConfiguracionSistemaComponent } from './pages/configuracion-sistema/configuracion-sistema.component';
 import { authGuard } from './guards/auth.guard';
 import { publicGuard } from './guards/public.guard';
 import { roleGuard } from './guards/role.guard';
@@ -38,7 +39,8 @@ export const routes: Routes = [
       { path: 'usuarios', component: UsuariosComponent, canActivate: [roleGuard] },
       { path: 'manual-usuario', component: ManualUsuarioComponent, canActivate: [roleGuard] },
       { path: 'cambiar-password', component: CambiarPasswordComponent },
-      { path: 'reglas-desincorporacion', component: ReglasDesincorporacionComponent }
+      { path: 'reglas-desincorporacion', component: ReglasDesincorporacionComponent },
+      { path: 'configuracion', component: ConfiguracionSistemaComponent, canActivate: [roleGuard] }
     ]
   },
   { path: '**', redirectTo: '/login' } // Wildcard fallback

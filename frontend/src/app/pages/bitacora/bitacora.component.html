@@ -1,51 +1,55 @@
-<div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start h-full">
-  
-  <!-- Left Column (Menu & KPIs) -->
-  <div class="lg:col-span-4 space-y-6 sticky top-4">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <h2 class="text-2xl font-bold text-gray-800 mb-2 flex items-center justify-center text-center"><span class="material-icons-outlined mr-2 text-primary">history</span> Bitácora de Auditoría</h2>
-      <p class="text-sm text-gray-500 text-center mb-6">Registro detallado de actividades y mantenimientos</p>
-      
-      <div class="grid grid-cols-2 gap-4 mb-6">
-        <div class="bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <span class="text-2xl font-black text-gray-800">{{kpiTotalLogs}}</span>
-          <span class="text-xs font-bold text-gray-500 uppercase mt-1">Total</span>
-        </div>
-        <div class="bg-blue-50 rounded-xl p-4 flex flex-col items-center justify-center text-center border border-blue-100">
-          <span class="text-2xl font-black text-blue-600">{{kpiMantenimientoLogs}}</span>
-          <span class="text-xs font-bold text-blue-500 uppercase mt-1">Mantenimientos</span>
-        </div>
-        <div class="bg-green-50 rounded-xl p-4 flex flex-col items-center justify-center text-center border border-green-100">
-          <span class="text-2xl font-black text-green-600">{{kpiAltasLogs}}</span>
-          <span class="text-xs font-bold text-green-500 uppercase mt-1">Altas</span>
-        </div>
-        <div class="bg-red-50 rounded-xl p-4 flex flex-col items-center justify-center text-center border border-red-100">
-          <span class="text-2xl font-black text-red-600">{{kpiBajasLogs}}</span>
-          <span class="text-xs font-bold text-red-500 uppercase mt-1">Bajas</span>
-        </div>
+<div class="bg-white rounded-lg shadow-sm p-6 w-full flex flex-col gap-6">
+
+  <!-- Fila Superior: Encabezado y Barra de Filtros -->
+  <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 border-b pb-6 border-gray-100">
+    <!-- Lado Izquierdo: Título -->
+    <div>
+      <h2 class="text-2xl font-bold text-gray-800 mb-2 flex items-center text-left">
+        <span class="material-icons-outlined mr-2 text-primary">history</span> Bitácora
+      </h2>
+      <p class="text-sm text-gray-500 text-left leading-relaxed">
+        Sistema de Inventario<br>
+        <span class="font-bold">Dirección de Medios de Comunicación</span>
+      </p>
+    </div>
+
+    <!-- Lado Derecho: Filtros y Acciones -->
+    <div class="flex flex-wrap items-center gap-4 w-full xl:w-auto justify-start xl:justify-end">
+      <div class="flex items-center space-x-2">
+        <span class="text-xs text-gray-400 font-medium hidden sm:block">Acción</span>
+        <select [(ngModel)]="filtroAccion" (ngModelChange)="aplicarFiltros()" class="border border-gray-200 rounded-md px-2 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary h-[38px] bg-white cursor-pointer w-full sm:w-auto min-w-[160px]">
+          <option value="">Todas las acciones</option>
+          <option value="LOGIN">Inicios de Sesión</option>
+          <option value="ALTA">Ingreso de Inventario</option>
+          <option value="MANTENIMIENTO">Envíos a Mantenimiento</option>
+          <option value="TRASLADO">Traslados/Ubicación</option>
+          <option value="DESINCORPORACION">Desincorporaciones</option>
+        </select>
       </div>
 
-      <h3 class="text-xs font-bold text-gray-400 uppercase mb-3 px-2 tracking-wider">Filtros Rápidos</h3>
-      <nav class="space-y-2">
-        <button (click)="applyBitacoraFilter(null)" [ngClass]="{'bg-gray-100 text-gray-800 font-bold ring-2 ring-gray-300 ring-offset-1': bitacoraFilter === null, 'text-gray-600 hover:bg-gray-50': bitacoraFilter !== null}" class="w-full flex items-center px-4 py-3 rounded-xl transition-all">
-          <span class="material-icons-outlined mr-3 text-[20px]">format_list_bulleted</span> Todos los registros
-        </button>
-        <button (click)="applyBitacoraFilter('MANTENIMIENTO')" [ngClass]="{'bg-blue-50 text-blue-700 font-bold ring-2 ring-blue-300 ring-offset-1': bitacoraFilter === 'MANTENIMIENTO', 'text-gray-600 hover:bg-gray-50': bitacoraFilter !== 'MANTENIMIENTO'}" class="w-full flex items-center px-4 py-3 rounded-xl transition-all">
-          <span class="material-icons-outlined mr-3 text-[20px]">build</span> Mantenimientos
-        </button>
-        <button (click)="applyBitacoraFilter('ALTA')" [ngClass]="{'bg-green-50 text-green-700 font-bold ring-2 ring-green-300 ring-offset-1': bitacoraFilter === 'ALTA', 'text-gray-600 hover:bg-gray-50': bitacoraFilter !== 'ALTA'}" class="w-full flex items-center px-4 py-3 rounded-xl transition-all">
-          <span class="material-icons-outlined mr-3 text-[20px]">add_circle_outline</span> Altas
-        </button>
-        <button (click)="applyBitacoraFilter('DESINCORPORACION')" [ngClass]="{'bg-red-50 text-red-700 font-bold ring-2 ring-red-300 ring-offset-1': bitacoraFilter === 'DESINCORPORACION', 'text-gray-600 hover:bg-gray-50': bitacoraFilter !== 'DESINCORPORACION'}" class="w-full flex items-center px-4 py-3 rounded-xl transition-all">
-          <span class="material-icons-outlined mr-3 text-[20px]">delete_outline</span> Bajas (Desincorporación)
-        </button>
-      </nav>
+      <div class="flex items-center space-x-2">
+        <span class="text-xs text-gray-400 font-medium">Desde</span>
+        <input type="date" [(ngModel)]="fechaInicio" (ngModelChange)="aplicarFiltros()" class="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary h-[38px]">
+      </div>
+      <div class="flex items-center space-x-2">
+        <span class="text-xs text-gray-400 font-medium">Hasta</span>
+        <input type="date" [(ngModel)]="fechaFin" (ngModelChange)="aplicarFiltros()" class="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary h-[38px]">
+      </div>
+      
+      <button (click)="limpiarTodosLosFiltros()"
+        class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors shadow-sm h-[38px]">
+        <span class="material-icons-outlined text-[18px]">cleaning_services</span> Limpiar todos los filtros
+      </button>
+
+      <button (click)="exportarPDF()"
+        class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm h-[38px]">
+        <span class="material-icons-outlined text-[18px]">file_download</span> Exportar
+      </button>
     </div>
   </div>
 
-  <!-- Right Column (Timeline) -->
-  <div class="lg:col-span-8 relative">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 min-h-[500px] overflow-auto h-full" (scroll)="onBitacoraScroll($event)">
+  <!-- Fila 3: Contenido Principal (Timeline) -->
+  <div class="w-full relative min-h-[500px] overflow-auto h-full pr-2" (scroll)="onBitacoraScroll($event)">
       
       <div *ngIf="displayedBitacoraLogs.length === 0" class="flex flex-col items-center justify-center py-16">
         <span class="material-icons-outlined text-6xl text-gray-200 mb-4">history_toggle_off</span>
@@ -65,7 +69,8 @@
                  'bg-blue-500': log.accion === 'MODIFICACION' || log.accion === 'MANTENIMIENTO_FIN',
                  'bg-purple-500': log.accion === 'TRASLADO_INTERNO',
                  'bg-indigo-500': log.accion === 'TRASLADO_EXTERNO',
-                 'bg-gray-400': !['ALTA', 'DESINCORPORACION', 'MANTENIMIENTO_INICIO', 'MODIFICACION', 'MANTENIMIENTO_FIN', 'TRASLADO_INTERNO', 'TRASLADO_EXTERNO'].includes(log.accion)
+                 'bg-teal-500': log.accion === 'LOGIN' || log.accion === 'LOGOUT',
+                 'bg-gray-400': !['ALTA', 'DESINCORPORACION', 'MANTENIMIENTO_INICIO', 'MODIFICACION', 'MANTENIMIENTO_FIN', 'TRASLADO_INTERNO', 'TRASLADO_EXTERNO', 'LOGIN', 'LOGOUT'].includes(log.accion)
                }">
           </div>
           
@@ -80,9 +85,10 @@
                        'bg-gradient-to-br from-blue-400 to-blue-600': log.accion === 'MODIFICACION' || log.accion === 'MANTENIMIENTO_FIN',
                        'bg-gradient-to-br from-purple-400 to-purple-600': log.accion === 'TRASLADO_INTERNO',
                        'bg-gradient-to-br from-indigo-400 to-indigo-600': log.accion === 'TRASLADO_EXTERNO',
-                       'bg-gradient-to-br from-gray-400 to-gray-600': !['ALTA', 'DESINCORPORACION', 'MANTENIMIENTO_INICIO', 'MODIFICACION', 'MANTENIMIENTO_FIN', 'TRASLADO_INTERNO', 'TRASLADO_EXTERNO'].includes(log.accion)
+                       'bg-gradient-to-br from-teal-400 to-teal-600': log.accion === 'LOGIN' || log.accion === 'LOGOUT',
+                       'bg-gradient-to-br from-gray-400 to-gray-600': !['ALTA', 'DESINCORPORACION', 'MANTENIMIENTO_INICIO', 'MODIFICACION', 'MANTENIMIENTO_FIN', 'TRASLADO_INTERNO', 'TRASLADO_EXTERNO', 'LOGIN', 'LOGOUT'].includes(log.accion)
                      }">
-                  <span class="material-icons-outlined text-[20px]">{{ log.accion === 'ALTA' ? 'add' : (log.accion === 'DESINCORPORACION' ? 'delete' : (log.accion === 'MODIFICACION' ? 'edit' : (log.accion === 'TRASLADO_INTERNO' ? 'apartment' : (log.accion === 'TRASLADO_EXTERNO' ? 'flight_takeoff' : 'build')))) }}</span>
+                  <span class="material-icons-outlined text-[20px]">{{ log.accion === 'ALTA' ? 'add' : (log.accion === 'DESINCORPORACION' ? 'delete' : (log.accion === 'MODIFICACION' ? 'edit' : (log.accion === 'TRASLADO_INTERNO' ? 'apartment' : (log.accion === 'TRASLADO_EXTERNO' ? 'flight_takeoff' : (log.accion === 'LOGIN' ? 'login' : (log.accion === 'LOGOUT' ? 'logout' : 'build')))))) }}</span>
                 </div>
                 <div>
                   <p class="text-[15px] font-bold text-gray-800">{{ log.detalles?.usuario_nombre || log.cedula_usuario || 'Sistema' }}</p>
@@ -126,7 +132,6 @@
         Fin de la bitácora
       </div>
 
-    </div>
   </div>
 
 </div>

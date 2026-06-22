@@ -88,10 +88,16 @@ export class InventarioComponent implements OnInit {
   }
 
   loadInventory() {
-    this.inventarioService.getBienes().subscribe({
+    let inicioValido = this.fechaInicio && this.fechaInicio.trim() !== '' ? this.fechaInicio : undefined;
+    let finValido = this.fechaFin && this.fechaFin.trim() !== '' ? this.fechaFin : undefined;
+
+    if (inicioValido && isNaN(new Date(inicioValido).getTime())) inicioValido = undefined;
+    if (finValido && isNaN(new Date(finValido).getTime())) finValido = undefined;
+
+    this.inventarioService.getBienes(inicioValido, finValido).subscribe({
       next: (data: any) => {
         if (!data || data.length === 0) {
-          this.toastService.show('Error: No se pudieron cargar los datos del servidor. Verifica tus permisos', 'error');
+          this.toastService.show('Error: No se pudieron cargar los datos del servidor o no hay bienes.', 'error');
         }
         this.allInventory = (data || []).filter((item: any) => item.cat_estados?.nombre !== 'Desincorporado');
         this.applyFilters();
@@ -181,28 +187,32 @@ export class InventarioComponent implements OnInit {
     }
 
     // Filtro por fecha
-    if (this.fechaInicio) {
+    if (this.fechaInicio && this.fechaInicio.trim() !== '') {
       const inicio = new Date(this.fechaInicio).getTime();
-      result = result.filter(item => new Date(item.created_at || item.fecha_adquisicion).getTime() >= inicio);
+      if (!isNaN(inicio)) {
+        result = result.filter(item => new Date(item.fecha_registro).getTime() >= inicio);
+      }
     }
     
-    if (this.fechaFin) {
+    if (this.fechaFin && this.fechaFin.trim() !== '') {
       const fin = new Date(this.fechaFin);
-      fin.setHours(23, 59, 59, 999);
-      result = result.filter(item => new Date(item.created_at || item.fecha_adquisicion).getTime() <= fin.getTime());
+      if (!isNaN(fin.getTime())) {
+        fin.setHours(23, 59, 59, 999);
+        result = result.filter(item => new Date(item.fecha_registro).getTime() <= fin.getTime());
+      }
     }
 
     // Ordenamiento
     result.sort((a, b) => {
       if (this.ordenarPor === 'Mas antiguos') {
-        return new Date(a.created_at || a.fecha_adquisicion).getTime() - new Date(b.created_at || b.fecha_adquisicion).getTime();
+        return new Date(a.fecha_registro).getTime() - new Date(b.fecha_registro).getTime();
       } else if (this.ordenarPor === 'Por Nombre/Codigo') {
         const nameA = (a.nombre || a.codigo_id || '').toLowerCase();
         const nameB = (b.nombre || b.codigo_id || '').toLowerCase();
         return nameA.localeCompare(nameB);
       } else {
         // Por defecto 'Mas recientes'
-        return new Date(b.created_at || b.fecha_adquisicion).getTime() - new Date(a.created_at || a.fecha_adquisicion).getTime();
+        return new Date(b.fecha_registro).getTime() - new Date(a.fecha_registro).getTime();
       }
     });
 
@@ -230,7 +240,7 @@ export class InventarioComponent implements OnInit {
       item.categorias?.nombre || item.categoria_id || 'N/A',
       item.cat_ubicaciones?.nombre || item.ubicacion_id || 'N/A',
       item.condicion_fisica || 'N/A',
-      item.created_at || item.fecha_adquisicion ? new Date(item.created_at || item.fecha_adquisicion).toLocaleDateString() : 'N/A'
+      item.fecha_registro ? new Date(item.fecha_registro).toLocaleDateString() : 'N/A'
     ]);
 
     let periodo = '';
@@ -252,6 +262,23 @@ export class InventarioComponent implements OnInit {
     this.fechaFin = '';
     this.ordenarPor = 'Mas recientes';
     this.applyFilters();
+  }
+
+  aplicarFiltroFecha() {
+    this.loadInventory();
+  }
+
+
+
+  limpiarTodosLosFiltros() {
+    this.searchQuery = '';
+    this.filtroUbicacion = '';
+    this.filtroCategoria = '';
+    this.filtroEstado = '';
+    this.filtroCondicion = '';
+    this.fechaInicio = '';
+    this.fechaFin = '';
+    this.loadInventory();
   }
 
   onSearchInput() {

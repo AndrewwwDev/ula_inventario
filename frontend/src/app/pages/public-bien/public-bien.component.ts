@@ -32,35 +32,27 @@ export class PublicBienComponent implements OnInit {
 
   async cargarDetalles(id: string) {
     try {
-      // CRÍTICO: Consulta Relacional Completa
       const { data, error } = await this.supabaseService.supabase
-        .from('bienes')
-        .select('*, categorias(nombre), cat_estados(nombre), cat_ubicaciones(nombre), cat_areas(nombre), usuarios!bienes_responsable_cedula_fkey(nombres, apellidos, cedula)')
-        .eq('codigo_id', id)
+        .rpc('consultar_bien_qr', { p_codigo: id })
         .single();
 
-      // Fallback if the explicit foreign key name fails due to being different
-      if (error && error.message && error.message.includes('foreign key')) {
-         console.warn('Fallback to standard relational select for usuarios');
-         const fallbackRes = await this.supabaseService.supabase
-           .from('bienes')
-           .select('*, categorias(nombre), cat_estados(nombre), cat_ubicaciones(nombre), cat_areas(nombre), usuarios(nombres, apellidos, cedula)')
-           .eq('codigo_id', id)
-           .single();
-           
-         if (fallbackRes.error || !fallbackRes.data) {
-           this.error = true;
-         } else {
-           this.bien = fallbackRes.data;
-         }
-      } else if (error || !data) {
+      if (error) {
+        console.error('Error RPC:', error.message);
+        this.error = true;
+        this.loading = false;
+        return;
+      }
+
+      if (!data) {
         this.error = true;
       } else {
         this.bien = data;
+        this.error = false;
       }
+      this.loading = false;
     } catch (err) {
+      console.error('Catch Error:', err);
       this.error = true;
-    } finally {
       this.loading = false;
     }
   }

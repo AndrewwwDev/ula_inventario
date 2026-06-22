@@ -1,11 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { InventarioService } from '../../services/inventario.service';
+import { ToastService } from '../../services/toast.service';
+import { PdfExportService } from '../../services/pdf-export.service';
 
 @Component({
   selector: 'app-bitacora',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './bitacora.component.html'
 })
 export class BitacoraComponent implements OnInit {
@@ -17,29 +20,24 @@ export class BitacoraComponent implements OnInit {
   bitacoraPageSize = 10;
   bitacoraCurrentPage = 1;
   isLoadingMoreBitacora = false;
-  bitacoraFilter: string | null = null;
+  fechaInicio: string = '';
+  fechaFin: string = '';
+  filtroAccion: string = '';
 
-  // Bitacora KPIs
-  kpiTotalLogs = 0;
-  kpiMantenimientoLogs = 0;
-  kpiAltasLogs = 0;
-  kpiBajasLogs = 0;
 
-  constructor(private inventarioService: InventarioService) {}
+
+  constructor(
+    private inventarioService: InventarioService,
+    private pdfExportService: PdfExportService,
+    public toastService: ToastService
+  ) {}
 
   ngOnInit() {
     this.loadBitacora();
   }
 
   loadBitacora() {
-    this.inventarioService.getBitacora().subscribe((data: any) => {
-      this.allBitacoraLogs = data;
-      this.kpiTotalLogs = data.length;
-      this.kpiMantenimientoLogs = data.filter((log: any) => log.accion.includes('MANTENIMIENTO')).length;
-      this.kpiAltasLogs = data.filter((log: any) => log.accion === 'ALTA').length;
-      this.kpiBajasLogs = data.filter((log: any) => log.accion === 'DESINCORPORACION').length;
-      this.applyBitacoraFilter();
-    });
+    this.aplicarFiltros();
   }
 
   parseDiff(diff: any): { key: string, old: string, new: string }[] {
@@ -51,30 +49,70 @@ export class BitacoraComponent implements OnInit {
     }));
   }
 
-  applyBitacoraFilter(filter?: string | null) {
-    if (filter !== undefined) {
-      if (this.bitacoraFilter === filter) {
-        this.bitacoraFilter = null;
+  aplicarFiltros() {
+    this.inventarioService.getBitacora(this.fechaInicio, this.fechaFin).subscribe((data: any) => {
+      this.allBitacoraLogs = data;
+
+      if (this.filtroAccion) {
+        if (this.filtroAccion === 'MANTENIMIENTO') {
+          this.bitacoraLogs = this.allBitacoraLogs.filter(log => log.accion && log.accion.includes('MANTENIMIENTO'));
+        } else if (this.filtroAccion === 'TRASLADO') {
+          this.bitacoraLogs = this.allBitacoraLogs.filter(log => log.accion && log.accion.includes('TRASLADO'));
+        } else {
+          this.bitacoraLogs = this.allBitacoraLogs.filter(log => log.accion === this.filtroAccion);
+        }
       } else {
-        this.bitacoraFilter = filter;
+        this.bitacoraLogs = this.allBitacoraLogs;
       }
-    }
-
-    let result = this.allBitacoraLogs;
-    if (this.bitacoraFilter === 'MANTENIMIENTO') {
-      result = result.filter(log => log.accion.includes('MANTENIMIENTO'));
-    } else if (this.bitacoraFilter === 'ALTA') {
-      result = result.filter(log => log.accion === 'ALTA');
-    } else if (this.bitacoraFilter === 'DESINCORPORACION') {
-      result = result.filter(log => log.accion === 'DESINCORPORACION');
-    } else if (this.bitacoraFilter === 'MODIFICACION') {
-      result = result.filter(log => log.accion === 'MODIFICACION');
-    }
-
-    this.bitacoraLogs = result;
-    this.bitacoraCurrentPage = 1;
-    this.displayedBitacoraLogs = this.bitacoraLogs.slice(0, this.bitacoraPageSize);
+      
+      this.bitacoraCurrentPage = 1;
+      this.displayedBitacoraLogs = this.bitacoraLogs.slice(0, this.bitacoraPageSize);
+    });
   }
+
+  limpiarTodosLosFiltros() {
+    this.fechaInicio = '';
+    this.fechaFin = '';
+    this.filtroAccion = '';
+    this.aplicarFiltros();
+  }
+
+  exportarPDF() {
+    const datos = this.bitacoraLogs;
+
+    if (!datos || datos.length === 0) {
+      if (this.toastService) {
+        this.toastService.show('No hay datos para exportar con los filtros actuales.', 'warning');
+      }
+      return;
+    }
+
+    const columnas = ['Usuario', 'Acción Realizada', 'Bien/Entidad', 'Detalles', 'Fecha/Hora'];
+    const dataFilas = datos.map(item => {
+      const accionStr = item.accion ? item.accion.replace('_', ' ') : 'Desconocida';
+      const usuarioStr = item.detalles?.usuario_nombre || item.cedula_usuario || 'Sistema';
+      const bienStr = item.codigo_bien || 'N/A';
+      const detallesStr = item.detalles?.mensaje || (this.isString(item.detalles) ? item.detalles : 'Sin detalles adicionales');
+      const fechaStr = item.fecha_hora ? new Date(item.fecha_hora).toLocaleString() : 'N/A';
+      
+      return [usuarioStr, accionStr, bienStr, detallesStr, fechaStr];
+    });
+
+    let periodo = '';
+    if (this.fechaInicio && this.fechaFin) {
+      periodo = `Desde: ${this.fechaInicio} - Hasta: ${this.fechaFin}`;
+    } else if (this.fechaInicio) {
+      periodo = `Desde: ${this.fechaInicio}`;
+    } else if (this.fechaFin) {
+      periodo = `Hasta: ${this.fechaFin}`;
+    } else {
+      periodo = 'Histórico completo';
+    }
+
+    this.pdfExportService.generarReporte('Reporte de Bitácora y Auditoría', columnas, dataFilas, periodo);
+  }
+
+
 
   onBitacoraScroll(event: any) {
     const element = event.target;

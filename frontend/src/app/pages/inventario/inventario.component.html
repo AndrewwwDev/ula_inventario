@@ -1,16 +1,15 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
 
-  <!-- Header / Top Bar -->
-  <div class="flex justify-between items-center gap-4 mb-6">
+  <!-- Fila Superior (Header / Acciones Principales) -->
+  <div class="flex flex-col md:flex-row justify-between items-center gap-4 w-full mb-6">
     <h2 class="text-lg font-bold text-gray-800 whitespace-nowrap hidden lg:block">Inventario total</h2>
-    <div class="flex-1 max-w-lg mx-auto relative w-full">
+    <div class="flex-1 max-w-2xl mx-auto relative w-full">
       <input type="text" [(ngModel)]="searchQuery" (input)="onSearchInput()"
         placeholder="Buscar por Nombre, Código ID o Descripción..."
         class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-sm shadow-sm">
-      <span
-        class="material-icons-outlined absolute right-3 top-2.5 text-gray-400 text-sm pointer-events-none">search</span>
+      <span class="material-icons-outlined absolute right-3 top-2.5 text-gray-400 text-sm pointer-events-none">search</span>
     </div>
-    <div class="flex items-center space-x-3">
+    <div class="flex items-center gap-2 shrink-0">
       <button (click)="toggleAddModal()"
         class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-sm transition-colors shadow-sm">
         <span class="material-icons-outlined mr-2 text-[18px]">add</span> Agregar
@@ -21,6 +20,25 @@
       </button>
     </div>
   </div>
+
+  <!-- Fila Inferior (Filtro por Fecha y Limpieza) -->
+  <div class="flex flex-col md:flex-row items-center gap-4 mt-4 bg-gray-50/50 p-3 rounded-lg border border-gray-100 mb-4">
+    <label class="text-sm text-gray-500 font-medium hidden md:block">Rango:</label>
+    <div class="flex items-center space-x-2">
+      <span class="text-xs text-gray-400">Desde</span>
+      <input type="date" [(ngModel)]="fechaInicio" (ngModelChange)="aplicarFiltroFecha()" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
+    </div>
+    <div class="flex items-center space-x-2">
+      <span class="text-xs text-gray-400">Hasta</span>
+      <input type="date" [(ngModel)]="fechaFin" (ngModelChange)="aplicarFiltroFecha()" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
+    </div>
+    
+    <button (click)="limpiarTodosLosFiltros()"
+      class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors shadow-sm md:ml-auto w-full md:w-auto justify-center">
+      <span class="material-icons-outlined text-[18px]">cleaning_services</span> Limpiar todos los filtros
+    </button>
+  </div>
+
 
 
   <!--
