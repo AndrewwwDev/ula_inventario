@@ -84,6 +84,14 @@ export class InventarioComponent implements OnInit {
           }
         }, 800);
       }
+      if (params['action'] === 'editar' && params['id']) {
+        setTimeout(() => {
+          const itemToEdit = this.allInventory.find(i => i.codigo_id === params['id']);
+          if (itemToEdit) {
+            this.openEditModal(itemToEdit);
+          }
+        }, 800);
+      }
     });
   }
 

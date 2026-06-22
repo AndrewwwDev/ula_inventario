@@ -62,8 +62,8 @@ export class PublicBienComponent implements OnInit {
     const { data: { session } } = await this.supabaseService.supabase.auth.getSession();
     
     if (session) {
-      // Si hay sesión activa (usuario logueado en su teléfono), redirige a /dashboard/bienes/editar/:id o la ruta equivalente
-      this.router.navigate(['/dashboard/inventario'], { queryParams: { search: this.bien.codigo_id, editId: this.bien.codigo_id } });
+      // Si hay sesión activa (usuario logueado en su teléfono), redirige al inventario y auto-abre la edición
+      this.router.navigate(['/dashboard/inventario'], { queryParams: { action: 'editar', id: this.bien.codigo_id } });
     } else {
       // Si NO hay sesión activa (visitante), redirige a /login.
       this.router.navigate(['/login']);
