@@ -85,10 +85,10 @@
           <th class="py-2 px-2 min-w-[150px] relative">
             <select [(ngModel)]="filtroCondicion" (change)="applyFilters()"
               class="bg-transparent border-none text-xs font-bold uppercase text-gray-500 focus:ring-0 cursor-pointer w-full appearance-none hover:bg-gray-100 rounded px-2 py-1 pr-6 transition-colors">
-              <option value="">CONDICIÓN (Todas)</option>
-              <option value="Buen estado">Buen estado</option>
-              <option value="Regular">Regular</option>
-              <option value="Mal estado">Mal estado</option>
+              <option value="">CONDICIÓN (TODAS)</option>
+              <option value="Buen estado">BUEN ESTADO</option>
+              <option value="Regular">REGULAR</option>
+              <option value="Mal estado">MAL ESTADO</option>
             </select>
           </th>
 
@@ -261,16 +261,16 @@
               <option *ngFor="let a of cat_areas" [value]="a.id">{{a.nombre}}</option>
             </select>
           </div>
-          <app-responsable-autocomplete [ngModel]="nuevoBien.responsable_cedula"
-            (ngModelChange)="nuevoBien.responsable_cedula = $event; onResponsableChange($event, false)"
-            name="responsable_cedula"></app-responsable-autocomplete>
+          <app-responsable-autocomplete [ngModel]="nuevoBien.personal_cedula"
+            (ngModelChange)="nuevoBien.personal_cedula = $event; onResponsableChange($event, false)"
+            name="personal_cedula"></app-responsable-autocomplete>
           <div>
             <label class="text-sm font-bold text-gray-700">Estado *</label>
             <select [(ngModel)]="nuevoBien.estado_id" name="estado_id"
-              class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              required [disabled]="!nuevoBien.responsable_cedula || isMantenimiento(nuevoBien.estado_id)">
-              <option value="" disabled selected>Seleccione estado</option>
-              <option *ngFor="let est of getEstadosPermitidos(nuevoBien.responsable_cedula, nuevoBien.estado_id)"
+              class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-primary focus:border-primary bg-white disabled:bg-gray-100 disabled:text-gray-500"
+              required [disabled]="!nuevoBien.personal_cedula || isMantenimiento(nuevoBien.estado_id)">
+              <option value="" disabled selected>Seleccione un estado</option>
+              <option *ngFor="let est of getEstadosPermitidos(nuevoBien.personal_cedula, nuevoBien.estado_id)"
                 [value]="est.id">{{ est.nombre }}</option>
             </select>
           </div>
@@ -365,10 +365,10 @@
           <div>
             <label class="text-sm font-bold text-gray-700">Estado *</label>
             <select [(ngModel)]="editingBien.estado_id" name="estado_id"
-              class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              required [disabled]="!editingBien.responsable_cedula || isMantenimiento(editingBien.estado_id)">
-              <option value="" disabled selected>Seleccione estado</option>
-              <option *ngFor="let est of getEstadosPermitidos(editingBien.responsable_cedula, editingBien.estado_id)"
+              class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-primary focus:border-primary bg-white disabled:bg-gray-100 disabled:text-gray-500"
+              required [disabled]="!editingBien.personal_cedula || isMantenimiento(editingBien.estado_id)">
+              <option value="" disabled selected>Seleccione un estado</option>
+              <option *ngFor="let est of getEstadosPermitidos(editingBien.personal_cedula, editingBien.estado_id)"
                 [value]="est.id">{{ est.nombre }}</option>
             </select>
           </div>
@@ -510,10 +510,9 @@
           </div>
           <div>
             <p class="text-xs font-bold text-blue-400 uppercase tracking-wider">Responsable</p>
-            <p class="text-sm font-medium text-blue-900">
-              {{ bienATrasladar?.responsable_cedula || 'Sin Asignación' }} <span
-                *ngIf="bienATrasladar?.responsable_cedula" class="text-sm text-gray-700 font-medium">- {{
-                obtenerNombreEncargadoActual() }}</span>
+            <p class="text-lg font-bold text-gray-800 flex items-center">
+              {{ bienATrasladar?.personal_cedula || 'Sin Asignación' }} <span
+                *ngIf="bienATrasladar?.personal_cedula" class="text-sm text-gray-700 font-medium">- {{ obtenerNombreEncargadoActual() }}</span>
             </p>
           </div>
         </div>
@@ -539,9 +538,9 @@
           </div>
           <div class="md:col-span-2">
             <app-responsable-autocomplete 
-              [ngModel]="datosTraslado.responsable_cedula"
-              (ngModelChange)="datosTraslado.responsable_cedula = $event"
-              name="responsable_cedula"
+              [ngModel]="datosTraslado.personal_cedula"
+              (ngModelChange)="datosTraslado.personal_cedula = $event"
+              name="personal_cedula"
               label="Cédula o Nombre del Nuevo Encargado *">
             </app-responsable-autocomplete>
           </div>
@@ -629,12 +628,15 @@
         <div>
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Responsable / Encargado</h3>
           <div class="flex flex-col gap-0.5">
-            <span class="text-sm font-semibold text-gray-900">
-              {{ obtenerNombrePorCedula(bienSeleccionado.responsable_cedula) }}
-            </span>
-            <span class="text-xs text-gray-500 font-mono" *ngIf="bienSeleccionado.responsable_cedula">
-              C.I. {{ bienSeleccionado.responsable_cedula }}
-            </span>
+            <div *ngIf="bienSeleccionado?.personal; else sinAsignacion">
+              <p class="text-sm font-medium text-gray-900">
+                {{ bienSeleccionado.personal.nombres }} {{ bienSeleccionado.personal.apellidos }}
+              </p>
+              <p class="text-xs text-gray-500">V-{{ bienSeleccionado.personal.cedula || bienSeleccionado.personal_cedula }}</p>
+            </div>
+            <ng-template #sinAsignacion>
+              <p class="text-sm text-gray-500 italic">Sin Asignación</p>
+            </ng-template>
           </div>
         </div>
         <div>

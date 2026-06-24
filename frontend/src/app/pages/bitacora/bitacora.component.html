@@ -18,12 +18,18 @@
       <div class="flex items-center space-x-2">
         <span class="text-xs text-gray-400 font-medium hidden sm:block">Acción</span>
         <select [(ngModel)]="filtroAccion" (ngModelChange)="aplicarFiltros()" class="border border-gray-200 rounded-md px-2 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary h-[38px] bg-white cursor-pointer w-full sm:w-auto min-w-[160px]">
-          <option value="">Todas las acciones</option>
-          <option value="LOGIN">Inicios de Sesión</option>
-          <option value="ALTA">Ingreso de Inventario</option>
-          <option value="MANTENIMIENTO">Envíos a Mantenimiento</option>
-          <option value="TRASLADO">Traslados/Ubicación</option>
-          <option value="DESINCORPORACION">Desincorporaciones</option>
+          <option value="">Todas las Acciones</option>
+          <option value="INICIO_SESION">🔑 Inicio de Sesión</option>
+          <option value="CIERRE_SESION">🚪 Cierre de Sesión (Logout)</option>
+          <option value="SESION_CADUCADA">⏰ Sesión Expirada</option>
+          <option value="ALTA">📥 Ingreso de Activo (Alta)</option>
+          <option value="TRASLADO">🚚 Traslado de Custodia</option>
+          <option value="MODIFICACION">✏️ Modificación Técnica</option>
+          <option value="MANTENIMIENTO_INICIO">🔧 Envío a Soporte</option>
+          <option value="MANTENIMIENTO_FIN">✅ Retorno de Soporte</option>
+          <option value="DESINCORPORACION">❌ Desincorporación Legal</option>
+          <option value="RESPALDO_CREADO">💾 Copia de Seguridad Generada</option>
+          <option value="RESTAURACION_SISTEMA">🔄 Restauración de Base de Datos</option>
         </select>
       </div>
 
@@ -69,12 +75,12 @@
                  'bg-blue-500': log.accion === 'MODIFICACION' || log.accion === 'MANTENIMIENTO_FIN',
                  'bg-purple-500': log.accion === 'TRASLADO_INTERNO',
                  'bg-indigo-500': log.accion === 'TRASLADO_EXTERNO',
-                 'bg-teal-500': log.accion === 'LOGIN' || log.accion === 'LOGOUT',
-                 'bg-gray-400': !['ALTA', 'DESINCORPORACION', 'MANTENIMIENTO_INICIO', 'MODIFICACION', 'MANTENIMIENTO_FIN', 'TRASLADO_INTERNO', 'TRASLADO_EXTERNO', 'LOGIN', 'LOGOUT'].includes(log.accion)
+                 'bg-teal-500': log.accion === 'INICIO_SESION' || log.accion === 'CIERRE_SESION' || log.accion === 'SESION_CADUCADA',
+                 'bg-gray-400': !['ALTA', 'DESINCORPORACION', 'MANTENIMIENTO_INICIO', 'MODIFICACION', 'MANTENIMIENTO_FIN', 'TRASLADO_INTERNO', 'TRASLADO_EXTERNO', 'INICIO_SESION', 'CIERRE_SESION', 'SESION_CADUCADA'].includes(log.accion)
                }">
           </div>
           
-          <div class="bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100/60 p-5 hover:shadow-[0_8px_20px_-6px_rgba(6,81,237,0.15)] hover:border-gray-200 transition-all cursor-pointer" (click)="abrirDetalle(log)">
+          <div class="bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100/60 p-5 hover:shadow-[0_8px_20px_-6px_rgba(6,81,237,0.15)] hover:border-gray-200 transition-all">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
               <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-inner"
@@ -85,13 +91,13 @@
                        'bg-gradient-to-br from-blue-400 to-blue-600': log.accion === 'MODIFICACION' || log.accion === 'MANTENIMIENTO_FIN',
                        'bg-gradient-to-br from-purple-400 to-purple-600': log.accion === 'TRASLADO_INTERNO',
                        'bg-gradient-to-br from-indigo-400 to-indigo-600': log.accion === 'TRASLADO_EXTERNO',
-                       'bg-gradient-to-br from-teal-400 to-teal-600': log.accion === 'LOGIN' || log.accion === 'LOGOUT',
-                       'bg-gradient-to-br from-gray-400 to-gray-600': !['ALTA', 'DESINCORPORACION', 'MANTENIMIENTO_INICIO', 'MODIFICACION', 'MANTENIMIENTO_FIN', 'TRASLADO_INTERNO', 'TRASLADO_EXTERNO', 'LOGIN', 'LOGOUT'].includes(log.accion)
+                       'bg-gradient-to-br from-teal-400 to-teal-600': log.accion === 'INICIO_SESION' || log.accion === 'CIERRE_SESION' || log.accion === 'SESION_CADUCADA',
+                       'bg-gradient-to-br from-gray-400 to-gray-600': !['ALTA', 'DESINCORPORACION', 'MANTENIMIENTO_INICIO', 'MODIFICACION', 'MANTENIMIENTO_FIN', 'TRASLADO_INTERNO', 'TRASLADO_EXTERNO', 'INICIO_SESION', 'CIERRE_SESION', 'SESION_CADUCADA'].includes(log.accion)
                      }">
-                  <span class="material-icons-outlined text-[20px]">{{ log.accion === 'ALTA' ? 'add' : (log.accion === 'DESINCORPORACION' ? 'delete' : (log.accion === 'MODIFICACION' ? 'edit' : (log.accion === 'TRASLADO_INTERNO' ? 'apartment' : (log.accion === 'TRASLADO_EXTERNO' ? 'flight_takeoff' : (log.accion === 'LOGIN' ? 'login' : (log.accion === 'LOGOUT' ? 'logout' : 'build')))))) }}</span>
+                  <span class="material-icons-outlined text-[20px]">{{ log.accion === 'ALTA' ? 'add' : (log.accion === 'DESINCORPORACION' ? 'delete' : (log.accion === 'MODIFICACION' ? 'edit' : (log.accion === 'TRASLADO_INTERNO' ? 'apartment' : (log.accion === 'TRASLADO_EXTERNO' ? 'flight_takeoff' : (log.accion === 'INICIO_SESION' ? 'login' : (log.accion === 'CIERRE_SESION' ? 'logout' : (log.accion === 'SESION_CADUCADA' ? 'timer_off' : 'build'))))))) }}</span>
                 </div>
                 <div>
-                  <p class="text-[15px] font-bold text-gray-800">{{ log.detalles?.usuario_nombre || log.cedula_usuario || 'Sistema' }}</p>
+                  <p class="text-[15px] font-bold text-gray-800">{{ log.usuarios?.nombres }} {{ log.usuarios?.apellidos }} <span *ngIf="log.cedula_usuario" class="font-medium text-xs text-gray-400 ml-1">(C.I. {{ log.cedula_usuario }})</span></p>
                   <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mt-0.5">{{ log.accion.replace('_', ' ') }}</p>
                 </div>
               </div>
@@ -119,6 +125,12 @@
                 </div>
               </div>
             </div>
+
+            <div class="mt-4 flex justify-end border-t border-gray-50 pt-3">
+              <button (click)="abrirDetalle(log)" class="flex items-center text-sm font-bold text-primary hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors border border-transparent hover:border-blue-100 shadow-sm">
+                <span class="material-icons-outlined text-[18px] mr-1.5">visibility</span> Ver Detalles
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -137,8 +149,8 @@
 </div>
 
 <!-- Modal Vista Previa de Bitácora -->
-<div *ngIf="showModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+<div *ngIf="showModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="cerrarDetalle()">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]" (click)="$event.stopPropagation()">
     <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
       <h3 class="text-lg font-bold text-gray-800 flex items-center">
         <span class="material-icons-outlined text-primary mr-2">visibility</span>
@@ -150,9 +162,10 @@
     </div>
     
     <div class="p-6 overflow-y-auto" *ngIf="selectedLog">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 gap-6">
+        
         <!-- Log Info -->
-        <div class="space-y-4">
+        <div class="space-y-4 col-span-full">
           <h4 class="font-bold text-gray-700 border-b pb-2 mb-3">Información del Registro</h4>
           
           <div class="bg-gray-50 rounded-lg p-4 space-y-3">
@@ -161,62 +174,86 @@
                 <span class="text-sm font-bold text-primary">{{selectedLog.accion}}</span>
              </div>
              <div class="flex justify-between items-center border-b border-gray-200 pb-2">
-                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Usuario</span>
-                <span class="text-sm font-bold text-gray-700">{{selectedLog.detalles?.usuario_nombre || selectedLog.cedula_usuario || 'Sistema'}}</span>
-             </div>
-             <div class="flex justify-between items-center">
-                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha</span>
-                <span class="text-sm font-medium text-gray-600">{{selectedLog.fecha_hora | date:'medium'}}</span>
-             </div>
-          </div>
-
-          <div *ngIf="!isString(selectedLog.detalles) && selectedLog.detalles" class="bg-blue-50 rounded-lg p-4 mt-4 border border-blue-100">
-             <h5 class="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">Detalles del Cambio</h5>
-             <p class="text-sm text-gray-700 mb-2"><strong>Mensaje:</strong> {{selectedLog.detalles.mensaje}}</p>
-             <p class="text-sm text-gray-700 mb-2" *ngIf="selectedLog.detalles.estado_anterior"><strong>Estado Anterior:</strong> {{selectedLog.detalles.estado_anterior}}</p>
-             <p class="text-sm text-gray-700 mb-2" *ngIf="selectedLog.detalles.estado_nuevo"><strong>Nuevo Estado:</strong> {{selectedLog.detalles.estado_nuevo}}</p>
-             <p class="text-sm text-gray-700" *ngIf="selectedLog.detalles.justificacion"><strong>Justificación:</strong> {{selectedLog.detalles.justificacion}}</p>
-             
-             <!-- Evidencia Fotográfica de Desincorporación -->
-             <div *ngIf="selectedLog.detalles.url_foto_evidencia" class="mt-4 pt-4 border-t border-blue-200/60">
-               <h5 class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 flex items-center">
-                 <span class="material-icons-outlined text-[16px] mr-1 text-gray-400">image</span> Evidencia Fotográfica
-               </h5>
-               <a [href]="selectedLog.detalles.url_foto_evidencia" target="_blank" title="Haga clic para ver imagen completa"
-                  class="block rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all bg-white p-1">
-                 <img [src]="selectedLog.detalles.url_foto_evidencia" alt="Evidencia de auditoría" 
-                      class="w-full h-auto max-h-48 object-contain bg-gray-50 rounded">
-               </a>
-             </div>
+                 <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Usuario Responsable</span>
+                 <div class="text-right">
+                   <p class="text-sm font-bold text-gray-700">
+                     {{ selectedLog.usuarios?.nombres ? (selectedLog.usuarios?.nombres + ' ' + selectedLog.usuarios?.apellidos) : (selectedLog.detalles?.operador_nombre || selectedLog.detalles?.usuario_afectado?.nombre || selectedLog.detalles?.datos_nuevos?.responsable || 'Sistema') }}
+                   </p>
+                   <p class="text-xs text-gray-500 mt-0.5 font-medium">
+                     C.I. {{ selectedLog.cedula_usuario || 'N/A' }}
+                   </p>
+                 </div>
+              </div>
+              <div class="flex justify-between items-center">
+                 <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha y Hora</span>
+                 <span class="text-sm font-medium text-gray-600">{{ selectedLog.fecha_hora | date: 'dd/MM/yyyy hh:mm a' }}</span>
+              </div>
           </div>
         </div>
 
-        <!-- Entity Preview (Bien) -->
-        <div>
-          <h4 class="font-bold text-gray-700 border-b pb-2 mb-3">Bien Afectado</h4>
-          <div *ngIf="selectedBien" class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-             <div class="h-40 bg-gray-100 relative">
-               <img *ngIf="selectedBien.imagen_url" [src]="selectedBien.imagen_url" class="w-full h-full object-cover" alt="Foto del bien">
-               <div *ngIf="!selectedBien.imagen_url" class="absolute inset-0 flex items-center justify-center">
-                 <span class="material-icons-outlined text-4xl text-gray-300">image_not_supported</span>
+        <!-- SUB-LAYOUT 1: AUDITORÍA DE INVENTARIO FÍSICO -->
+        <div *ngIf="selectedLog.codigo_bien != null" class="col-span-full">
+          <h4 class="font-bold text-gray-700 border-b pb-2 mb-3">Auditoría de Inventario Físico</h4>
+          <div class="bg-gray-50 rounded-lg p-4 space-y-2 border border-gray-100">
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ selectedLog.detalles?.categoria_bien || selectedLog.detalles?.categoria_nombre || selectedLog.detalles?.datos_nuevos?.categoria || selectedLog.detalles?.datos_anteriores?.categoria || selectedBien?.categoria?.nombre || 'Categoría no especificada' }}</p>
+            <p class="font-bold text-gray-800 text-lg leading-tight">{{ selectedLog.detalles?.nombre_bien || selectedBien?.nombre || 'Bien Registrado' }} <span class="text-sm font-medium text-gray-500 ml-1 font-mono">[Código ID: {{ selectedLog.codigo_bien }}]</span></p>
+
+            <div *ngIf="selectedLog.accion === 'TRASLADO'" class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 p-4 border border-blue-100 rounded-xl mt-4">
+               <div>
+                  <span class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Origen</span>
+                  <p class="text-sm font-bold text-gray-800">{{ selectedLog.detalles?.origen || 'N/A' }}</p>
+                  <p class="text-xs text-gray-500 mt-1 flex items-center">
+                    <span class="material-icons-outlined text-[14px] mr-1">person</span>
+                    Saliente: {{ selectedLog.detalles?.responsable_anterior?.nombre || 'N/A' }}
+                  </p>
                </div>
-               <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm">
-                 {{selectedBien.codigo}}
+               <div>
+                  <span class="block text-[10px] uppercase font-bold text-blue-500 mb-1">Destino</span>
+                  <p class="text-sm font-bold text-gray-800">{{ selectedLog.detalles?.destino || 'N/A' }}</p>
+                  <p class="text-xs text-blue-600 mt-1 flex items-center font-medium">
+                    <span class="material-icons-outlined text-[14px] mr-1">person</span>
+                    Entrante: {{ selectedLog.detalles?.responsable_nuevo?.nombre || 'N/A' }}
+                  </p>
                </div>
-             </div>
-             <div class="p-4 space-y-2">
-               <p class="font-bold text-gray-800 text-lg leading-tight">{{selectedBien.nombre}}</p>
-               <p class="text-sm text-gray-500">{{selectedBien.descripcion || 'Sin descripción'}}</p>
-               <div class="pt-2 mt-2 border-t border-gray-100 flex gap-2">
-                  <span class="px-2 py-1 bg-gray-100 rounded text-xs font-bold text-gray-600">{{selectedBien.categoria?.nombre || 'Categoría'}}</span>
-                  <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-bold">{{selectedBien.estado_operativo}}</span>
-               </div>
-             </div>
+            </div>
+            
+            <div *ngIf="selectedLog.detalles?.operacion === 'UPDATE'" class="bg-white border border-gray-200 rounded-xl p-4 overflow-x-auto mt-4 shadow-sm">
+              <p class="text-xs text-blue-600 font-bold mb-3 uppercase tracking-wider">Modificaciones Técnicas</p>
+              <div *ngFor="let change of getChangedFields(selectedLog)" class="flex flex-col mb-3 pb-3 border-b border-gray-100 last:border-0 last:mb-0 last:pb-0">
+                <p class="font-mono text-[11px] font-bold text-gray-600 mb-1.5 uppercase tracking-wider">{{ change.key }}</p>
+                <div class="flex items-center gap-2 text-sm whitespace-normal break-words">
+                  <div class="bg-red-50 text-red-700 px-3 py-1.5 rounded-lg border border-red-100 flex-1 break-words shadow-sm">
+                    <del class="opacity-70 text-[10px] mr-1 font-bold">-</del> {{ change.old || '(Vacío)' }}
+                  </div>
+                  <span class="material-icons-outlined text-[16px] text-gray-300">arrow_forward</span>
+                  <div class="bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100 flex-1 break-words shadow-sm">
+                    <ins class="opacity-70 text-[10px] mr-1 font-bold no-underline">+</ins> {{ change.new || '(Vacío)' }}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div *ngIf="!selectedBien" class="bg-gray-50 rounded-xl border border-gray-200 border-dashed p-8 text-center">
-             <span class="material-icons-outlined text-gray-300 text-4xl mb-2">inventory_2</span>
-             <p class="text-sm text-gray-500 font-medium">No se pudo cargar la vista previa del bien.<br>Es posible que haya sido eliminado.</p>
-          </div>
+        </div>
+
+        <!-- SUB-LAYOUT 2: AUDITORÍA DE ACCIONES INFORMÁTICAS Y SEGURIDAD -->
+        <div *ngIf="selectedLog.codigo_bien == null" class="col-span-full">
+           <h4 class="font-bold text-gray-700 border-b pb-2 mb-3">Control de Seguridad del Sistema</h4>
+           <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl shadow-sm mt-2">
+             <div class="flex items-center mb-3">
+               <span class="material-icons-outlined text-gray-500 mr-2 text-xl">admin_panel_settings</span>
+               <span class="font-bold text-sm text-gray-700 uppercase tracking-wider">Actividad de Software</span>
+             </div>
+             <p class="text-sm text-gray-800 font-medium mb-3">{{ selectedLog.detalles?.mensaje || selectedLog.accion }}</p>
+             
+             <div *ngIf="selectedLog.accion === 'RESPALDO_CREADO' || selectedLog.accion === 'RESTAURACION_SISTEMA'" class="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+               <span class="material-icons-outlined text-[14px] mr-1">{{ selectedLog.accion === 'RESPALDO_CREADO' ? 'backup' : 'restore' }}</span>
+               {{ selectedLog.accion === 'RESPALDO_CREADO' ? 'Backup de Base de Datos' : 'Restauración del Sistema' }}
+             </div>
+             
+             <p *ngIf="selectedLog.detalles?.dispositivo" class="text-xs text-gray-500 mt-3 font-mono border-t border-gray-200 pt-3">
+               Dispositivo: {{selectedLog.detalles?.dispositivo}}
+             </p>
+           </div>
         </div>
       </div>
     </div>

@@ -64,7 +64,7 @@ export class ResponsableAutocompleteComponent implements OnInit, OnDestroy, Cont
       distinctUntilChanged(),
       tap(() => this.buscandoUsuarios = true),
       switchMap(termino => 
-        this.inventarioService.buscarUsuariosPredictivo(termino!).pipe(
+        this.inventarioService.buscarCustodiosPredictivo(termino!).pipe(
           catchError(() => of([]))
         )
       ),
@@ -86,7 +86,7 @@ export class ResponsableAutocompleteComponent implements OnInit, OnDestroy, Cont
       this.cedulaSeleccionada = value;
       
       if (value && value.length >= 6) {
-        this.inventarioService.buscarUsuariosPredictivo(value).subscribe(res => {
+        this.inventarioService.buscarCustodiosPredictivo(value).subscribe((res: any[]) => {
             const match = res.find((u:any) => u.cedula === value);
             if (match) {
               this.isSelectingFromList = true;
@@ -161,7 +161,7 @@ export class ResponsableAutocompleteComponent implements OnInit, OnDestroy, Cont
          this.inventarioService.verificarCedulaExistente(typedValue).subscribe((existe: boolean) => {
             if (existe) {
                // Auto-seleccionar
-               this.inventarioService.buscarUsuariosPredictivo(typedValue).subscribe(res => {
+               this.inventarioService.buscarCustodiosPredictivo(typedValue).subscribe((res: any[]) => {
                   const match = res.find((u:any) => u.cedula === typedValue);
                   if (match) {
                      this.seleccionarUsuario(match);

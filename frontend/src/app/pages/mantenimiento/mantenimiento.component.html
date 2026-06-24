@@ -12,6 +12,11 @@
     <!-- Tabs y Filtros -->
     <div class="flex justify-between items-end border-b border-gray-100 bg-gray-50/50">
       <div class="flex">
+        <button (click)="switchMantenimientoTab('reparacion')"
+          [ngClass]="{'border-primary text-primary font-bold bg-white': mantenimientoTab === 'reparacion', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'reparacion'}"
+          class="px-6 py-4 border-b-2 transition-colors">
+          En Reparación
+        </button>
         <button (click)="switchMantenimientoTab('alertas')"
           [ngClass]="{'border-primary text-primary font-bold bg-white': mantenimientoTab === 'alertas', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'alertas'}"
           class="px-6 py-4 border-b-2 transition-colors relative">
@@ -20,11 +25,6 @@
             class="ml-2 bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-xs font-bold">{{ alertasMantenimiento.length
             }}</span>
         </button>
-        <button (click)="switchMantenimientoTab('reparacion')"
-          [ngClass]="{'border-primary text-primary font-bold bg-white': mantenimientoTab === 'reparacion', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'reparacion'}"
-          class="px-6 py-4 border-b-2 transition-colors">
-          En Reparación
-        </button>
         <button (click)="switchMantenimientoTab('historial')"
           [ngClass]="{'border-primary text-primary font-bold bg-white': mantenimientoTab === 'historial', 'border-transparent text-gray-500 hover:text-gray-700': mantenimientoTab !== 'historial'}"
           class="px-6 py-4 border-b-2 transition-colors">
@@ -32,70 +32,43 @@
         </button>
       </div>
 
-      <!-- Filtro por Fecha -->
+      <!-- Filtro por Fecha Reactivo -->
       <div class="px-6 py-2 flex items-center space-x-3 mb-1">
         <label class="text-sm text-gray-500 font-medium mr-1">Rango:</label>
         
         <div class="flex items-center space-x-2">
           <span class="text-xs text-gray-400">Desde</span>
-          <input type="date" [(ngModel)]="fechaInicio" 
-            class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
+          <input type="date" [(ngModel)]="fechaInicio" (ngModelChange)="aplicarFiltroFecha()"
+            class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32 cursor-pointer transition-shadow hover:shadow-sm">
         </div>
 
         <div class="flex items-center space-x-2">
           <span class="text-xs text-gray-400">Hasta</span>
-          <input type="date" [(ngModel)]="fechaFin" 
-            class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
+          <input type="date" [(ngModel)]="fechaFin" (ngModelChange)="aplicarFiltroFecha()"
+            class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32 cursor-pointer transition-shadow hover:shadow-sm">
         </div>
 
         <div class="flex items-center space-x-2 ml-2">
-          <button (click)="aplicarFiltroFecha()" class="bg-primary hover:bg-primary-hover text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm transition-colors">
-            Buscar
-          </button>
-          <button *ngIf="fechaInicio || fechaFin" (click)="limpiarFiltroFecha()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">
-            Limpiar
+          <button (click)="limpiarFiltroFecha()" title="Limpiar Filtros"
+            class="text-gray-500 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium">
+            <span class="material-icons-outlined text-[18px]">cleaning_services</span> Limpiar
           </button>
         </div>
       </div>
     </div>
 
     <div class="p-6">
-      <!-- Tab: Alertas -->
-      <div *ngIf="mantenimientoTab === 'alertas'">
-        <div *ngIf="alertasMantenimiento.length === 0" class="text-center py-12 text-gray-500">No hay alertas de
-          mantenimiento actuales.</div>
-        <table *ngIf="alertasMantenimiento.length > 0" class="w-full text-left">
-          <thead>
-            <tr class="text-xs font-bold text-gray-500 uppercase">
-              <th class="py-3 px-2">Bien</th>
-              <th class="py-3 px-2">Ubicación</th>
-              <th class="py-3 px-2">Próxima Fecha</th>
-              <th class="py-3 px-2">Estado</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr *ngFor="let m of alertasMantenimiento" (click)="abrirDetalleAlerta(m)"
-              class="cursor-pointer hover:shadow-md hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
-              <td class="py-3 px-2 text-sm">
-                <div class="font-bold text-gray-800">{{ m.bien?.codigo_id }}</div>
-                <div class="truncate max-w-[200px] text-gray-600">{{ m.bien?.nombre }}</div>
-              </td>
-              <td class="py-3 px-2 text-sm text-gray-600">
-                <div class="truncate max-w-[150px]" title="{{ m.bien?.cat_ubicaciones?.nombre }}">{{
-                  m.bien?.cat_ubicaciones?.nombre || 'N/A' }}</div>
-              </td>
-              <td class="py-3 px-2 text-sm text-red-500 font-bold">{{ m.proxima_fecha | date:'mediumDate' }}</td>
-              <td class="py-3 px-2"><span
-                  class="px-2.5 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-bold flex items-center w-max"><span
-                    class="material-icons-outlined text-[14px] mr-1">warning</span> Vencido</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Tab: En Reparación -->
+      <!-- 1. PRIMER BLOQUE (Top): Contenedor En Reparación -->
       <div *ngIf="mantenimientoTab === 'reparacion'">
         <div *ngIf="enReparacion.length === 0" class="text-center py-12 text-gray-500">No hay equipos en reparación.
+        </div>
+        
+        <!-- Encabezado de acciones de la tabla En Reparación -->
+        <div *ngIf="enReparacion.length > 0" class="flex justify-end mb-4">
+          <button (click)="exportarReparacionPDF()" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+            <span class="material-icons text-base text-gray-500">file_download</span>
+            Exportar
+          </button>
         </div>
         <table *ngIf="enReparacion.length > 0" class="w-full text-left">
           <thead>
@@ -131,7 +104,40 @@
         </table>
       </div>
 
-      <!-- Tab: Historial -->
+      <!-- 2. SEGUNDO BLOQUE (Medio): Contenedor Alertas / Bitácora -->
+      <div *ngIf="mantenimientoTab === 'alertas'">
+        <div *ngIf="alertasMantenimiento.length === 0" class="text-center py-12 text-gray-500">No hay alertas de
+          mantenimiento actuales.</div>
+        <table *ngIf="alertasMantenimiento.length > 0" class="w-full text-left">
+          <thead>
+            <tr class="text-xs font-bold text-gray-500 uppercase">
+              <th class="py-3 px-2">Bien</th>
+              <th class="py-3 px-2">Ubicación</th>
+              <th class="py-3 px-2">Próxima Fecha</th>
+              <th class="py-3 px-2">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr *ngFor="let m of alertasMantenimiento" (click)="abrirDetalleAlerta(m)"
+              class="cursor-pointer hover:shadow-md hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
+              <td class="py-3 px-2 text-sm">
+                <div class="font-bold text-gray-800">{{ m.bien?.codigo_id }}</div>
+                <div class="truncate max-w-[200px] text-gray-600">{{ m.bien?.nombre }}</div>
+              </td>
+              <td class="py-3 px-2 text-sm text-gray-600">
+                <div class="truncate max-w-[150px]" title="{{ m.bien?.cat_ubicaciones?.nombre }}">{{
+                  m.bien?.cat_ubicaciones?.nombre || 'N/A' }}</div>
+              </td>
+              <td class="py-3 px-2 text-sm text-red-500 font-bold">{{ m.proxima_fecha | date:'mediumDate' }}</td>
+              <td class="py-3 px-2"><span
+                  class="px-2.5 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-bold flex items-center w-max"><span
+                    class="material-icons-outlined text-[14px] mr-1">warning</span> Vencido</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 3. TERCER BLOQUE (Bottom): Contenedor Historial Clínico -->
       <div *ngIf="mantenimientoTab === 'historial'">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-bold text-gray-700">Registros Históricos</h3>
@@ -202,18 +208,12 @@
         <textarea [(ngModel)]="trabajoRealizado" rows="3" placeholder="Detalles de la reparación o mantenimiento..."
           class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
       </div>
-      <div>
-        <label class="text-sm font-bold text-gray-700">Próxima Fecha de Mantenimiento <span
-            class="text-red-500">*</span></label>
-        <input type="date" [(ngModel)]="proximaFechaMantenimiento"
-          class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none">
-      </div>
     </div>
     <div class="px-6 py-4 border-t border-gray-100 flex justify-end space-x-3 bg-gray-50">
       <button (click)="showFinalizarModal = false"
         class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
       <button (click)="finalizarMantenimiento()"
-        [disabled]="!trabajoRealizado || !proximaFechaMantenimiento || isSubmitting"
+        [disabled]="!trabajoRealizado || isSubmitting"
         class="px-5 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50">Guardar
         y Reincorporar</button>
     </div>

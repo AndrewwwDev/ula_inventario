@@ -1,0 +1,290 @@
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+  <!-- Fila Superior -->
+  <div class="flex flex-col md:flex-row justify-between items-center gap-4 w-full mb-6">
+    <h2 class="text-lg font-bold text-gray-800">Directorio del Personal</h2>
+    <button (click)="abrirModalAgregar()"
+      class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-sm transition-colors shadow-sm">
+      <span class="material-icons-outlined mr-2 text-[18px]">person_add</span> Agregar Nuevo Personal
+    </button>
+  </div>
+
+  <!-- Tabs de Navegación -->
+  <div class="flex border-b border-gray-200 mb-6">
+    <button (click)="tabActiva = 'Activo'"
+      [ngClass]="tabActiva === 'Activo' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+      class="py-3 px-6 font-semibold text-sm border-b-2 transition-colors">
+      Personal Activo
+    </button>
+    <button (click)="tabActiva = 'Inhabilitado'"
+      [ngClass]="tabActiva === 'Inhabilitado' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+      class="py-3 px-6 font-semibold text-sm border-b-2 transition-colors">
+      Personal Inhabilitado
+    </button>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[800px] text-left border-collapse">
+      <thead>
+        <tr class="border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50/50">
+          <th class="py-3 px-4">Nombres y Apellidos</th>
+          <th class="py-3 px-4">Cédula</th>
+          <th class="py-3 px-4">Cargo / Posición</th>
+          <th class="py-3 px-4 text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr *ngIf="cargando">
+          <td colspan="4" class="py-8 text-center text-gray-500">
+            <span class="material-icons-outlined animate-spin text-3xl text-blue-600">autorenew</span>
+            <p class="mt-2 text-sm font-medium">Cargando datos del personal...</p>
+          </td>
+        </tr>
+        <tr *ngIf="!cargando && personalFiltrado.length === 0">
+          <td colspan="4" class="py-8 text-center text-gray-500">
+            <span class="material-icons-outlined text-4xl mb-2 text-gray-300">group_off</span>
+            <p class="text-sm font-medium">No hay registros de personal en el sistema para esta vista.</p>
+          </td>
+        </tr>
+        <tr *ngFor="let empleado of personalFiltrado" (click)="empleado.estado !== 'Inhabilitado' ? abrirModalBienes(empleado) : null"
+          [ngClass]="empleado.estado !== 'Inhabilitado' ? 'cursor-pointer hover:bg-gray-100 group' : ''"
+          class="transition-colors">
+          <td class="py-3 px-4">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-3 flex-shrink-0">
+                {{ empleado.nombres ? empleado.nombres.charAt(0) : 'U' }}
+              </div>
+              <div>
+                <p class="text-sm font-bold text-gray-800">{{ empleado.nombres }} {{ empleado.apellidos }}</p>
+                <p class="text-xs text-gray-500">{{ empleado.correo || 'Sin correo' }}</p>
+              </div>
+            </div>
+          </td>
+          <td class="py-3 px-4 text-sm font-mono text-gray-700">V-{{ empleado.cedula }}</td>
+          <td class="py-3 px-4 text-sm font-medium text-gray-600">{{ empleado.cargo || 'No especificado' }}</td>
+          <td class="py-3 px-4 text-center">
+            <button (click)="$event.stopPropagation(); abrirModalInhabilitar(empleado)"
+              [ngClass]="empleado.estado === 'Inhabilitado' ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-red-50 text-red-600 hover:bg-red-100'"
+              class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors">
+              <span class="material-icons-outlined text-[18px] mr-1.5">{{ empleado.estado === 'Inhabilitado' ? 'restore' : 'block' }}</span>
+              {{ empleado.estado === 'Inhabilitado' ? 'Reactivar' : 'Inhabilitar' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Bienes Asignados -->
+<div *ngIf="mostrarModalBienes && personalSeleccionado"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4 animate-fade-in">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+    <!-- Modal Header -->
+    <div class="px-6 py-5 border-b border-gray-100 flex items-start justify-between bg-white relative">
+      <div class="flex items-center gap-4">
+        <div
+          class="w-14 h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-bold">
+          {{ personalSeleccionado.nombres ? personalSeleccionado.nombres.charAt(0) : 'U' }}
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-gray-900">{{ personalSeleccionado.nombres }} {{
+            personalSeleccionado.apellidos }}</h2>
+          <div class="flex items-center gap-3 mt-1 text-sm text-gray-600 font-medium">
+            <span class="flex items-center"><span
+                class="material-icons-outlined text-[16px] mr-1 text-gray-400">badge</span> V-{{
+              personalSeleccionado.cedula }}</span>
+            <span class="flex items-center"><span
+                class="material-icons-outlined text-[16px] mr-1 text-gray-400">work</span> {{ personalSeleccionado.cargo
+              || 'N/A' }}</span>
+          </div>
+          <div class="flex items-center gap-3 mt-1 text-xs text-gray-500">
+            <span *ngIf="personalSeleccionado.telefono" class="flex items-center"><span
+                class="material-icons-outlined text-[14px] mr-1">phone</span> {{ personalSeleccionado.telefono }}</span>
+            <span *ngIf="personalSeleccionado.correo" class="flex items-center"><span
+                class="material-icons-outlined text-[14px] mr-1">mail</span> {{ personalSeleccionado.correo }}</span>
+          </div>
+        </div>
+      </div>
+      <button (click)="cerrarModalBienes()"
+        class="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-full p-1 transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="p-6 overflow-y-auto bg-gray-50/50">
+      <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center">
+        <span class="material-icons-outlined mr-2 text-blue-600">devices</span> Bienes Tecnológicos Asignados
+      </h3>
+
+      <div *ngIf="!personalSeleccionado.bienes || personalSeleccionado.bienes.length === 0"
+        class="bg-white border border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-center">
+        <span class="material-icons-outlined text-gray-300 text-5xl mb-3">inventory</span>
+        <p class="text-gray-500 font-medium">Este empleado no posee bienes tecnológicos asignados actualmente.</p>
+      </div>
+
+      <div *ngIf="personalSeleccionado.bienes && personalSeleccionado.bienes.length > 0" class="space-y-3">
+        <div *ngFor="let bien of personalSeleccionado.bienes"
+          class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-sm transition-shadow">
+          <div class="flex items-start gap-4">
+            <div
+              class="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center flex-shrink-0 text-gray-400">
+              <span class="material-icons-outlined text-xl">computer</span>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-gray-900">{{ bien.nombre }}</p>
+              <p class="text-xs font-mono text-gray-500 mt-0.5">ID: {{ bien.codigo_id }}</p>
+            </div>
+          </div>
+          <div class="flex items-center md:justify-end">
+            <span
+              class="px-3 py-1 text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-100 flex items-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-1.5"></span> {{ bien.estado_id || 'Activo' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </div>
+
+<!-- Modal Agregar Personal -->
+    <div *ngIf="mostrarModalAgregar"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4 animate-fade-in">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+          <h2 class="text-lg font-bold text-gray-900">Registrar Personal</h2>
+          <button (click)="cerrarModalAgregar()"
+            class="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-full p-1 transition-colors">
+            <span class="material-icons-outlined">close</span>
+          </button>
+        </div>
+        <form [formGroup]="personalForm" (ngSubmit)="guardarPersonal()" class="flex flex-col overflow-hidden">
+          <div class="overflow-y-auto p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-gray-700 mb-1">Cédula *</label>
+              <input type="text" formControlName="cedula" required placeholder="Ej: V-12345678"
+                class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500"
+                [ngClass]="{'border-red-500': personalForm.get('cedula')?.invalid && personalForm.get('cedula')?.touched}">
+              <p *ngIf="personalForm.get('cedula')?.invalid && personalForm.get('cedula')?.touched"
+                class="text-xs text-red-500 mt-1">
+                Requerido. Formato válido: V-12345678, E-12345678, J-12345678
+              </p>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1">Nombres *</label>
+              <input type="text" formControlName="nombres" required placeholder="Ej: Carlos Alberto"
+                class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500"
+                [ngClass]="{'border-red-500': personalForm.get('nombres')?.invalid && personalForm.get('nombres')?.touched}">
+              <p *ngIf="personalForm.get('nombres')?.invalid && personalForm.get('nombres')?.touched"
+                class="text-xs text-red-500 mt-1">
+                Requerido. Mínimo 3 caracteres.
+              </p>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1">Apellidos *</label>
+              <input type="text" formControlName="apellidos" required placeholder="Ej: Pérez Gómez"
+                class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500"
+                [ngClass]="{'border-red-500': personalForm.get('apellidos')?.invalid && personalForm.get('apellidos')?.touched}">
+              <p *ngIf="personalForm.get('apellidos')?.invalid && personalForm.get('apellidos')?.touched"
+                class="text-xs text-red-500 mt-1">
+                Requerido. Mínimo 3 caracteres.
+              </p>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1">Cargo *</label>
+              <input type="text" formControlName="cargo" required placeholder="Ej: Analista de Sistemas"
+                class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500"
+                [ngClass]="{'border-red-500': personalForm.get('cargo')?.invalid && personalForm.get('cargo')?.touched}">
+              <p *ngIf="personalForm.get('cargo')?.invalid && personalForm.get('cargo')?.touched"
+                class="text-xs text-red-500 mt-1">
+                El cargo es requerido.
+              </p>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1">Teléfono *</label>
+              <input type="text" formControlName="telefono" required placeholder="Ej: 0414-1234567"
+                class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500"
+                [ngClass]="{'border-red-500': personalForm.get('telefono')?.invalid && personalForm.get('telefono')?.touched}">
+              <p *ngIf="personalForm.get('telefono')?.invalid && personalForm.get('telefono')?.touched"
+                class="text-xs text-red-500 mt-1">
+                El teléfono es requerido.
+              </p>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-gray-700 mb-1">Correo *</label>
+              <input type="email" formControlName="correo" required placeholder="Ej: carlos@ula.ve"
+                class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500"
+                [ngClass]="{'border-red-500': personalForm.get('correo')?.invalid && personalForm.get('correo')?.touched}">
+              <p *ngIf="personalForm.get('correo')?.invalid && personalForm.get('correo')?.touched"
+                class="text-xs text-red-500 mt-1">
+                Correo electrónico inválido o requerido.
+              </p>
+            </div>
+          </div>
+          </div>
+          <div class="px-6 pb-6 pt-4 border-t border-gray-100 shrink-0 flex justify-end gap-3 mt-auto bg-white">
+            <button type="button" (click)="cerrarModalAgregar()"
+              class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-bold transition-colors">Cancelar</button>
+            <button type="submit" [disabled]="personalForm.invalid || isSubmitting"
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold transition-colors disabled:opacity-50 flex items-center">
+              <span *ngIf="isSubmitting" class="material-icons-outlined animate-spin mr-2 text-sm">autorenew</span>
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Inhabilitar Personal -->
+    <div *ngIf="mostrarModalInhabilitar && personalSeleccionado"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4 animate-fade-in">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+        <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+          <h2 class="text-lg font-bold text-red-600 flex items-center">
+            <span class="material-icons-outlined mr-2">warning</span> Inhabilitar Personal
+          </h2>
+          <button (click)="cerrarModalInhabilitar()"
+            class="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-full p-1 transition-colors">
+            <span class="material-icons-outlined">close</span>
+          </button>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-gray-600 mb-4">
+            Estás a punto de inhabilitar a <span class="font-bold text-gray-900">{{personalSeleccionado.nombres}}
+              {{personalSeleccionado.apellidos}}</span>.
+            Al hacer esto, todos los bienes tecnológicos que tiene asignados quedarán en estado <span
+              class="font-bold">"Sin Asignación"</span> automáticamente.
+          </p>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1">Motivo de Inhabilitación *</label>
+              <textarea [formControl]="motivoInhabilitacionControl" rows="3" required
+                placeholder="Ej: Jubilación, Renuncia, Cambio de área..."
+                class="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-red-500 transition-colors resize-none"
+                [ngClass]="{'border-red-500': motivoInhabilitacionControl.invalid && motivoInhabilitacionControl.touched}"></textarea>
+              <p *ngIf="motivoInhabilitacionControl.invalid && motivoInhabilitacionControl.touched"
+                class="text-xs text-red-500 mt-1 font-medium">
+                Debe justificar el motivo para poder inhabilitar.
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-6 flex justify-end gap-3">
+            <button type="button" (click)="cerrarModalInhabilitar()"
+              class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-bold transition-colors">Cancelar</button>
+            <button type="button" (click)="confirmarInhabilitacion()"
+              [disabled]="motivoInhabilitacionControl.invalid || isSubmitting"
+              class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-sm">
+              <span *ngIf="isSubmitting" class="material-icons-outlined animate-spin mr-2 text-sm">autorenew</span>
+              Confirmar Baja
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>

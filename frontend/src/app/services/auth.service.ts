@@ -28,6 +28,9 @@ export class AuthService {
       this.ngZone.run(async () => {
         if (event === 'SIGNED_IN') {
           await this.loadUserProfile(session?.user);
+          // Tomar la cédula que loadUserProfile guardó
+          const userCedula = this.currentUserSubject.value?.cedula;
+          await this.logSessionEvent('LOGIN', userCedula);
           
           // Redirigir si estamos en la vista de login
           if (this.router.url.includes('/login')) {
@@ -45,6 +48,8 @@ export class AuthService {
         } else if (event === 'TOKEN_REFRESHED') {
           // El token se refrescó, actualizar el usuario actual
           await this.loadUserProfile(session?.user);
+          const userCedula = this.currentUserSubject.value?.cedula;
+          await this.logSessionEvent('SESION_RENOVADA', userCedula);
         } else if (event === 'PASSWORD_RECOVERY') {
           // Capturado por Supabase Auth a partir del Magic Link
           this.router.navigate(['/restablecer-password']);
@@ -112,8 +117,48 @@ export class AuthService {
     );
   }
 
+  private async logSessionEvent(accion: string, usuarioId: string | null) {
+    if (!usuarioId) return;
+    try {
+      const usuario = this.currentUserSubject.value;
+      let usuarioAfectado = null;
+      if (usuario) {
+        usuarioAfectado = {
+          cedula: usuario.cedula,
+          nombre: `${usuario.nombres || ''} ${usuario.apellidos || ''}`.trim()
+        };
+      }
+
+      let accionDb = accion;
+      if (accion === 'LOGIN') accionDb = 'INICIO_SESION';
+      else if (accion === 'LOGOUT') accionDb = 'CIERRE_SESION';
+
+      await this.supabase.supabase.from('bitacora').insert({
+        cedula_usuario: usuarioId,
+        accion: accionDb,
+        detalles: {
+          operacion: 'SESSION_EVENT',
+          mensaje: `El usuario ${accionDb === 'INICIO_SESION' ? 'inició' : 'cerró'} sesión en el sistema.`,
+          usuario_afectado: usuarioAfectado,
+          dispositivo: navigator.userAgent,
+          timestamp: new Date().toISOString()
+        },
+        fecha_hora: new Date().toISOString()
+      });
+    } catch (e) {
+      console.error('Error registrando auditoría de sesión:', e);
+    }
+  }
+
   async logout() {
-    await this.supabase.auth.signOut();
+    const userCedula = this.currentUserSubject.value?.cedula;
+    try {
+      await this.logSessionEvent('LOGOUT', userCedula);
+    } catch (e) {
+      console.error('Error preventivo al auditar LOGOUT:', e);
+    } finally {
+      await this.supabase.auth.signOut();
+    }
   }
 
   get token(): string | null {

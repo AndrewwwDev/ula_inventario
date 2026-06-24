@@ -13,7 +13,7 @@ export class InventarioService {
     return from((async () => {
       try {
         let query = this.supabase.from('bienes')
-          .select('*, categorias(nombre), cat_estados!inner(nombre), cat_ubicaciones(nombre), cat_areas(nombre), usuarios(nombres, apellidos)')
+          .select('*, categorias(nombre), cat_estados!inner(nombre), cat_ubicaciones(nombre), cat_areas(nombre), personal(cedula, nombres, apellidos, cargo)')
           .neq('cat_estados.nombre', 'Desincorporado');
 
         if (fechaInicio) query = query.gte('fecha_registro', `${fechaInicio}T00:00:00.000Z`);
@@ -21,6 +21,7 @@ export class InventarioService {
         query = query.order('fecha_registro', { ascending: false });
           
         const { data, error } = await query;
+        console.log('🔴 DEEP DEBUGGING - Raw Supabase Data (Primeros 3 registros):', data?.slice(0, 3));
         
         if (error) {
           console.error('[InventarioService] Error consultando bienes. Revisa políticas RLS o conexión:', error.message || error);
@@ -81,7 +82,7 @@ export class InventarioService {
         condicion_fisica: payload.condicion_fisica,
         ubicacion_id: payload.ubicacion_id,
         area_id: payload.area_id,
-        responsable_cedula: payload.responsable_cedula,
+        personal_cedula: payload.personal_cedula,
         estado_id: payload.estado_id,
         marca: payload.marca,
         modelo: payload.modelo,
@@ -161,7 +162,7 @@ export class InventarioService {
       const { data: result, error } = await this.supabase.from('bienes').update({
         ubicacion_id: payload.ubicacion_id,
         area_id: payload.area_id,
-        responsable_cedula: payload.responsable_cedula
+        personal_cedula: payload.personal_cedula
       }).eq('codigo_id', id).select().single();
       
       if (error) throw error;
@@ -171,7 +172,7 @@ export class InventarioService {
         mensaje: mensajeAuditoria,
         nueva_ubicacion: payload.ubicacion_id,
         nueva_area: payload.area_id,
-        nuevo_responsable: payload.responsable_cedula
+        nuevo_responsable: payload.personal_cedula
       });
 
       return result;
@@ -308,16 +309,49 @@ export class InventarioService {
     })());
   }
 
-  buscarUsuariosPredictivo(termino: string) {
+  getPersonalActivo() {
     return from((async () => {
       try {
-        const { data, error } = await this.supabase.from('usuarios')
-          .select('cedula, nombres, apellidos')
-          .or(`cedula.ilike.%${termino}%,nombres.ilike.%${termino}%,apellidos.ilike.%${termino}%`)
-          .limit(10);
-        if (error) { console.warn('Error en buscarUsuariosPredictivo:', error); return []; }
+        const { data, error } = await this.supabase.from('personal')
+          .select('*')
+          .eq('estado', 'Activo')
+          .order('nombres');
+        if (error) { console.warn('Error en getPersonalActivo:', error); return []; }
         return data || [];
-      } catch (err) { console.warn('Excepción en buscarUsuariosPredictivo:', err); return []; }
+      } catch (err) { console.warn('Excepción en getPersonalActivo:', err); return []; }
+    })());
+  }
+
+  buscarCustodiosPredictivo(termino: string) {
+    return from((async () => {
+      try {
+        const pPersonal = this.supabase.from('personal')
+          .select('cedula, nombres, apellidos, cargo')
+          .or(`nombres.ilike.%${termino}%,apellidos.ilike.%${termino}%,cedula.ilike.%${termino}%`)
+          .limit(10);
+
+        const pUsuarios = this.supabase.from('usuarios')
+          .select('cedula, nombres, apellidos, rol')
+          .or(`nombres.ilike.%${termino}%,apellidos.ilike.%${termino}%,cedula.ilike.%${termino}%`)
+          .limit(10);
+
+        const [resPersonal, resUsuarios] = await Promise.all([pPersonal, pUsuarios]);
+
+        const custodios: any[] = [];
+
+        if (resPersonal.data) {
+          resPersonal.data.forEach(p => custodios.push({ ...p, tipoOrigen: 'Personal' }));
+        }
+
+        if (resUsuarios.data) {
+          resUsuarios.data.forEach(u => custodios.push({ ...u, tipoOrigen: u.rol }));
+        }
+
+        return custodios;
+      } catch (err) { 
+        console.warn('Excepción en buscarCustodiosPredictivo:', err); 
+        return []; 
+      }
     })());
   }
 
@@ -327,7 +361,7 @@ export class InventarioService {
         const { data, error } = await this.supabase.from('usuarios')
           .select('cedula')
           .eq('cedula', cedula)
-          .single();
+          .maybeSingle();
         if (error || !data) return false;
         return true;
       } catch (err) { return false; }
@@ -353,7 +387,7 @@ export class InventarioService {
       try {
         const today = new Date().toISOString().split('T')[0];
         let query = this.supabase.from('bienes')
-          .select('*, categorias!inner(nombre), cat_estados!inner(nombre), usuarios(nombres, apellidos)')
+          .select('*, categorias!inner(nombre), cat_estados!inner(nombre), personal(cedula, nombres, apellidos, cargo)')
           .eq('categorias.nombre', 'Computadoras')
           .lte('fecha_proximo_mantenimiento', today)
           .neq('cat_estados.nombre', 'Desincorporado')
@@ -374,7 +408,7 @@ export class InventarioService {
     return from((async () => {
       try {
         let query = this.supabase.from('mantenimientos')
-          .select('*, usuarios(nombres, apellidos, cedula), bienes(nombre, cat_ubicaciones(nombre), cat_areas(nombre))')
+          .select('*, personal(cedula, nombres, apellidos, cargo), bienes(nombre, cat_ubicaciones(nombre), cat_areas(nombre))')
           .eq('estado_reparacion', 'En Proceso');
 
         if (fechaInicio) query = query.gte('fecha_ingreso', `${fechaInicio}T00:00:00.000Z`);
@@ -400,7 +434,7 @@ export class InventarioService {
     return from((async () => {
       try {
         let query = this.supabase.from('mantenimientos')
-          .select('*, usuarios(nombres, apellidos, cedula), bienes(nombre, marca, modelo, responsable_cedula, cat_ubicaciones(nombre), cat_areas(nombre))');
+          .select('*, personal(cedula, nombres, apellidos, cargo), bienes(nombre, marca, modelo, personal_cedula, cat_ubicaciones(nombre), cat_areas(nombre))');
 
         if (fechaInicio) query = query.gte('fecha_ingreso', `${fechaInicio}T00:00:00.000Z`);
         if (fechaFin) query = query.lte('fecha_ingreso', `${fechaFin}T23:59:59.999Z`);
@@ -455,31 +489,52 @@ export class InventarioService {
     })());
   }
 
-  finalizarMantenimiento(id: string, trabajo: string, proximaFecha: string, cedulaTecnico: string, nombreTecnico: string) {
+  finalizarMantenimiento(id: string, trabajo: string, cedulaTecnico: string, nombreTecnico: string) {
     return from((async () => {
-      const { data: mantData } = await this.supabase.from('mantenimientos').select('*').eq('codigo_bien', id).eq('estado_reparacion', 'En Proceso').single();
-      
-      if (mantData) {
-        const { error: updateMantError } = await this.supabase.from('mantenimientos')
+      try {
+        const fechaHoy = new Date();
+        const fechaProximo = new Date();
+        fechaProximo.setMonth(fechaHoy.getMonth() + 6);
+
+        const fechaSalidaIso = fechaHoy.toISOString();
+        const fechaUltimoMantenimiento = fechaSalidaIso.split('T')[0];
+        const fechaProximoMantenimiento = fechaProximo.toISOString().split('T')[0];
+
+        const { data: mantData, error: findError } = await this.supabase.from('mantenimientos')
+          .select('*').eq('codigo_bien', id).eq('estado_reparacion', 'En Proceso').single();
+        if (findError && findError.code !== 'PGRST116') throw findError;
+        
+        if (mantData) {
+          const { error: updateMantError } = await this.supabase.from('mantenimientos')
+            .update({ 
+              estado_reparacion: 'Finalizado', 
+              trabajo_realizado: trabajo, 
+              fecha_salida: fechaSalidaIso,
+              cedula_tecnico: cedulaTecnico 
+            })
+            .eq('id', mantData.id);
+          if (updateMantError) throw updateMantError;
+        }
+
+        const { data: estadoActivo, error: estadoError } = await this.supabase.from('cat_estados')
+          .select('id').eq('nombre', 'Activo').single();
+        if (estadoError) throw estadoError;
+
+        const { error: updateError } = await this.supabase.from('bienes')
           .update({ 
-            estado_reparacion: 'Finalizado', 
-            trabajo_realizado: trabajo, 
-            fecha_salida: new Date().toISOString(),
-            cedula_tecnico: cedulaTecnico 
+            estado_id: estadoActivo.id, 
+            fecha_ultimo_mantenimiento: fechaUltimoMantenimiento,
+            fecha_proximo_mantenimiento: fechaProximoMantenimiento 
           })
-          .eq('id', mantData.id);
-        if (updateMantError) throw updateMantError;
+          .eq('codigo_id', id);
+        if (updateError) throw updateError;
+        
+        await this.logBitacora('MANTENIMIENTO_FIN', 'bienes', id, `Mantenimiento finalizado por ${nombreTecnico}. Trabajo: ${trabajo}`);
+        return { success: true };
+      } catch (error) {
+        console.error('[ERROR CRÍTICO]', error);
+        throw error;
       }
-
-      const { data: estadoActivo } = await this.supabase.from('cat_estados').select('id').eq('nombre', 'Activo').single();
-
-      const { error: updateError } = await this.supabase.from('bienes')
-        .update({ estado_id: estadoActivo!.id, fecha_proximo_mantenimiento: proximaFecha })
-        .eq('codigo_id', id);
-      if (updateError) throw updateError;
-      
-      await this.logBitacora('MANTENIMIENTO_FIN', 'bienes', id, `Mantenimiento finalizado por ${nombreTecnico}. Trabajo: ${trabajo}`);
-      return { success: true };
     })());
   }
 
@@ -487,7 +542,7 @@ export class InventarioService {
   getBitacora(fechaInicio?: string, fechaFin?: string) {
     return from((async () => {
       try {
-        let query = this.supabase.from('bitacora').select('*');
+        let query = this.supabase.from('bitacora').select('*, usuarios(nombres, apellidos, rol, cargo)');
         if (fechaInicio) query = query.gte('fecha_hora', `${fechaInicio}T00:00:00.000Z`);
         if (fechaFin) query = query.lte('fecha_hora', `${fechaFin}T23:59:59.999Z`);
         query = query.order('fecha_hora', { ascending: false });
@@ -546,7 +601,7 @@ export class InventarioService {
       try {
         let query = this.supabase.from('bienes')
           .select('*, categorias(nombre), cat_estados!inner(nombre)')
-          .eq('responsable_cedula', cedula)
+          .eq('personal_cedula', cedula)
           .neq('cat_estados.nombre', 'Desincorporado');
 
         if (fechaInicio) query = query.gte('fecha_registro', `${fechaInicio}T00:00:00.000Z`);

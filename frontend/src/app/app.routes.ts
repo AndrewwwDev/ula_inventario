@@ -17,6 +17,7 @@ import { authGuard } from './guards/auth.guard';
 import { publicGuard } from './guards/public.guard';
 import { roleGuard } from './guards/role.guard';
 import { PublicBienComponent } from './pages/public-bien/public-bien.component';
+import { PersonalComponent } from './pages/personal/personal.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -38,6 +39,7 @@ export const routes: Routes = [
       { path: 'bitacora', component: BitacoraComponent },
       { path: 'usuarios', component: UsuariosComponent, canActivate: [roleGuard] },
       { path: 'manual-usuario', component: ManualUsuarioComponent, canActivate: [roleGuard] },
+      { path: 'personal', component: PersonalComponent },
       { path: 'cambiar-password', component: CambiarPasswordComponent },
       { path: 'reglas-desincorporacion', component: ReglasDesincorporacionComponent },
       { path: 'configuracion', component: ConfiguracionSistemaComponent, canActivate: [roleGuard] }

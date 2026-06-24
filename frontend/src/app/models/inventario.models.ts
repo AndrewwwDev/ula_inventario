@@ -17,7 +17,13 @@ export interface Bien {
   condicion_fisica: string;
   ubicacion_id: string; // Foreign Key a cat_ubicaciones
   area_id: string;      // Foreign Key a cat_areas
-  responsable_cedula: string;
+  personal_cedula: string;
+  personal?: {
+    cedula: string;
+    nombres: string;
+    apellidos: string;
+    cargo?: string;
+  };
   url_foto_principal?: string;
   marca?: string;
   modelo?: string;

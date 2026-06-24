@@ -31,7 +31,7 @@ export class UsuariosComponent implements OnInit {
     nombres: '',
     apellidos: '',
     cargo: '',
-    rol: 'Usuario'
+    rol: 'Administrador'
   };
 
   constructor(
@@ -75,7 +75,7 @@ export class UsuariosComponent implements OnInit {
       nombres: '',
       apellidos: '',
       cargo: '',
-      rol: 'Usuario'
+      rol: 'Administrador'
     };
     this.showCreateModal = true;
   }
@@ -90,7 +90,7 @@ export class UsuariosComponent implements OnInit {
         nombres: '',
         apellidos: '',
         cargo: '',
-        rol: 'Usuario'
+        rol: 'Administrador'
       });
     }
   }

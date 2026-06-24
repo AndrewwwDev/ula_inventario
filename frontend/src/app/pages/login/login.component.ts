@@ -50,10 +50,14 @@ export class LoginComponent {
       } catch (err: any) {
         console.error('[Login] Error:', err);
         this.isLoading = false;
-        if (err.message === 'Invalid login credentials') {
-          this.errorMessage = 'Credenciales de inicio de sesión no válidas';
+        
+        // Manejo de AuthApiError sin romper la experiencia
+        if (err.message === 'Invalid login credentials' || err.name === 'AuthApiError' || err.status === 400) {
+          this.errorMessage = 'Correo o contraseña incorrectos';
+          this.toastService.show('Correo o contraseña incorrectos', 'error');
         } else {
-          this.errorMessage = err.message || 'Credenciales incorrectas o error de conexión';
+          this.errorMessage = err.message || 'Error de conexión o credenciales inválidas';
+          this.toastService.show(this.errorMessage, 'error');
         }
       }
     }

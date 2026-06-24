@@ -15,20 +15,22 @@
       </div>
     </div>
 
-    <!-- Filtro por Fecha -->
+    <!-- Filtro por Fecha Reactivo -->
     <div class="flex flex-wrap items-center gap-3 mb-4 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
       <label class="text-sm text-gray-500 font-medium">Rango:</label>
       <div class="flex items-center space-x-2">
         <span class="text-xs text-gray-400">Desde</span>
-        <input type="date" [(ngModel)]="fechaInicio" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
+        <input type="date" [(ngModel)]="fechaInicio" (ngModelChange)="aplicarFiltroFecha()" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32 cursor-pointer transition-shadow hover:shadow-sm">
       </div>
       <div class="flex items-center space-x-2">
         <span class="text-xs text-gray-400">Hasta</span>
-        <input type="date" [(ngModel)]="fechaFin" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
+        <input type="date" [(ngModel)]="fechaFin" (ngModelChange)="aplicarFiltroFecha()" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32 cursor-pointer transition-shadow hover:shadow-sm">
       </div>
       <div class="flex items-center space-x-2 ml-auto sm:ml-2 mt-2 sm:mt-0">
-        <button (click)="aplicarFiltroFecha()" class="bg-primary hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm transition-colors">Filtrar</button>
-        <button *ngIf="fechaInicio || fechaFin" (click)="limpiarFiltroFecha()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">Limpiar</button>
+        <button (click)="limpiarFiltroFecha()" class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-800 transition-colors shadow-sm ml-2">
+          <span class="material-icons text-base text-gray-500">cleaning_services</span>
+          Limpiar
+        </button>
       </div>
     </div>
 

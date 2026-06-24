@@ -54,13 +54,7 @@ export class BitacoraComponent implements OnInit {
       this.allBitacoraLogs = data;
 
       if (this.filtroAccion) {
-        if (this.filtroAccion === 'MANTENIMIENTO') {
-          this.bitacoraLogs = this.allBitacoraLogs.filter(log => log.accion && log.accion.includes('MANTENIMIENTO'));
-        } else if (this.filtroAccion === 'TRASLADO') {
-          this.bitacoraLogs = this.allBitacoraLogs.filter(log => log.accion && log.accion.includes('TRASLADO'));
-        } else {
-          this.bitacoraLogs = this.allBitacoraLogs.filter(log => log.accion === this.filtroAccion);
-        }
+        this.bitacoraLogs = this.allBitacoraLogs.filter(log => log.accion === this.filtroAccion);
       } else {
         this.bitacoraLogs = this.allBitacoraLogs;
       }
@@ -89,8 +83,8 @@ export class BitacoraComponent implements OnInit {
 
     const columnas = ['Usuario', 'Acción Realizada', 'Bien/Entidad', 'Detalles', 'Fecha/Hora'];
     const dataFilas = datos.map(item => {
-      const accionStr = item.accion ? item.accion.replace('_', ' ') : 'Desconocida';
-      const usuarioStr = item.detalles?.usuario_nombre || item.cedula_usuario || 'Sistema';
+      const accionStr = item.accion ? item.accion.replace(/_/g, ' ') : 'Desconocida';
+      const usuarioStr = item.usuarios?.nombres ? `${item.usuarios.nombres} ${item.usuarios.apellidos} (C.I. ${item.cedula_usuario})` : item.cedula_usuario || 'Sistema';
       const bienStr = item.codigo_bien || 'N/A';
       const detallesStr = item.detalles?.mensaje || (this.isString(item.detalles) ? item.detalles : 'Sin detalles adicionales');
       const fechaStr = item.fecha_hora ? new Date(item.fecha_hora).toLocaleString() : 'N/A';
@@ -160,5 +154,31 @@ export class BitacoraComponent implements OnInit {
     this.showModal = false;
     this.selectedLog = null;
     this.selectedBien = null;
+  }
+
+  getChangedFields(log: any): {key: string, old: any, new: any}[] {
+    const oldData = log.detalles?.datos_anteriores;
+    const newData = log.detalles?.datos_nuevos;
+    if (!oldData || !newData) return [];
+    
+    const changes: {key: string, old: any, new: any}[] = [];
+    for (const key of Object.keys(newData)) {
+      if (oldData[key] !== newData[key]) {
+        changes.push({
+          key,
+          old: oldData[key],
+          new: newData[key]
+        });
+      }
+    }
+    return changes;
+  }
+
+  getInsertedOrDeletedFields(data: any): {key: string, value: any}[] {
+    if (!data) return [];
+    return Object.keys(data).map(key => ({
+      key,
+      value: data[key]
+    })).filter(item => item.value !== null && typeof item.value !== 'object');
   }
 }

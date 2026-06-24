@@ -6,7 +6,7 @@ import { ToastService } from '../../services/toast.service';
 import { PdfExportService } from '../../services/pdf-export.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-mantenimiento',
@@ -16,7 +16,7 @@ import { Router } from '@angular/router';
 })
 export class MantenimientoComponent implements OnInit {
 
-  mantenimientoTab: 'alertas' | 'reparacion' | 'historial' = 'alertas';
+  mantenimientoTab: 'alertas' | 'reparacion' | 'historial' = 'reparacion';
   alertasMantenimiento: any[] = [];
   enReparacion: any[] = [];
   historialMantenimiento: any[] = [];
@@ -24,7 +24,6 @@ export class MantenimientoComponent implements OnInit {
 
   showFinalizarModal = false;
   trabajoRealizado = '';
-  proximaFechaMantenimiento = '';
   finalizandoBienId: string | null = null;
   isSubmitting = false;
   currentUser: any = null;
@@ -85,10 +84,17 @@ export class MantenimientoComponent implements OnInit {
     private pdfExportService: PdfExportService,
     private supabaseService: SupabaseService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['vista'] === 'alertas') {
+        this.mantenimientoTab = 'alertas';
+      }
+    });
+
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
@@ -139,12 +145,11 @@ export class MantenimientoComponent implements OnInit {
   openFinalizarMantenimiento(item: any) {
     this.finalizandoBienId = item.codigo_id;
     this.trabajoRealizado = '';
-    this.proximaFechaMantenimiento = '';
     this.showFinalizarModal = true;
   }
 
   finalizarMantenimiento() {
-    if (!this.finalizandoBienId || !this.trabajoRealizado || !this.proximaFechaMantenimiento) {
+    if (!this.finalizandoBienId || !this.trabajoRealizado) {
       this.toastService.show('Por favor llene todos los campos', 'warning');
       return;
     }
@@ -157,7 +162,6 @@ export class MantenimientoComponent implements OnInit {
     this.inventarioService.finalizarMantenimiento(
       this.finalizandoBienId, 
       this.trabajoRealizado, 
-      this.proximaFechaMantenimiento,
       cedulaTecnico,
       nombreTecnico
     ).subscribe({
@@ -241,6 +245,38 @@ export class MantenimientoComponent implements OnInit {
     this.fechaInicio = '';
     this.fechaFin = '';
     this.ordenarPor = 'Mas recientes';
+  }
+
+  exportarReparacionPDF() {
+    if (!this.enReparacion || this.enReparacion.length === 0) {
+      this.toastService.show('No hay equipos en reparación para exportar.', 'warning');
+      return;
+    }
+
+    const columnas = ['Código', 'Nombre', 'Ubicación', 'Descripción de Falla'];
+    
+    const dataFilas = this.enReparacion.map(item => {
+      const ubicacionCompleta = item.area ? `${item.ubicacion} - ${item.area}` : (item.ubicacion || 'N/A');
+      return [
+        item.codigo_id || 'N/A',
+        item.nombre || 'N/A',
+        ubicacionCompleta,
+        item.motivo_falla || item.trabajo_realizado || 'N/A'
+      ];
+    });
+
+    let periodo = '';
+    if (this.fechaInicio && this.fechaFin) {
+      periodo = `Desde: ${this.fechaInicio} - Hasta: ${this.fechaFin}`;
+    } else if (this.fechaInicio) {
+      periodo = `Desde: ${this.fechaInicio}`;
+    } else if (this.fechaFin) {
+      periodo = `Hasta: ${this.fechaFin}`;
+    } else {
+      periodo = 'Equipos actualmente en proceso';
+    }
+
+    this.pdfExportService.generarReporte('Reporte de Equipos en Reparación', columnas, dataFilas, periodo);
   }
 
   async abrirModalDetalle(item: any) {

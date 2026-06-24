@@ -15,6 +15,13 @@ export const authGuard: CanActivateFn = async (route, state) => {
       return true; // Hay sesión, permitir paso
     }
 
+    // Prevención de Condiciones de Carrera (Race Conditions)
+    // A veces getSession() retorna null si Supabase aún está procesando el token en localStorage
+    const user = await supabaseService.getUser();
+    if (user) {
+      return true;
+    }
+
     return router.createUrlTree(['/login']);
   } catch (error) {
     console.error('[authGuard] Error consultando sesión:', error);

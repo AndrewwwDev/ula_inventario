@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -6,7 +6,7 @@ import { InventarioService } from '../../services/inventario.service';
 import { ToastService } from '../../services/toast.service';
 import { ActivatedRoute } from '@angular/router';
 import { debounceTime, distinctUntilChanged, switchMap, filter, tap, catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { QRCodeModule } from 'angularx-qrcode';
 import { ResponsableAutocompleteComponent } from '../../components/responsable-autocomplete/responsable-autocomplete.component';
 import { PdfExportService } from '../../services/pdf-export.service';
@@ -35,10 +35,13 @@ export class InventarioComponent implements OnInit {
   cat_estados: any[] = [];
   cat_ubicaciones: any[] = [];
   cat_areas: any[] = [];
-  usuarios: any[] = [];
+  personal: any[] = [];
 
   // --- Search & Filters ---
   searchQuery = '';
+  searchSubject = new Subject<string>();
+  sugerenciasBusqueda: any[] = [];
+  mostrarDropdown = false;
   filtroUbicacion = '';
   filtroCategoria = '';
   filtroEstado = '';
@@ -70,10 +73,32 @@ export class InventarioComponent implements OnInit {
     this.loadOptions();
     this.loadInventory();
     
+    // Autocompletado Búsqueda Dual con RxJS
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(term => {
+      this.searchQuery = term;
+      if (term.length >= 2) {
+        this.generarSugerencias(term);
+      } else {
+        this.sugerenciasBusqueda = [];
+        this.mostrarDropdown = false;
+      }
+      this.applyFilters();
+    });
+    
     // Check if we need to open a specific modal from another view
     this.route.queryParams.subscribe(params => {
+      if (params['condicion']) {
+        this.filtroCondicion = params['condicion'];
+      }
       if (params['estado']) {
         this.filtroEstado = params['estado'];
+      }
+      
+      if (this.allInventory && this.allInventory.length > 0) {
+        this.applyFilters();
       }
       if (params['action'] === 'mantenimiento' && params['id']) {
         // Wait for inventory to load to find the item
@@ -108,7 +133,13 @@ export class InventarioComponent implements OnInit {
           this.toastService.show('Error: No se pudieron cargar los datos del servidor o no hay bienes.', 'error');
         }
         this.allInventory = (data || []).filter((item: any) => item.cat_estados?.nombre !== 'Desincorporado');
-        this.applyFilters();
+        
+        // NUEVO: Verificación de filtros en espera tras la carga
+        if (this.filtroCondicion || this.filtroEstado) {
+          this.applyFilters();
+        } else {
+          this.applyFilters(); // Aplicamos filtro inicial por si hay búsqueda por defecto
+        }
       },
       error: (err) => {
         this.toastService.show('Error: No se pudieron cargar los datos del servidor. Verifica tus permisos', 'error');
@@ -141,28 +172,116 @@ export class InventarioComponent implements OnInit {
       this.cat_areas = res || [];
     });
 
-    // Cargar usuarios para el mapeo de nombres en modales (Requerimiento 1)
-    this.supabaseService.supabase.from('usuarios').select('cedula, nombres, apellidos').then(({ data }) => {
-      if (data) {
-        this.usuarios = data;
+    // Cargar personal para el mapeo de nombres en modales (Requerimiento 1)
+    this.inventarioService.getPersonalActivo().subscribe({
+      next: (data) => {
+        this.personal = data;
       }
     });
   }
 
   // Phase 1: Mapeo Relacional de Encargado en Traslados
   obtenerNombreEncargadoActual(): string {
-    if (!this.bienATrasladar || !this.bienATrasladar.responsable_cedula || !this.usuarios || this.usuarios.length === 0) {
+    if (!this.bienATrasladar || !this.bienATrasladar.personal_cedula || !this.personal || this.personal.length === 0) {
       return 'Sin Asignación';
     }
-    const usuario = this.usuarios.find((u: any) => u.cedula === this.bienATrasladar.responsable_cedula);
-    return usuario ? `${usuario.nombres} ${usuario.apellidos}` : 'Sin Asignación';
+    const persona = this.personal.find((p: any) => p.cedula === this.bienATrasladar.personal_cedula);
+    return persona ? `${persona.nombres} ${persona.apellidos}` : 'Sin Asignación';
   }
 
   obtenerNombrePorCedula(cedula: string): string {
     if (!cedula) return 'Sin Asignación';
-    if (!this.usuarios || this.usuarios.length === 0) return 'Sin Asignación';
-    const usuario = this.usuarios.find(u => u.cedula === cedula);
-    return usuario ? `${usuario.nombres} ${usuario.apellidos}` : 'Usuario no registrado';
+    if (!this.personal || this.personal.length === 0) return 'Sin Asignación';
+    const persona = this.personal.find(p => p.cedula === cedula);
+    return persona ? `${persona.nombres} ${persona.apellidos}` : 'Personal no registrado';
+  }
+
+  // --- Search Autocomplete ---
+  async generarSugerencias(evento: any) {
+    // 1. Extracción ultra-segura del valor (Soporta evento nativo, ngModel, o FormControl)
+    const valor = evento?.target?.value ?? evento?.value ?? evento;
+
+    if (typeof valor !== 'string') {
+        return; // Si no es un string válido, aborta silenciosamente
+    }
+
+    const termino = valor.trim().toLowerCase();
+    
+    // 2. Limpieza básica y reseteo
+    if (termino.length < 2) {
+      this.sugerenciasBusqueda = [];
+      this.mostrarDropdown = false;
+      this.loadInventory(); // Recarga la tabla inicial si se borra el texto
+      return;
+    }
+
+    try {
+      // BÚSQUEDA PARALELA (Omnibox)
+      const [resBienes, resPersonal] = await Promise.all([
+        // 1. Busca en equipos
+        this.supabaseService.supabase.from('bienes')
+          .select('codigo_id, nombre')
+          .or(`nombre.ilike.%${termino}%,codigo_id.ilike.%${termino}%`)
+          .limit(5),
+        // 2. Busca en personas
+        this.supabaseService.supabase.from('personal')
+          .select('cedula, nombres, apellidos')
+          .or(`nombres.ilike.%${termino}%,apellidos.ilike.%${termino}%,cedula.ilike.%${termino}%`)
+          .limit(5)
+      ]);
+
+      const sugerencias: any[] = [];
+
+      // Mapear equipos encontrados
+      if (resBienes.data) {
+        resBienes.data.forEach(b => {
+          sugerencias.push({
+            textoVisible: `💻 ${b.nombre} (ID: ${b.codigo_id})`,
+            valorBusqueda: b.codigo_id,
+            tipo: 'bien'
+          });
+        });
+      }
+
+      // Mapear personas encontradas
+      if (resPersonal.data) {
+        resPersonal.data.forEach(u => {
+          sugerencias.push({
+            textoVisible: `👤 ${u.nombres} ${u.apellidos} (C.I: ${u.cedula})`,
+            valorBusqueda: u.cedula,
+            tipo: 'personal'
+          });
+        });
+      }
+
+      this.sugerenciasBusqueda = sugerencias;
+      this.mostrarDropdown = this.sugerenciasBusqueda.length > 0;
+
+    } catch (error) {
+      console.error('[Error Omnibox] Fallo en la búsqueda:', error);
+      this.mostrarDropdown = false;
+    }
+  }
+
+  seleccionarSugerencia(sug: any) {
+    this.searchQuery = sug.valorBusqueda;
+    this.mostrarDropdown = false;
+    this.applyFilters();
+  }
+
+  onSearchInput() {
+    this.searchSubject.next(this.searchQuery);
+    if (!this.searchQuery) {
+      this.applyFilters();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  cerrarDropdownBusqueda(event: Event) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.search-container')) {
+      this.mostrarDropdown = false;
+    }
   }
 
   // --- Filtering & Infinite Scroll ---
@@ -188,9 +307,13 @@ export class InventarioComponent implements OnInit {
     if (this.searchQuery && this.searchQuery.trim() !== '') {
       const q = this.searchQuery.toLowerCase();
       result = result.filter(item =>
-        (item.nombre && item.nombre.toLowerCase().includes(q)) ||
-        (item.codigo_id && item.codigo_id.toLowerCase().includes(q)) ||
-        (item.descripcion && item.descripcion.toLowerCase().includes(q))
+        (item.nombre && item.nombre?.toLowerCase().includes(q)) ||
+        (item.codigo_id && item.codigo_id?.toLowerCase().includes(q)) ||
+        (item.descripcion && item.descripcion?.toLowerCase().includes(q)) ||
+        (item.serial && item.serial?.toLowerCase().includes(q)) ||
+        (item.marca && item.marca?.toLowerCase().includes(q)) ||
+        (item.modelo && item.modelo?.toLowerCase().includes(q)) ||
+        (item.personal_cedula && item.personal_cedula?.toLowerCase().includes(q))
       );
     }
 
@@ -289,9 +412,6 @@ export class InventarioComponent implements OnInit {
     this.loadInventory();
   }
 
-  onSearchInput() {
-    this.applyFilters();
-  }
 
   onScroll(event: any) {
     const element = event.target;
@@ -321,7 +441,7 @@ export class InventarioComponent implements OnInit {
       if (this.allInventory.length > 0) {
         const randomItem = this.allInventory[Math.floor(Math.random() * this.allInventory.length)];
         this.searchQuery = randomItem.codigo_id;
-        this.onSearchInput();
+        this.applyFilters();
         this.toastService.show(`Código ${randomItem.codigo_id} escaneado con éxito`, 'success');
       } else {
         this.toastService.show('No hay bienes para escanear', 'warning');
@@ -347,7 +467,7 @@ export class InventarioComponent implements OnInit {
     tipoTraslado: '',
     ubicacion_id: '',
     area_id: '',
-    responsable_cedula: ''
+    personal_cedula: ''
   };
   bienADesincorporar: any = null;
   bienSeleccionado: any = null;
@@ -373,12 +493,38 @@ export class InventarioComponent implements OnInit {
 
   guardarBien() {
     this.isSubmitting = true;
-    
-    let payload: any = this.nuevoBien;
+
+    // 1. Lógica de Extracción de Identificador y Validación Estricta
+    let cedulaValidada: string | null = null;
+    const responsableInput = this.nuevoBien.personal_cedula || this.nuevoBien.responsable_cedula;
+
+    if (responsableInput) {
+      if (typeof responsableInput === 'object' && 'cedula' in responsableInput) {
+        // Si el autocompletado pasó el objeto completo, extraemos la cédula
+        cedulaValidada = responsableInput.cedula;
+      } else if (typeof responsableInput === 'string' && responsableInput.trim() !== '') {
+        // Si pasó un string, verificamos si es una cédula válida (Ej: V-12345678 o 12345678)
+        // Ajustamos la regex para permitir prefijos V-, E-, J- y números
+        const esCedulaValida = /^([VvEeJjPpGg]-?)?\d+$/.test(responsableInput.trim());
+        
+        // Si es válida, la usamos; si no, forzamos null para no enviar texto basura
+        cedulaValidada = esCedulaValida ? responsableInput.trim().toUpperCase() : null;
+      }
+    }
+
+    // 2. Empaquetado del Payload unificado
+    this.nuevoBien.personal_cedula = cedulaValidada;
+    delete this.nuevoBien.responsable_cedula; // Limpieza obligatoria por seguridad
+
+    let payload: any = { ...this.nuevoBien };
+
+    console.log('🔴 DEEP DEBUGGING - Payload Local antes de Supabase:', payload);
+
     if (this.selectedFile) {
       payload = new FormData();
       Object.keys(this.nuevoBien).forEach(k => {
-        if (this.nuevoBien[k] !== undefined && this.nuevoBien[k] !== null) {
+        // Ignoramos nulos, undefined y la llave antigua
+        if (this.nuevoBien[k] !== undefined && this.nuevoBien[k] !== null && k !== 'responsable_cedula') {
           payload.append(k, this.nuevoBien[k]);
         }
       });
@@ -394,7 +540,7 @@ export class InventarioComponent implements OnInit {
       },
       error: (err: any) => {
         this.isSubmitting = false;
-        this.toastService.show('Error al registrar: ' + (err.error?.message || err.message), 'error');
+        this.toastService.show('Error al registrar bien: ' + (err.error?.message || err.message), 'error');
       }
     });
   }
@@ -451,7 +597,7 @@ export class InventarioComponent implements OnInit {
       tipoTraslado: 'Interno',
       ubicacion_id: item.ubicacion_id || '',
       area_id: item.area_id || '',
-      responsable_cedula: item.responsable_cedula || ''
+      personal_cedula: item.personal_cedula || ''
     };
     this.showTrasladoModal = true;
   }
@@ -460,7 +606,7 @@ export class InventarioComponent implements OnInit {
     if (!this.bienATrasladar) return false;
     const ubicacionSinCambio = this.datosTraslado.ubicacion_id === this.bienATrasladar.ubicacion_id;
     const areaSinCambio = this.datosTraslado.area_id === this.bienATrasladar.area_id;
-    const responsableSinCambio = String(this.datosTraslado.responsable_cedula || '').trim() === String(this.bienATrasladar.responsable_cedula || '').trim();
+    const responsableSinCambio = String(this.datosTraslado.personal_cedula || '').trim() === String(this.bienATrasladar.personal_cedula || '').trim();
 
     // Es inválido si NADA cambió o si hay campos vacíos obligatorios
     if (!this.datosTraslado.ubicacion_id || !this.datosTraslado.area_id) return false;
@@ -469,18 +615,18 @@ export class InventarioComponent implements OnInit {
   }
 
   confirmarTraslado() {
-    if (!this.bienATrasladar || !this.datosTraslado.ubicacion_id || !this.datosTraslado.responsable_cedula) return;
+    if (!this.bienATrasladar || !this.datosTraslado.ubicacion_id || !this.datosTraslado.personal_cedula) return;
 
     this.isSubmitting = true;
     
     const accion = this.datosTraslado.tipoTraslado === 'Interno' ? 'TRASLADO_INTERNO' : 'TRASLADO_EXTERNO';
-    const mensajeAuditoria = `Equipo trasladado a nueva ubicación [ID: ${this.datosTraslado.ubicacion_id}] y entregado a [${this.datosTraslado.responsable_cedula}]`;
+    const mensajeAuditoria = `Equipo trasladado a nueva ubicación [ID: ${this.datosTraslado.ubicacion_id}] y entregado a [${this.datosTraslado.personal_cedula}]`;
 
     const payloadUpdate = {
       ...this.bienATrasladar,
       ubicacion_id: this.datosTraslado.ubicacion_id,
       area_id: this.datosTraslado.area_id,
-      responsable_cedula: this.datosTraslado.responsable_cedula
+      personal_cedula: this.datosTraslado.personal_cedula
     };
 
     this.inventarioService.registrarTraslado(this.bienATrasladar.codigo_id, payloadUpdate, accion, mensajeAuditoria).subscribe({
@@ -523,6 +669,105 @@ export class InventarioComponent implements OnInit {
   cerrarVistaPrevia() {
     this.showVistaPreviaModal = false;
     this.bienSeleccionado = null;
+    this.mostrarHojaVida = false;
+    this.historialActivo = [];
+  }
+
+  // --- Estado del Acordeón y Bitácora ---
+  mostrarHojaVida = false;
+  historialActivo: any[] = [];
+  cargandoHistorial = false;
+
+  toggleHojaVida() {
+    this.mostrarHojaVida = !this.mostrarHojaVida;
+    if (this.mostrarHojaVida && this.historialActivo.length === 0) {
+      this.cargarHistorialActivo();
+    }
+  }
+
+  async cargarHistorialActivo() {
+    if (!this.bienSeleccionado?.codigo_id) return;
+    this.cargandoHistorial = true;
+    try {
+      const { data, error } = await this.supabaseService.supabase
+        .from('bitacora')
+        .select(`
+          *,
+          usuarios ( nombres, apellidos )
+        `)
+        .eq('codigo_bien', this.bienSeleccionado.codigo_id)
+        .order('fecha_hora', { ascending: false });
+      
+      if (error) throw error;
+      this.historialActivo = data || [];
+    } catch (err) {
+      console.error('Error al cargar la bitácora del bien', err);
+      this.toastService.show('Error al cargar la hoja de vida', 'error');
+    } finally {
+      this.cargandoHistorial = false;
+    }
+  }
+
+  exportarHojaVidaPDF() {
+    if (!this.bienSeleccionado) return;
+    import('jspdf').then(jsPDF => {
+      import('jspdf-autotable').then(autoTable => {
+        const doc = new jsPDF.default();
+        doc.text(`Hoja de Vida del Activo - ${this.bienSeleccionado.codigo_id}`, 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Nombre: ${this.bienSeleccionado.nombre}`, 14, 25);
+        doc.text(`Serial: ${this.bienSeleccionado.serial || 'N/A'}`, 14, 30);
+        
+        const tableData = this.historialActivo.map(h => [
+          new Date(h.fecha_hora).toLocaleDateString() + ' ' + new Date(h.fecha_hora).toLocaleTimeString(),
+          h.tipo_accion,
+          h.detalles_json?.mensaje || 'N/A',
+          h.detalles_json?.usuario_nombre || 'N/A'
+        ]);
+
+        autoTable.default(doc, {
+          head: [['Fecha', 'Acción', 'Detalle', 'Responsable']],
+          body: tableData,
+          startY: 40,
+          styles: { fontSize: 8 }
+        });
+
+        doc.save(`Hoja_Vida_${this.bienSeleccionado.codigo_id}.pdf`);
+      });
+    });
+  }
+
+  registroSeleccionado: any = null;
+
+  abrirDetalles(item: any) {
+    console.log('Objeto completo de la bitácora:', item);
+    this.registroSeleccionado = item;
+  }
+
+  cerrarDetalles() {
+    this.registroSeleccionado = null;
+  }
+
+  obtenerDetallesLista(item: any): { clave: string, valor: any }[] {
+    if (!item) return [];
+
+    // 1. Diagnóstico: Recopilamos todos los campos relevantes de la bitácora
+    const camposRelevantes = {
+      'Acción': item.accion || item.action || item.tipo_accion,
+      'Comentarios': item.comentarios || item.observaciones || item.descripcion || item.mensaje,
+      'Detalles Técnicos': item.detalles || item.detalles_json, 
+      'Ubicación Origen': item.origen || item.ubicacion_anterior,
+      'Ubicación Destino': item.destino || item.nueva_ubicacion,
+      'Motivo': item.motivo || item.razon
+    };
+
+    // 2. Transformación: Filtramos solo lo que tiene valor real
+    return Object.entries(camposRelevantes)
+      .filter(([_, valor]) => valor !== null && valor !== undefined && valor !== '')
+      .map(([clave, valor]) => ({
+        clave: clave.toUpperCase(),
+        valor: (typeof valor === 'object') ? JSON.stringify(valor) : valor
+      }));
   }
 
   cerrarModalMantenimiento() {
