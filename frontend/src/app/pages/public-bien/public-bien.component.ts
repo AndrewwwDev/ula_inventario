@@ -33,11 +33,20 @@ export class PublicBienComponent implements OnInit {
   async cargarDetalles(id: string) {
     try {
       const { data, error } = await this.supabaseService.supabase
-        .rpc('consultar_bien_qr', { p_codigo: id })
+        .from('bienes')
+        .select(`
+          *,
+          categorias (nombre),
+          cat_estados (nombre),
+          cat_ubicaciones (nombre),
+          cat_areas (nombre),
+          personal (cedula, nombres, apellidos)
+        `)
+        .eq('codigo_id', id)
         .single();
 
       if (error) {
-        console.error('Error RPC:', error.message);
+        console.error('🔴 Error consultando bien público:', error);
         this.error = true;
         this.loading = false;
         return;
@@ -46,6 +55,7 @@ export class PublicBienComponent implements OnInit {
       if (!data) {
         this.error = true;
       } else {
+        console.log('🔴 DEEP DEBUGGING - Respuesta Cruda Supabase (Vista Pública):', data);
         this.bien = data;
         this.error = false;
       }

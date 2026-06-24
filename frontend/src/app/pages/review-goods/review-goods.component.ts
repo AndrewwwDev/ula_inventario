@@ -107,9 +107,10 @@ export class ReviewGoodsComponent {
           categorias (nombre),
           cat_estados (nombre),
           cat_ubicaciones (nombre),
-          cat_areas (nombre)
+          cat_areas (nombre),
+          personal (cedula, nombres, apellidos)
         `)
-        .or(`codigo_id.eq.${filtro},responsable_cedula.eq.${filtro}`);
+        .or(`codigo_id.eq.${filtro},personal_cedula.eq.${filtro}`);
         
       if (error) {
         throw error;
