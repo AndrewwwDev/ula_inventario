@@ -101,6 +101,9 @@ export class UsuariosComponent implements OnInit {
       return;
     }
 
+    // Aseguramos que la cédula se estandarice y no contenga espacios
+    this.newUser.cedula = this.newUser.cedula.trim().toUpperCase();
+
     this.creatingUser = true;
 
     try {

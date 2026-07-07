@@ -84,6 +84,11 @@ export class PersonalComponent implements OnInit {
     try {
       const formValue = this.personalForm.value;
       
+      // Saneamiento de cédula (evita prefijos duplicados y normaliza a mayúsculas)
+      if (formValue.cedula) {
+        formValue.cedula = formValue.cedula.trim().toUpperCase();
+      }
+      
       const existeDuplicado = await this.personalService.verificarDuplicadosGlobal(formValue.cedula, formValue.correo);
       if (existeDuplicado) {
         alert('Error: La cédula o el correo electrónico ya se encuentran registrados en el sistema como usuario o personal.');

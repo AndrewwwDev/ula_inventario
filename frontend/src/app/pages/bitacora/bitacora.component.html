@@ -107,20 +107,21 @@
               </div>
             </div>
             
-            <p class="text-sm text-gray-600 mb-4 leading-relaxed" *ngIf="log.detalles">
+            <p class="text-sm text-gray-600 mb-4 leading-relaxed break-words whitespace-normal" *ngIf="log.detalles">
               {{ log.detalles?.mensaje || (isString(log.detalles) ? log.detalles : 'Ver detalles para más información') }}
             </p>
             
-            <div *ngIf="log.diff_visual && parseDiff(log.diff_visual).length > 0" class="bg-gray-50/80 rounded-xl p-4 text-sm font-mono border border-gray-100 overflow-x-auto">
-              <div *ngFor="let diff of parseDiff(log.diff_visual)" class="flex flex-col space-y-1.5 mb-3 last:mb-0">
+            <div *ngIf="log.diff_visual && parseDiff(log.diff_visual).length > 0" class="bg-gray-50/80 rounded-xl p-4 text-sm font-mono border border-gray-100 overflow-x-auto w-full">
+              <div *ngFor="let diff of parseDiff(log.diff_visual)" class="flex flex-col space-y-1.5 mb-3 last:mb-0 w-full min-w-0">
                 <p class="font-bold text-gray-400 text-[10px] tracking-widest uppercase">{{ diff.key }}</p>
-                <div class="flex flex-wrap items-center gap-2">
-                  <div class="flex items-center bg-red-50 text-red-700 px-3 py-1.5 rounded-lg border border-red-100/50 shadow-sm">
-                    <del class="no-underline opacity-80 mr-1">-</del> <span>{{ diff.old || '(Vacío)' }}</span>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full min-w-0">
+                  <div class="flex items-center bg-red-50 text-red-700 px-3 py-1.5 rounded-lg border border-red-100/50 shadow-sm flex-1 min-w-0 break-words whitespace-normal">
+                    <del class="no-underline opacity-80 mr-1 flex-shrink-0">-</del> <span class="break-words whitespace-normal min-w-0">{{ diff.old || '(Vacío)' }}</span>
                   </div>
-                  <span class="material-icons-outlined text-[16px] text-gray-300">arrow_forward</span>
-                  <div class="flex items-center bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100/50 shadow-sm">
-                    <ins class="no-underline opacity-80 mr-1">+</ins> <span>{{ diff.new || '(Vacío)' }}</span>
+                  <span class="material-icons-outlined text-[16px] text-gray-300 flex-shrink-0 hidden sm:block">arrow_forward</span>
+                  <span class="material-icons-outlined text-[16px] text-gray-300 flex-shrink-0 sm:hidden self-center rotate-90">arrow_forward</span>
+                  <div class="flex items-center bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100/50 shadow-sm flex-1 min-w-0 break-words whitespace-normal">
+                    <ins class="no-underline opacity-80 mr-1 flex-shrink-0">+</ins> <span class="break-words whitespace-normal min-w-0">{{ diff.new || '(Vacío)' }}</span>
                   </div>
                 </div>
               </div>

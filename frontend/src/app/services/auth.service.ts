@@ -102,6 +102,31 @@ export class AuthService {
     }
   }
 
+  // MÉTODO NUEVO: Extrae el perfil directo de la base de datos evitando el caché del metadata
+  async getPerfilCompleto() {
+    try {
+      const { data: { user } } = await this.supabase.auth.getUser();
+      if (!user) return null;
+
+      // Buscamos directamente en la tabla SQL real
+      const { data, error } = await this.supabase.supabase
+        .from('usuarios')
+        .select('*')
+        .eq('auth_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error obteniendo perfil desde getPerfilCompleto:', error);
+        return user;
+      }
+
+      return data ? { ...user, ...data } : user;
+    } catch (error) {
+      console.error('Excepción en getPerfilCompleto:', error);
+      return null;
+    }
+  }
+
   login(usuario: string, contrasena: string) {
     return from(this.supabase.auth.signInWithPassword({
       email: usuario,

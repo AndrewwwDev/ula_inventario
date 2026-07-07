@@ -29,6 +29,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showProfileMenu = false;
   notificacionesCount: number = 0;
 
+  // Variables de UI explícitas
+  usuarioNombre: string = 'Usuario';
+  usuarioRol: string = 'Administrador';
+  cedulaUsuario: string = 'C.I No encontrada';
+
   constructor(
     private authService: AuthService,
     private router: Router,
@@ -41,6 +46,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.isSuperAdmin$ = this.authService.isSuperAdmin$;
     
+    // Carga de datos asíncrona directa a BD (Refactorización Absoluta)
+    this.cargarDatosUsuario();
+
     this.authService.currentUser$.subscribe((user: any) => {
       if (user) {
         this.user = user;
@@ -70,6 +78,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
     );
   }
 
+  async cargarDatosUsuario() {
+    try {
+      const perfil = await this.authService.getPerfilCompleto();
+      if (perfil) {
+        const nombre = perfil.nombres ? perfil.nombres.split(' ')[0] : '';
+        const apellido = perfil.apellidos ? perfil.apellidos.split(' ')[0] : '';
+        this.usuarioNombre = `${nombre} ${apellido}`.trim() || 'Usuario';
+        this.usuarioRol = perfil.rol || perfil.cargo || 'Administrador';
+        this.cedulaUsuario = perfil.cedula || 'C.I No encontrada'; // Extracción directa y segura de la BD
+      }
+    } catch (error) {
+      console.error('Error cargando perfil:', error);
+      this.cedulaUsuario = 'C.I No encontrada';
+    }
+  }
+
   ngOnDestroy() {
     this.idleService.stopMonitoring();
     this.subscriptions.unsubscribe();
@@ -81,18 +105,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   toggleSidebar() {
     this.isSidebarOpen = !this.isSidebarOpen;
-  }
-
-  get userShortName(): string {
-    if (!this.user) return 'Usuario';
-    const nombre = this.user.nombres ? this.user.nombres.split(' ')[0] : '';
-    const apellido = this.user.apellidos ? this.user.apellidos.split(' ')[0] : '';
-    return `${nombre} ${apellido}`.trim() || 'Usuario';
-  }
-
-  get usuarioCedula(): string {
-    if (!this.user || !this.user.cedula) return '';
-    return this.user.cedula;
   }
 
   toggleProfileMenu(event: Event) {

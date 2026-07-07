@@ -41,6 +41,8 @@ export class DesincorporacionComponent implements OnInit {
   isRulesModalOpen: boolean = false;
   aceptaResponsabilidad: boolean = false;
 
+  personal: any[] = [];
+
   constructor(
     private inventarioService: InventarioService,
     private toastService: ToastService,
@@ -49,6 +51,7 @@ export class DesincorporacionComponent implements OnInit {
 
   ngOnInit() {
     this.loadDesincorporados();
+    this.loadPersonal();
 
     // Configuración de límites de fechas de auditoría (Requerimiento 1)
     const hoy = new Date();
@@ -57,6 +60,21 @@ export class DesincorporacionComponent implements OnInit {
     const mesAnterior = new Date(hoy);
     mesAnterior.setMonth(hoy.getMonth() - 1);
     this.minDate = mesAnterior.toISOString().split('T')[0];
+  }
+
+  loadPersonal() {
+    this.inventarioService.getPersonalActivo().subscribe({
+      next: (data) => {
+        this.personal = data;
+      }
+    });
+  }
+
+  obtenerNombrePorCedula(cedula: string): string {
+    if (!cedula) return 'Sin Asignación';
+    if (!this.personal || this.personal.length === 0) return 'Sin Asignación';
+    const persona = this.personal.find(p => p.cedula === cedula);
+    return persona ? `${persona.nombres} ${persona.apellidos}` : 'Personal no registrado';
   }
 
   loadDesincorporados() {
@@ -173,13 +191,14 @@ export class DesincorporacionComponent implements OnInit {
       return;
     }
 
-    const columnas = ['Código ID', 'Nombre Bien', 'Fecha Baja', 'Motivo', 'Responsable Original'];
+    const columnas = ['Código ID', 'Nombre Bien', 'Fecha Baja', 'Motivo', 'Desincorporado Por', 'Responsable Original'];
     const dataFilas = datos.map(item => [
       item.codigo_id || 'N/A',
       item.nombre || 'N/A',
       item.fecha_desincorporacion ? new Date(item.fecha_desincorporacion).toLocaleDateString() : 'N/A',
       item.motivo_desincorporacion || 'N/A',
-      item.responsable_cedula || 'N/A'
+      item.nombre_autoriza || 'N/A',
+      this.obtenerNombrePorCedula(item.responsable_cedula)
     ]);
 
     let periodo = '';

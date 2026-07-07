@@ -31,34 +31,76 @@ export class InicioComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.inventarioService.getDashboardMetrics().subscribe((res: any) => {
-      const { metrics, estados } = res;
-      
+    this.inventarioService.getDashboardMetrics().subscribe((metricasBD: any[]) => {
+      let totalCalculado = 0;
+
       this.stats.forEach(stat => {
-        if (stat.label === 'Total de bienes') {
-          stat.value = metrics['Total']?.toString() || '0';
-        } else if (stat.filterName) {
-          stat.value = metrics[stat.filterName]?.toString() || '0';
-          const matchedEstado = estados?.find((e: any) => e.nombre === stat.filterName);
-          if (matchedEstado) {
-            stat.filterId = matchedEstado.id;
+        // Encontramos el registro en la vista que coincida con el nombre del estado (o condición)
+        // Usamos el 'filterName' para estados, o 'label' para condiciones
+        const filterKey = stat.filterName || stat.label;
+        const match = metricasBD.find((m: any) => m.estado_nombre === filterKey);
+
+        if (match) {
+          stat.value = match.total_bienes.toString();
+          
+          // Sumamos al total general solo si no es 'Desincorporado' ni condiciones físicas para no duplicar
+          if (stat.filterName && stat.filterName !== 'Desincorporado' && stat.filterName !== 'Faltante') {
+            totalCalculado += Number(match.total_bienes);
           }
-        } else if (stat.isCondicion) {
-          stat.value = metrics[stat.label]?.toString() || '0';
+        } else if (!stat.isCondicion) {
+          stat.value = '0';
         }
       });
+
+      // Actualizamos el total general (asumiendo que la vista no retorna 'Total de bienes')
+      const statTotal = this.stats.find(s => s.label === 'Total de bienes');
+      if (statTotal) {
+        // Si la vista retorna un total absoluto, se podría usar, sino usamos la suma
+        const matchTotal = metricasBD.find((m: any) => m.estado_nombre === 'Total');
+        statTotal.value = matchTotal ? matchTotal.total_bienes.toString() : totalCalculado.toString();
+      }
+    });
+
+    // NUEVO: Calcular las condiciones físicas a partir de la data real completa de los bienes
+    this.inventarioService.getBienes().subscribe((bienes: any[]) => {
+      let buenEstado = 0;
+      let regular = 0;
+      let malEstado = 0;
+      let sinAsignacion = 0;
+
+      bienes.forEach((bien: any) => {
+        // Calcular Condiciones Físicas
+        const condicion = bien.condicion_fisica ? bien.condicion_fisica.trim().toLowerCase() : '';
+        if (condicion === 'buen estado') buenEstado++;
+        else if (condicion === 'regular') regular++;
+        else if (condicion === 'mal estado') malEstado++;
+
+        // Calcular Sin Asignación (Responsable Nulo o Vacío)
+        if (!bien.personal_cedula) sinAsignacion++;
+      });
+
+      // Actualizar el arreglo de stats reactivamente
+      const statBuen = this.stats.find(s => s.label === 'Buen estado');
+      if (statBuen) statBuen.value = buenEstado.toString();
+
+      const statReg = this.stats.find(s => s.label === 'Regular');
+      if (statReg) statReg.value = regular.toString();
+
+      const statMal = this.stats.find(s => s.label === 'Mal estado');
+      if (statMal) statMal.value = malEstado.toString();
+
+      const statSinAsignacion = this.stats.find(s => s.label === 'Sin Asignación');
+      if (statSinAsignacion) statSinAsignacion.value = sinAsignacion.toString();
     });
   }
 
   navigateTo(stat: any) {
     if (stat.filterName === 'Desincorporado') {
       this.router.navigate(['/dashboard/desincorporacion']);
-    } else if (stat.filterId) {
-      this.router.navigate(['/dashboard/inventario'], { queryParams: { estado: stat.filterId } });
-    } else if (stat.isCondicion) {
-      // Opcional: filtrar por condición
     } else {
-      this.router.navigate(['/dashboard/inventario']);
+      // Paso 1: Redirección reactiva. Usa stat.filterName o stat.label
+      const filtroKey = stat.filterName || stat.label;
+      this.router.navigate(['/dashboard/inventario'], { queryParams: { filtro: filtroKey } });
     }
   }
 }

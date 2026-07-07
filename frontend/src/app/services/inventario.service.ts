@@ -204,20 +204,35 @@ export class InventarioService {
         if (!desincData || desincData.length === 0) return [];
 
         const codigos = desincData.map((d: any) => d.codigo_bien);
-        const { data: bienesData, error: bienesError } = await this.supabase.from('bienes').select('codigo_id, nombre').in('codigo_id', codigos);
+        const { data: bienesData, error: bienesError } = await this.supabase.from('bienes').select('codigo_id, nombre, personal_cedula').in('codigo_id', codigos);
         
         const bienesMap = new Map();
         if (bienesData) {
-          bienesData.forEach((b: any) => bienesMap.set(b.codigo_id, b.nombre));
+          bienesData.forEach((b: any) => bienesMap.set(b.codigo_id, {nombre: b.nombre, personal_cedula: b.personal_cedula}));
         }
 
-        return desincData.map((d: any) => ({
-          codigo_id: d.codigo_bien,
-          nombre: bienesMap.get(d.codigo_bien) || 'Bien Desconocido',
-          fecha_desincorporacion: d.fecha,
-          motivo_desincorporacion: d.motivo_desincorporacion,
-          url_foto_evidencia: d.url_foto_evidencia
-        }));
+        // Consultar nombres de quienes autorizaron en la tabla 'usuarios'
+        const autorizaCedulas = [...new Set(desincData.map((d: any) => d.cedula_autoriza).filter(Boolean))];
+        const { data: usuariosData } = await this.supabase.from('usuarios').select('cedula, nombres, apellidos').in('cedula', autorizaCedulas);
+        
+        const usuariosMap = new Map();
+        if (usuariosData) {
+          usuariosData.forEach((u: any) => usuariosMap.set(u.cedula, `${u.nombres || ''} ${u.apellidos || ''}`.trim()));
+        }
+
+        return desincData.map((d: any) => {
+          const bInfo = bienesMap.get(d.codigo_bien) || {nombre: 'Bien Desconocido', personal_cedula: null};
+          return {
+            codigo_id: d.codigo_bien,
+            nombre: bInfo.nombre,
+            fecha_desincorporacion: d.fecha,
+            motivo_desincorporacion: d.motivo_desincorporacion,
+            url_foto_evidencia: d.url_foto_evidencia,
+            cedula_autoriza: d.cedula_autoriza,
+            nombre_autoriza: usuariosMap.get(d.cedula_autoriza) || 'Usuario del Sistema',
+            responsable_cedula: bInfo.personal_cedula
+          };
+        });
       } catch (err) { console.warn('Excepción en getBienesDesincorporados:', err); return []; }
     })());
   }
@@ -325,26 +340,19 @@ export class InventarioService {
   buscarCustodiosPredictivo(termino: string) {
     return from((async () => {
       try {
-        const pPersonal = this.supabase.from('personal')
+        const { data, error } = await this.supabase.from('personal')
           .select('cedula, nombres, apellidos, cargo')
           .or(`nombres.ilike.%${termino}%,apellidos.ilike.%${termino}%,cedula.ilike.%${termino}%`)
           .limit(10);
 
-        const pUsuarios = this.supabase.from('usuarios')
-          .select('cedula, nombres, apellidos, rol')
-          .or(`nombres.ilike.%${termino}%,apellidos.ilike.%${termino}%,cedula.ilike.%${termino}%`)
-          .limit(10);
-
-        const [resPersonal, resUsuarios] = await Promise.all([pPersonal, pUsuarios]);
-
-        const custodios: any[] = [];
-
-        if (resPersonal.data) {
-          resPersonal.data.forEach(p => custodios.push({ ...p, tipoOrigen: 'Personal' }));
+        if (error) {
+          console.warn('Error en buscarCustodiosPredictivo:', error);
+          return [];
         }
 
-        if (resUsuarios.data) {
-          resUsuarios.data.forEach(u => custodios.push({ ...u, tipoOrigen: u.rol }));
+        const custodios: any[] = [];
+        if (data) {
+          data.forEach(p => custodios.push({ ...p, tipoOrigen: p.cargo || 'Personal' }));
         }
 
         return custodios;
@@ -618,56 +626,20 @@ export class InventarioService {
   getDashboardMetrics() {
     return from((async () => {
       try {
-        const { data: estados, error: estadosError } = await this.supabase.from('cat_estados').select('*');
-        if (estadosError) {
-          console.warn('Error de acceso a tabla cat_estados:', estadosError);
-          return { metrics: {}, estados: [] };
-        }
-        const estadoDes = estados?.find(e => e.nombre === 'Desincorporado');
-        const desincID = estadoDes ? estadoDes.id : null;
-        
-        const metrics: any = {};
-        
-        let queryTotal = this.supabase.from('bienes').select('*', { count: 'exact', head: true });
-        if (desincID) queryTotal = queryTotal.neq('estado_id', desincID);
-        
-        const { count: totalCount, error: countError } = await queryTotal;
-        if (countError) {
-          console.warn('Error de acceso a tabla bienes (count):', countError);
-        }
-        metrics['Total'] = totalCount || 0;
-
-        if (estados && estados.length > 0) {
-          const countPromises = estados.map((est: any) => 
-            this.supabase.from('bienes').select('*', { count: 'exact', head: true }).eq('estado_id', est.id)
-          );
-          const results = await Promise.all(countPromises);
+        // Consultamos directamente la vista optimizada
+        const { data, error } = await this.supabase
+          .from('vw_dashboard_metricas')
+          .select('estado_nombre, total_bienes');
           
-          estados.forEach((est: any, index: any) => {
-            const res = results[index];
-            if (res.error) console.warn(`Error contando estado ${est.nombre}:`, res.error);
-            metrics[est.nombre] = res.count || 0;
-          });
+        if (error) {
+          console.warn('Error al consultar vw_dashboard_metricas:', error);
+          return [];
         }
-
-        const conditions = ['Buen estado', 'Regular', 'Mal estado'];
-        const condPromises = conditions.map(cond => {
-          let q = this.supabase.from('bienes').select('*', { count: 'exact', head: true }).eq('condicion_fisica', cond);
-          if (desincID) q = q.neq('estado_id', desincID);
-          return q;
-        });
-        const condResults = await Promise.all(condPromises);
         
-        conditions.forEach((cond, index) => {
-          const res = condResults[index];
-          if (res.error) console.warn(`Error contando condicion ${cond}:`, res.error);
-          metrics[cond] = res.count || 0;
-        });
-
-        return { metrics, estados };
+        return data || [];
       } catch (error) {
-        console.warn('Error de acceso a tabla en getDashboardMetrics:', error);
-        return { metrics: {}, estados: [] };
+        console.warn('Excepción en getDashboardMetrics:', error);
+        return [];
       }
     })());
   }

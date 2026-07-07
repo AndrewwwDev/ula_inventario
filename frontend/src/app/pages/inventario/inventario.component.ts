@@ -21,7 +21,7 @@ import { NotificacionesService } from '../../services/notificaciones.service';
   templateUrl: './inventario.component.html'
 })
 export class InventarioComponent implements OnInit {
-  
+
   // --- Inventory Data & Infinite Scroll ---
   allInventory: any[] = [];
   filteredInventory: any[] = [];
@@ -72,7 +72,7 @@ export class InventarioComponent implements OnInit {
     });
     this.loadOptions();
     this.loadInventory();
-    
+
     // Autocompletado Búsqueda Dual con RxJS
     this.searchSubject.pipe(
       debounceTime(300),
@@ -87,7 +87,7 @@ export class InventarioComponent implements OnInit {
       }
       this.applyFilters();
     });
-    
+
     // Check if we need to open a specific modal from another view
     this.route.queryParams.subscribe(params => {
       if (params['condicion']) {
@@ -96,7 +96,7 @@ export class InventarioComponent implements OnInit {
       if (params['estado']) {
         this.filtroEstado = params['estado'];
       }
-      
+
       if (this.allInventory && this.allInventory.length > 0) {
         this.applyFilters();
       }
@@ -117,6 +117,23 @@ export class InventarioComponent implements OnInit {
           }
         }, 800);
       }
+      
+      // PASO 2: Recepción Reactiva del Filtro
+      if (params['filtro']) {
+        // Encontramos el ID del estado correspondiente al nombre del filtro
+        const estadoEncontrado = this.cat_estados.find(e => e.nombre === params['filtro']);
+        if (estadoEncontrado) {
+          this.filtroEstado = estadoEncontrado.id;
+        } else if (params['filtro'] === 'Sin Asignación') {
+          // Asignación de estado nominal (Virtual)
+          this.filtroEstado = 'Sin Asignación';
+        }
+        
+        // Aplicamos solo si ya hay inventario cargado, si no, loadInventory() lo aplicará luego
+        if (this.allInventory && this.allInventory.length > 0) {
+          this.applyFilters();
+        }
+      }
     });
   }
 
@@ -133,7 +150,7 @@ export class InventarioComponent implements OnInit {
           this.toastService.show('Error: No se pudieron cargar los datos del servidor o no hay bienes.', 'error');
         }
         this.allInventory = (data || []).filter((item: any) => item.cat_estados?.nombre !== 'Desincorporado');
-        
+
         // NUEVO: Verificación de filtros en espera tras la carga
         if (this.filtroCondicion || this.filtroEstado) {
           this.applyFilters();
@@ -202,11 +219,11 @@ export class InventarioComponent implements OnInit {
     const valor = evento?.target?.value ?? evento?.value ?? evento;
 
     if (typeof valor !== 'string') {
-        return; // Si no es un string válido, aborta silenciosamente
+      return; // Si no es un string válido, aborta silenciosamente
     }
 
     const termino = valor.trim().toLowerCase();
-    
+
     // 2. Limpieza básica y reseteo
     if (termino.length < 2) {
       this.sugerenciasBusqueda = [];
@@ -216,6 +233,13 @@ export class InventarioComponent implements OnInit {
     }
 
     try {
+      // OBTENER LA SESIÓN (Solución al 401)
+      const { data: { session } } = await this.supabaseService.supabase.auth.getSession();
+      if (!session) {
+        console.error('No hay sesión activa. Error 401 inminente.');
+        return; // Abortar para evitar 401
+      }
+
       // BÚSQUEDA PARALELA (Omnibox)
       const [resBienes, resPersonal] = await Promise.all([
         // 1. Busca en equipos
@@ -247,7 +271,7 @@ export class InventarioComponent implements OnInit {
       if (resPersonal.data) {
         resPersonal.data.forEach(u => {
           sugerencias.push({
-            textoVisible: `👤 ${u.nombres} ${u.apellidos} (C.I: ${u.cedula})`,
+            textoVisible: `${u.nombres} ${u.apellidos} (C.I: ${u.cedula})`,
             valorBusqueda: u.cedula,
             tipo: 'personal'
           });
@@ -291,15 +315,23 @@ export class InventarioComponent implements OnInit {
     if (this.filtroUbicacion) {
       result = result.filter(item => item.ubicacion === this.filtroUbicacion);
     }
-    
+
     if (this.filtroCategoria) {
       result = result.filter(item => item.categoria_id === this.filtroCategoria);
     }
-    
-    if (this.filtroEstado) {
-      result = result.filter(item => item.estado_id === this.filtroEstado);
+
+    // PASO 3: Lógica de Filtrado Híbrida
+    if (this.filtroEstado && this.filtroEstado !== 'Todos') {
+      result = result.filter(bien => {
+        // Filtrado normal por ID de estado
+        const estadoCoincide = bien.estado_id === this.filtroEstado;
+        // Filtrado nominal "Sin Asignación" (cuando el estado virtual coincide y no hay responsable)
+        const esSinAsignacion = this.filtroEstado === 'Sin Asignación' && (!bien.personal_cedula || bien.personal_cedula === null);
+        
+        return estadoCoincide || esSinAsignacion;
+      });
     }
-    
+
     if (this.filtroCondicion) {
       result = result.filter(item => item.condicion_fisica === this.filtroCondicion);
     }
@@ -324,7 +356,7 @@ export class InventarioComponent implements OnInit {
         result = result.filter(item => new Date(item.fecha_registro).getTime() >= inicio);
       }
     }
-    
+
     if (this.fechaFin && this.fechaFin.trim() !== '') {
       const fin = new Date(this.fechaFin);
       if (!isNaN(fin.getTime())) {
@@ -431,7 +463,7 @@ export class InventarioComponent implements OnInit {
       );
       this.displayedInventory = [...this.displayedInventory, ...nextItems];
       this.isLoadingMore = false;
-    }, 500); 
+    }, 500);
   }
 
   simulateScanner() {
@@ -506,7 +538,7 @@ export class InventarioComponent implements OnInit {
         // Si pasó un string, verificamos si es una cédula válida (Ej: V-12345678 o 12345678)
         // Ajustamos la regex para permitir prefijos V-, E-, J- y números
         const esCedulaValida = /^([VvEeJjPpGg]-?)?\d+$/.test(responsableInput.trim());
-        
+
         // Si es válida, la usamos; si no, forzamos null para no enviar texto basura
         cedulaValidada = esCedulaValida ? responsableInput.trim().toUpperCase() : null;
       }
@@ -618,7 +650,7 @@ export class InventarioComponent implements OnInit {
     if (!this.bienATrasladar || !this.datosTraslado.ubicacion_id || !this.datosTraslado.personal_cedula) return;
 
     this.isSubmitting = true;
-    
+
     const accion = this.datosTraslado.tipoTraslado === 'Interno' ? 'TRASLADO_INTERNO' : 'TRASLADO_EXTERNO';
     const mensajeAuditoria = `Equipo trasladado a nueva ubicación [ID: ${this.datosTraslado.ubicacion_id}] y entregado a [${this.datosTraslado.personal_cedula}]`;
 
@@ -697,7 +729,7 @@ export class InventarioComponent implements OnInit {
         `)
         .eq('codigo_bien', this.bienSeleccionado.codigo_id)
         .order('fecha_hora', { ascending: false });
-      
+
       if (error) throw error;
       this.historialActivo = data || [];
     } catch (err) {
@@ -717,7 +749,7 @@ export class InventarioComponent implements OnInit {
         doc.setFontSize(10);
         doc.text(`Nombre: ${this.bienSeleccionado.nombre}`, 14, 25);
         doc.text(`Serial: ${this.bienSeleccionado.serial || 'N/A'}`, 14, 30);
-        
+
         const tableData = this.historialActivo.map(h => [
           new Date(h.fecha_hora).toLocaleDateString() + ' ' + new Date(h.fecha_hora).toLocaleTimeString(),
           h.tipo_accion,
@@ -755,7 +787,7 @@ export class InventarioComponent implements OnInit {
     const camposRelevantes = {
       'Acción': item.accion || item.action || item.tipo_accion,
       'Comentarios': item.comentarios || item.observaciones || item.descripcion || item.mensaje,
-      'Detalles Técnicos': item.detalles || item.detalles_json, 
+      'Detalles Técnicos': item.detalles || item.detalles_json,
       'Ubicación Origen': item.origen || item.ubicacion_anterior,
       'Ubicación Destino': item.destino || item.nueva_ubicacion,
       'Motivo': item.motivo || item.razon
@@ -781,9 +813,9 @@ export class InventarioComponent implements OnInit {
 
     this.isSubmitting = true;
     this.inventarioService.desincorporarBien(
-      this.bienADesincorporar.codigo_id, 
-      this.motivoDesincorporacion, 
-      this.fechaDesincorporacion, 
+      this.bienADesincorporar.codigo_id,
+      this.motivoDesincorporacion,
+      this.fechaDesincorporacion,
       this.selectedFile
     ).subscribe({
       next: () => {
@@ -804,7 +836,7 @@ export class InventarioComponent implements OnInit {
 
     this.isSubmitting = true;
     const fallaFinal = `${this.tipoMantenimiento} - Motivo: ${this.motivoMantenimiento}`;
-    
+
     const cedulaSolicitante = this.currentUser?.cedula || '00000000';
     const nombreSolicitante = this.currentUser ? `${this.currentUser.nombres} ${this.currentUser.apellidos}` : 'Desconocido';
 
@@ -854,7 +886,7 @@ export class InventarioComponent implements OnInit {
 
   getEstadosPermitidos(responsableCedula: string | null | undefined, currentStateId?: string): any[] {
     const isSinAsignar = !responsableCedula || responsableCedula.trim() === '';
-    
+
     // Identificar el ID del estado 'Mantenimiento' si existe en cat_estados
     const estadoMantenimiento = this.cat_estados.find(est => est.nombre === 'Mantenimiento');
     const isCurrentlyMantenimiento = estadoMantenimiento && currentStateId === estadoMantenimiento.id;
@@ -865,12 +897,12 @@ export class InventarioComponent implements OnInit {
       return this.cat_estados.filter(est => {
         // Excluir permanentemente Desincorporado y Sin Asignación
         if (est.nombre === 'Sin Asignación' || est.nombre === 'Desincorporado') return false;
-        
+
         // Excluir Mantenimiento, A MENOS que sea el estado actual (para que el HTML pueda renderizarlo bloqueado)
         if (est.nombre === 'Mantenimiento') {
           return isCurrentlyMantenimiento;
         }
-        
+
         return true;
       });
     }
@@ -885,7 +917,7 @@ export class InventarioComponent implements OnInit {
   onResponsableChange(cedula: string | undefined, isEdit: boolean) {
     const isSinAsignar = !cedula || cedula.trim() === '';
     const targetObj = isEdit ? this.editingBien : this.nuevoBien;
-    
+
     const estadoSinAsignacion = this.cat_estados.find(e => e.nombre === 'Sin Asignación');
     const estadoActivo = this.cat_estados.find(e => e.nombre === 'Activo');
 

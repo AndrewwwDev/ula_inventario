@@ -6,8 +6,21 @@
     <div class="flex-1 max-w-2xl mx-auto relative w-full">
       <input type="text" [(ngModel)]="searchQuery" (input)="onSearchInput()"
         placeholder="Buscar por Nombre, Código ID o Descripción..."
-        class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-sm shadow-sm">
-      <span class="material-icons-outlined absolute right-3 top-2.5 text-gray-400 text-sm pointer-events-none">search</span>
+        class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-sm shadow-sm"
+        autocomplete="off">
+      <span
+        class="material-icons-outlined absolute right-3 top-2.5 text-gray-400 text-sm pointer-events-none">search</span>
+
+      <!-- Dropdown Omnibox -->
+      <div *ngIf="mostrarDropdown && sugerenciasBusqueda.length > 0"
+        class="absolute top-full left-0 mt-1 z-50 shadow-2xl bg-white w-full rounded-xl border border-gray-200 overflow-hidden">
+        <ul class="max-h-60 overflow-y-auto divide-y divide-gray-100">
+          <li *ngFor="let sug of sugerenciasBusqueda" (click)="seleccionarSugerencia(sug)"
+            class="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors flex items-center">
+            <span class="text-sm text-gray-800 font-medium">{{ sug.textoVisible }}</span>
+          </li>
+        </ul>
+      </div>
     </div>
     <div class="flex items-center gap-2 shrink-0">
       <button (click)="toggleAddModal()"
@@ -22,17 +35,20 @@
   </div>
 
   <!-- Fila Inferior (Filtro por Fecha y Limpieza) -->
-  <div class="flex flex-col md:flex-row items-center gap-4 mt-4 bg-gray-50/50 p-3 rounded-lg border border-gray-100 mb-4">
+  <div
+    class="flex flex-col md:flex-row items-center gap-4 mt-4 bg-gray-50/50 p-3 rounded-lg border border-gray-100 mb-4">
     <label class="text-sm text-gray-500 font-medium hidden md:block">Rango:</label>
     <div class="flex items-center space-x-2">
       <span class="text-xs text-gray-400">Desde</span>
-      <input type="date" [(ngModel)]="fechaInicio" (ngModelChange)="aplicarFiltroFecha()" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
+      <input type="date" [(ngModel)]="fechaInicio" (ngModelChange)="aplicarFiltroFecha()"
+        class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
     </div>
     <div class="flex items-center space-x-2">
       <span class="text-xs text-gray-400">Hasta</span>
-      <input type="date" [(ngModel)]="fechaFin" (ngModelChange)="aplicarFiltroFecha()" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
+      <input type="date" [(ngModel)]="fechaFin" (ngModelChange)="aplicarFiltroFecha()"
+        class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-32">
     </div>
-    
+
     <button (click)="limpiarTodosLosFiltros()"
       class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors shadow-sm md:ml-auto w-full md:w-auto justify-center">
       <span class="material-icons-outlined text-[18px]">cleaning_services</span> Limpiar todos los filtros
@@ -109,19 +125,33 @@
               </div>
             </div>
           </td>
-          <td class="py-3 px-4">
-            <p class="text-sm font-bold text-gray-800">{{item.codigo_id}}</p>
-            <p *ngIf="item.serial_fabricante"
-              class="text-xs font-mono text-blue-600 font-semibold bg-blue-50 px-1 py-0.5 rounded inline-block mt-1"
-              title="Serial de Fabricante">S/N: {{item.serial_fabricante}}</p>
+
+
+          <!-- CELDA 1: CÓDIGO / SERIAL -->
+          <td class="py-3 px-4 whitespace-nowrap">
+            <div class="flex flex-col max-w-[120px] sm:max-w-[180px] md:max-w-[220px]">
+              <span class="text-sm font-semibold text-gray-900 truncate" [title]="item.codigo_id">
+                {{item.codigo_id}}
+              </span>
+              <span class="text-xs text-gray-500 mt-0.5 truncate" [title]="item.serial_fabricante">
+                {{item.serial_fabricante}}
+              </span>
+            </div>
           </td>
-          <td class="py-3 px-4">
-            <p class="text-sm font-semibold text-gray-800 line-clamp-1" title="{{item.nombre}}">{{item.nombre}}</p>
-            <p class="text-xs text-gray-500 line-clamp-1 mt-0.5" title="{{item.marca}} {{item.modelo}}">
-              <span *ngIf="item.marca" class="font-bold">{{item.marca}}</span>
-              <span *ngIf="item.modelo"> {{item.modelo}}</span>
-              <span *ngIf="!item.marca && !item.modelo">{{item.descripcion || 'Sin descripción detallada'}}</span>
-            </p>
+
+          <!-- CELDA 2: BIEN / DESCRIPCIÓN -->
+          <td class="py-3 px-4 whitespace-nowrap">
+            <div class="flex flex-col max-w-[120px] sm:max-w-[180px] md:max-w-[250px]">
+              <span class="text-sm font-bold text-gray-900 truncate" [title]="item.nombre">
+                {{item.nombre}}
+              </span>
+              <span class="text-xs text-gray-500 mt-0.5 truncate"
+                [title]="(item.marca || '') + ' ' + (item.modelo || '')">
+                <span *ngIf="item.marca" class="font-bold">{{item.marca}}</span>
+                <span *ngIf="item.modelo"> {{item.modelo}}</span>
+                <span *ngIf="!item.marca && !item.modelo">{{item.descripcion || 'Sin descripción detallada'}}</span>
+              </span>
+            </div>
           </td>
           <td class="py-3 px-4 text-sm font-medium text-gray-700">{{item.cat_ubicaciones?.nombre || 'N/A'}} <br> <span
               class="text-xs text-gray-400">{{item.cat_areas?.nombre || 'N/A'}}</span></td>
@@ -333,8 +363,7 @@
             <label class="text-sm font-bold text-gray-700">Código ID *</label>
             <input type="text" [(ngModel)]="editingBien.codigo_id" name="codigo_id"
               class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl outline-none focus:border-blue-500"
-              placeholder="Ej: BIEN-2026, ACT-001"
-              title="El código de bien es un valor alfanumérico estandarizado."
+              placeholder="Ej: BIEN-2026, ACT-001" title="El código de bien es un valor alfanumérico estandarizado."
               required disabled>
           </div>
           <div>
@@ -511,8 +540,8 @@
           <div>
             <p class="text-xs font-bold text-blue-400 uppercase tracking-wider">Responsable</p>
             <p class="text-lg font-bold text-gray-800 flex items-center">
-              {{ bienATrasladar?.personal_cedula || 'Sin Asignación' }} <span
-                *ngIf="bienATrasladar?.personal_cedula" class="text-sm text-gray-700 font-medium">- {{ obtenerNombreEncargadoActual() }}</span>
+              {{ bienATrasladar?.personal_cedula || 'Sin Asignación' }} <span *ngIf="bienATrasladar?.personal_cedula"
+                class="text-sm text-gray-700 font-medium">- {{ obtenerNombreEncargadoActual() }}</span>
             </p>
           </div>
         </div>
@@ -537,10 +566,8 @@
             </select>
           </div>
           <div class="md:col-span-2">
-            <app-responsable-autocomplete 
-              [ngModel]="datosTraslado.personal_cedula"
-              (ngModelChange)="datosTraslado.personal_cedula = $event"
-              name="personal_cedula"
+            <app-responsable-autocomplete [ngModel]="datosTraslado.personal_cedula"
+              (ngModelChange)="datosTraslado.personal_cedula = $event" name="personal_cedula"
               label="Cédula o Nombre del Nuevo Encargado *">
             </app-responsable-autocomplete>
           </div>
@@ -594,7 +621,7 @@
         </div>
         <div>
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Serial Fabricante</h3>
-          <p class="text-lg font-mono text-blue-600">{{bienSeleccionado.serial_fabricante || 'N/A'}}</p>
+          <p class="text-lg font-mono text-black-600">{{bienSeleccionado.serial_fabricante || 'N/A'}}</p>
         </div>
         <div>
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Marca / Modelo</h3>
@@ -612,8 +639,9 @@
         </div>
         <div class="col-span-1 md:col-span-2">
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Descripción</h3>
-          <p class="text-sm text-gray-700 leading-relaxed">{{bienSeleccionado.descripcion || 'No se proporcionó
-            descripción.'}}</p>
+          <p
+            class="text-sm text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 break-words whitespace-normal min-w-0">
+            {{bienSeleccionado.descripcion || 'El equipo no posee descripción.'}}</p>
         </div>
         <div>
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Ubicación / Área</h3>
@@ -628,14 +656,14 @@
         <div>
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Responsable / Encargado</h3>
           <div class="flex flex-col gap-0.5">
-            <div *ngIf="bienSeleccionado?.personal; else sinAsignacion">
+            <div *ngIf="bienSeleccionado?.personal_cedula; else sinAsignacion">
               <p class="text-sm font-medium text-gray-900">
-                {{ bienSeleccionado.personal.nombres }} {{ bienSeleccionado.personal.apellidos }}
+                {{ obtenerNombrePorCedula(bienSeleccionado.personal_cedula) }}
               </p>
-              <p class="text-xs text-gray-500">V-{{ bienSeleccionado.personal.cedula || bienSeleccionado.personal_cedula }}</p>
+              <p class="text-xs text-gray-500 font-mono">{{ bienSeleccionado.personal_cedula }}</p>
             </div>
             <ng-template #sinAsignacion>
-              <p class="text-sm text-gray-500 italic">Sin Asignación</p>
+              <p class="text-sm italic text-gray-500">Sin Asignación</p>
             </ng-template>
           </div>
         </div>
@@ -645,18 +673,22 @@
         </div>
 
         <!-- Código QR -->
-        <div class="col-span-1 md:col-span-2 flex flex-col items-center mt-4 p-6 bg-gray-50 rounded-2xl border border-gray-100 print:fixed print:inset-0 print:w-full print:h-full print:bg-white print:z-[9999] print:flex print:items-center print:justify-center print:p-0">
-          
-          <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3 print:hidden">Etiqueta Inteligente QR</h3>
-          
-          <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 print:border-none print:shadow-none flex flex-col items-center">
+        <div
+          class="col-span-1 md:col-span-2 flex flex-col items-center mt-4 p-6 bg-gray-50 rounded-2xl border border-gray-100 print:fixed print:inset-0 print:w-full print:h-full print:bg-white print:z-[9999] print:flex print:items-center print:justify-center print:p-0">
+
+          <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3 print:hidden">Etiqueta Inteligente QR
+          </h3>
+
+          <div
+            class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 print:border-none print:shadow-none flex flex-col items-center">
             <qrcode [qrdata]="generarUrlQR(bienSeleccionado.codigo_id)" [width]="180" [errorCorrectionLevel]="'M'">
             </qrcode>
             <p class="font-bold text-xl text-center text-gray-900 mt-2">{{ bienSeleccionado.codigo_id }}</p>
           </div>
-          
-          <p class="text-xs text-gray-500 mt-2 text-center max-w-sm print:hidden">Escanee este código para acceder a la vista rápida del bien desde un dispositivo móvil.</p>
-          
+
+          <p class="text-xs text-gray-500 mt-2 text-center max-w-sm print:hidden">Escanee este código para acceder a la
+            vista rápida del bien desde un dispositivo móvil.</p>
+
           <button (click)="imprimirQR()"
             class="mt-4 flex items-center px-5 py-2.5 bg-gray-800 text-white font-bold rounded-xl hover:bg-gray-700 transition-colors shadow-sm print:hidden">
             <span class="material-icons-outlined mr-2">print</span> Imprimir Etiqueta QR
