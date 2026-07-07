@@ -11,6 +11,14 @@ Este software transforma los procesos manuales vulnerables en una plataforma cen
 
 ## ✨ Características Principales
 
+<img width="1354" height="729" alt="image" src="https://github.com/user-attachments/assets/f9443dab-a139-4cf6-b3c3-c466105f84e2" />
+
+<img width="1366" height="725" alt="image" src="https://github.com/user-attachments/assets/645a600a-e3b8-44b6-b143-9451fd3f43be" />
+
+<img width="1366" height="725" alt="image" src="https://github.com/user-attachments/assets/85fc3300-5f24-4400-84cf-54ef06f59fdc" />
+
+
+
 * 🔒 **Seguridad y Auditoría Transaccional:** Autenticación robusta y sistema de roles estricto (RLS). Cuenta con una Bitácora automatizada (Triggers en Base de Datos) que garantiza la inmutabilidad de los datos, registrando el "antes y después" de cada movimiento.
 * 📱 **Trazabilidad QR Interactiva:** Generación automática de códigos QR para cada equipo. Al ser escaneados con cualquier dispositivo móvil, dirigen a una ficha técnica segura para auditorías rápidas en campo.
 * 🔄 **Gestión de Ciclo de Vida y Estados:** Control preciso de 7 estados operativos (Activo, Inactivo, Mantenimiento, Desincorporado, Traslado Interno, Traslado Externo y Faltante) con separación lógica de responsabilidades.
